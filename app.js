@@ -5,7 +5,7 @@ const MOBILE_APP_CONFIG = {
   iosDownloadUrl: "",
   androidFallbackUrl: "",
   iosFallbackUrl: "",
-  webUrl: ""
+  webUrl: "https://fazenda-dabruna.onrender.com/"
 };
 
 const FARM_CODE_PREFIXES = {

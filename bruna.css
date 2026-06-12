@@ -89,6 +89,14 @@
 }
 
 /* ── Sidebar: atalho "Pastagens / Custo por Hectare" ─────────────── */
+.splash-logo,
+.auth-corner-logo,
+.brand-logo,
+.auth-brand-logo {
+  object-fit: contain !important;
+  background: #fffaf0;
+}
+
 .sidebar-shortcut.shortcut-pastagens {
   color: var(--gold-light);
 }

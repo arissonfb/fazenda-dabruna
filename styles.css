@@ -5367,7 +5367,9 @@ th {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 30;
+    z-index: 10000;
+    pointer-events: auto;
+    isolation: isolate;
     background: rgba(255, 251, 244, 0.97);
     backdrop-filter: blur(14px);
     border-top: 1px solid var(--line);
@@ -5396,6 +5398,9 @@ th {
     cursor: pointer;
     transition: 150ms ease;
     min-width: 58px;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
   }
 
   .mobile-nav-btn.active {
