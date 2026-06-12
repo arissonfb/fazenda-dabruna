@@ -14,7 +14,7 @@ const BRUNA_CREDENTIALS = {
 };
 
 /* ── Validade da demonstração (5 dias) ───────────────────────────── */
-const DEMO_EXPIRES_AT = new Date("2026-06-16T23:59:59-03:00").getTime();
+const DEMO_EXPIRES_AT = new Date("2026-06-19T23:59:59-03:00").getTime();
 const DEMO_CONTACT_WHATSAPP = "https://wa.me/5551997111561";
 
 function isDemoExpired() {

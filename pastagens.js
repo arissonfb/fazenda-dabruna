@@ -542,79 +542,107 @@ function populatePastureFilterOptions(isTotalView) {
   });
 }
 
-/* ── Cards de área ────────────────────────────────────────────────── */
-function renderPastureAreaCards(rows, isTotalView) {
+/* ── Linha de registro de área ────────────────────────────────────── */
+function renderPastureAreaRows(rows, isTotalView) {
   if (!rows.length) {
     return `<div class="pasture-empty">Nenhuma área de pastagem encontrada para os filtros selecionados.</div>`;
   }
 
-  return rows.map(({ farm, area }) => {
-    const totalCost = getAreaTotalCost(area);
-    const costHa = getAreaCostPerHa(area);
-    const procedures = area.procedures || [];
-    const status = area.status || "planejada";
-    const subtitle = isTotalView
-      ? `${escapeHtml(farm.name)} · ${escapeHtml(getPastureCultureLabel(area))} · Safra ${escapeHtml(area.season || "—")}`
-      : `${escapeHtml(getPastureCultureLabel(area))} · Safra ${escapeHtml(area.season || "—")}`;
+  return `
+    <div class="pasture-areas-table-wrap">
+      <div class="table-wrap">
+        <table class="pasture-areas-table">
+          <thead>
+            <tr>
+              ${isTotalView ? "<th>Fazenda</th>" : ""}
+              <th>Área</th>
+              <th>Cultura / Safra</th>
+              <th>Início</th>
+              <th>Status</th>
+              <th>Hectares</th>
+              <th>Custo total</th>
+              <th>Custo / ha</th>
+              <th>Procedimentos</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(({ farm, area }) => {
+              const totalCost = getAreaTotalCost(area);
+              const costHa = getAreaCostPerHa(area);
+              const procedures = area.procedures || [];
+              const status = area.status || "planejada";
+              const subtitle = `${escapeHtml(getPastureCultureLabel(area))} · Safra ${escapeHtml(area.season || "—")}`;
+              const colSpan = isTotalView ? 10 : 9;
 
-    const procedureRows = procedures.map((p) => `
-      <tr>
-        <td>${formatDate(p.date)}</td>
-        <td>${escapeHtml(getPastureProcedureTypeLabel(p))}</td>
-        <td>${escapeHtml(p.description || "—")}</td>
-        <td>${escapeHtml(p.responsible || "—")}</td>
-        <td>${formatWeight(p.areaHa || 0)}</td>
-        <td>${formatWeight(p.quantity || 0)}</td>
-        <td>${escapeHtml(getPastureUnitLabel(p.unit))}</td>
-        <td>${formatCurrency(p.unitValue)}</td>
-        <td>${formatCurrency(p.totalValue)}</td>
-        <td>
-          <div class="pasture-row-actions">
-            <button type="button" data-pasture-action="edit-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Editar</button>
-            <button type="button" data-pasture-action="duplicate-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Duplicar</button>
-            <button type="button" class="danger" data-pasture-action="delete-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Excluir</button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
+              const procedureRows = procedures.map((p) => `
+                <tr>
+                  <td>${formatDate(p.date)}</td>
+                  <td>${escapeHtml(getPastureProcedureTypeLabel(p))}</td>
+                  <td>${escapeHtml(p.description || "—")}</td>
+                  <td>${escapeHtml(p.responsible || "—")}</td>
+                  <td>${formatWeight(p.areaHa || 0)}</td>
+                  <td>${formatWeight(p.quantity || 0)}</td>
+                  <td>${escapeHtml(getPastureUnitLabel(p.unit))}</td>
+                  <td>${formatCurrency(p.unitValue)}</td>
+                  <td>${formatCurrency(p.totalValue)}</td>
+                  <td>
+                    <div class="pasture-row-actions">
+                      <button type="button" data-pasture-action="edit-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Editar</button>
+                      <button type="button" data-pasture-action="duplicate-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Duplicar</button>
+                      <button type="button" class="danger" data-pasture-action="delete-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Excluir</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join("");
 
-    return `
-      <article class="pasture-area-card">
-        <div class="pasture-area-card-header">
-          <div>
-            <h3>${escapeHtml(area.name)}</h3>
-            <p>${subtitle}</p>
-          </div>
-          <span class="pasture-status ${escapeHtml(status)}">${escapeHtml(getPastureStatusLabel(status))}</span>
-        </div>
-        <div class="pasture-area-card-body">
-          <div class="pasture-area-stat"><span>Área</span><strong>${formatHa(area.sizeHa)}</strong></div>
-          <div class="pasture-area-stat"><span>Início</span><strong>${formatDate(area.startDate)}</strong></div>
-          <div class="pasture-area-stat"><span>Custo total</span><strong>${formatCurrency(totalCost)}</strong></div>
-          <div class="pasture-area-stat"><span>Custo / ha</span><strong>${formatCurrency(costHa)}</strong></div>
-        </div>
-        <div class="pasture-area-card-footer">
-          <button type="button" class="action-btn purchase" data-pasture-action="new-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">+ Procedimento</button>
-          <button type="button" class="ghost-btn" data-pasture-action="edit-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Editar</button>
-          <button type="button" class="ghost-btn" data-pasture-action="duplicate-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Duplicar</button>
-          <button type="button" class="ghost-btn" data-pasture-action="delete-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Excluir</button>
-        </div>
-        <details class="pasture-procedures">
-          <summary>Procedimentos (${formatInteger(procedures.length)})</summary>
-          ${procedures.length ? `
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Responsável</th><th>Área (ha)</th><th>Qtd.</th><th>Unid.</th><th>Vlr. unit.</th><th>Total</th><th></th></tr>
-                </thead>
-                <tbody>${procedureRows}</tbody>
-              </table>
-            </div>
-          ` : `<p class="field-note" style="padding-top:10px">Nenhum procedimento registrado.</p>`}
-        </details>
-      </article>
-    `;
-  }).join("");
+              return `
+                <tr class="pasture-area-row">
+                  ${isTotalView ? `<td>${escapeHtml(farm.name)}</td>` : ""}
+                  <td>
+                    <strong>${escapeHtml(area.name)}</strong>
+                    <div class="pasture-area-meta">${subtitle}</div>
+                  </td>
+                  <td>${escapeHtml(getPastureCultureLabel(area))} · ${escapeHtml(area.season || "—")}</td>
+                  <td>${formatDate(area.startDate)}</td>
+                  <td><span class="pasture-status ${escapeHtml(status)}">${escapeHtml(getPastureStatusLabel(status))}</span></td>
+                  <td>${formatHa(area.sizeHa)}</td>
+                  <td>${formatCurrency(totalCost)}</td>
+                  <td>${formatCurrency(costHa)}</td>
+                  <td>${formatInteger(procedures.length)}</td>
+                  <td>
+                    <div class="pasture-row-actions">
+                      <button type="button" data-pasture-action="new-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">+ Procedimento</button>
+                      <button type="button" data-pasture-action="edit-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Editar</button>
+                      <button type="button" data-pasture-action="duplicate-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Duplicar</button>
+                      <button type="button" class="danger" data-pasture-action="delete-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Excluir</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="pasture-area-details-row">
+                  <td colspan="${colSpan}">
+                    <details class="pasture-procedures">
+                      <summary>Procedimentos (${formatInteger(procedures.length)})</summary>
+                      ${procedures.length ? `
+                        <div class="table-wrap">
+                          <table>
+                            <thead>
+                              <tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Responsável</th><th>Área (ha)</th><th>Qtd.</th><th>Unid.</th><th>Vlr. unit.</th><th>Total</th><th></th></tr>
+                            </thead>
+                            <tbody>${procedureRows}</tbody>
+                          </table>
+                        </div>
+                      ` : `<p class="field-note" style="padding:12px 0 0">Nenhum procedimento registrado.</p>`}
+                    </details>
+                  </td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
 /* ── View principal ───────────────────────────────────────────────── */
@@ -661,7 +689,7 @@ function renderPastagensView() {
         <span class="field-note">${formatInteger(rows.length)} área(s) encontrada(s)</span>
       </div>
       <div class="pasture-areas-grid">
-        ${renderPastureAreaCards(rows, isTotalView)}
+        ${renderPastureAreaRows(rows, isTotalView)}
       </div>
     </section>
   `;
@@ -1145,13 +1173,14 @@ async function exportPasturePdf() {
   doc.autoTable({
     startY: y,
     theme: "striped",
-    head: [["Fazenda", "Área", "Cultura", "Safra", "Status", "Hectares", "Custo total", "Custo/ha"]],
+    head: [["Fazenda", "Área", "Cultura", "Safra", "Status", "Procedimentos", "Hectares", "Custo total", "Custo/ha"]],
     body: rows.map(({ farm: rowFarm, area }) => [
       rowFarm.name,
       area.name,
       getPastureCultureLabel(area),
       area.season || "—",
       getPastureStatusLabel(area.status),
+      formatInteger((area.procedures || []).length),
       formatHa(area.sizeHa),
       formatCurrency(getAreaTotalCost(area)),
       formatCurrency(getAreaCostPerHa(area))
@@ -1200,20 +1229,40 @@ async function exportPasturePdf() {
 }
 
 /* ── Exportação Excel ─────────────────────────────────────────────── */
-function exportPastureExcel() {
+async function exportPastureExcel() {
   const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
   const farm = getFarm();
   const rows = getFilteredPastureRows();
   const metrics = computePastureMetrics(rows);
+  const scopeLabel = isTotalView ? "Todas as Fazendas" : (farm?.name || "—");
+  const emittedLabel = new Date().toLocaleDateString("pt-BR");
 
-  let html = `<table border="1"><thead><tr><th colspan="2">Pastagens / Custo por Hectare — Fazendas Da Bruna</th></tr></thead><tbody>`;
-  html += `<tr><td>Escopo</td><td>${escapeHtml(isTotalView ? "Todas as Fazendas" : (farm?.name || "—"))}</td></tr>`;
+  let logoDataUrl = "";
+  try {
+    logoDataUrl = await loadLogoForPdf("#ffffff");
+  } catch (error) {
+    console.warn("Não foi possível carregar o logo para o Excel.", error);
+  }
+
+  let html = `<table border="0" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin-bottom:12px;font-family:Arial, sans-serif;">`;
+  html += `<tr>`;
+  if (logoDataUrl) {
+    html += `<td rowspan="4" style="width:90px;"><img src="${logoDataUrl}" width="80" height="80" alt="Fazendas Da Bruna"></td>`;
+  }
+  html += `<td style="font-size:18pt;font-weight:bold;color:#375b43;">Fazendas Da Bruna</td></tr>`;
+  html += `<tr><td style="font-size:13pt;font-weight:bold;color:#c9a84c;">Pastagens / Custo por Hectare</td></tr>`;
+  html += `<tr><td>Escopo: ${escapeHtml(scopeLabel)}</td></tr>`;
+  html += `<tr><td>Responsável técnico: ${escapeHtml(TECHNICAL_MANAGER_NAME)} &nbsp;|&nbsp; Emitido em: ${escapeHtml(emittedLabel)}</td></tr>`;
+  html += `</table>`;
+
+  html += `<table border="1"><thead><tr><th colspan="2">Resumo executivo</th></tr></thead><tbody>`;
+  html += `<tr><td>Escopo</td><td>${escapeHtml(scopeLabel)}</td></tr>`;
   html += `<tr><td>Total investido</td><td>${formatCurrency(metrics.totalCost)}</td></tr>`;
   html += `<tr><td>Área total implantada</td><td>${formatHa(metrics.totalHa)}</td></tr>`;
   html += `<tr><td>Custo médio / ha</td><td>${formatCurrency(metrics.avgCostHa)}</td></tr>`;
   html += `</tbody></table><br/>`;
 
-  html += `<table border="1"><thead><tr><th>Fazenda</th><th>Área</th><th>Cultura</th><th>Safra</th><th>Status</th><th>Hectares</th><th>Custo total</th><th>Custo/ha</th></tr></thead><tbody>`;
+  html += `<table border="1"><thead><tr><th>Fazenda</th><th>Área</th><th>Cultura</th><th>Safra</th><th>Status</th><th>Procedimentos</th><th>Hectares</th><th>Custo total</th><th>Custo/ha</th></tr></thead><tbody>`;
   rows.forEach(({ farm: rowFarm, area }) => {
     html += `<tr>
       <td>${escapeHtml(rowFarm.name)}</td>
@@ -1221,6 +1270,7 @@ function exportPastureExcel() {
       <td>${escapeHtml(getPastureCultureLabel(area))}</td>
       <td>${escapeHtml(area.season || "—")}</td>
       <td>${escapeHtml(getPastureStatusLabel(area.status))}</td>
+      <td>${formatInteger((area.procedures || []).length)}</td>
       <td>${Number(area.sizeHa) || 0}</td>
       <td>${getAreaTotalCost(area).toFixed(2)}</td>
       <td>${getAreaCostPerHa(area).toFixed(2)}</td>

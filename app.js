@@ -179,7 +179,7 @@ const ARAPEY_PRIMARY_GEO_KEYS = new Set([
 const PDF_LOGO_PATH = "./assets/logo-da-bruna-transp.svg";
 const PDF_COVER_IMAGE_PATH = "./assets/angus.jpg";
 const ADMINISTRATOR_NAME = "Bruna Carvalho";
-const TECHNICAL_MANAGER_NAME = "Árisson Fernandes Balbuena";
+const TECHNICAL_MANAGER_NAME = "Bruna Castro";
 const MOVEMENT_PHOTO_TYPES = new Set(["compra", "venda", "morte", "consumo", "nascimento", "transferencia", "ajuste"]);
 const MAX_MOVEMENT_PHOTOS = 6;
 const MOVEMENT_PHOTO_MAX_DIMENSION = 1280;
@@ -926,7 +926,58 @@ const seedData = {
           }
         }
       ],
-      movements: [],
+      movements: [
+        {
+          id: "seed-mov-f1-01",
+          code: "F100001",
+          type: "consumo",
+          date: "2026-02-10",
+          categoryId: "bois-abate",
+          categoryName: "Bois de abate",
+          quantity: 10,
+          delta: -10,
+          value: 0,
+          saleDetails: null,
+          notes: "Abate para consumo interno na sede da fazenda",
+          potreiro: "f1-potreiro-1",
+          sourceId: "",
+          photos: []
+        },
+        {
+          id: "seed-mov-f1-02",
+          code: "F100002",
+          type: "morte",
+          date: "2026-03-22",
+          categoryId: "terneiros-femeas",
+          categoryName: "Terneiros 1 a 2 anos - fêmeas",
+          quantity: 3,
+          delta: -3,
+          value: 0,
+          saleDetails: null,
+          notes: "Pneumonia detectada tardiamente, tratamento iniciado sem sucesso",
+          potreiro: "f1-potreiro-4",
+          sourceId: "",
+          cause: "doenca",
+          customCause: "",
+          photos: []
+        },
+        {
+          id: "seed-mov-f1-03",
+          code: "F100003",
+          type: "consumo",
+          date: "2026-04-18",
+          categoryId: "vacas-invernar",
+          categoryName: "Vacas de invernar",
+          quantity: 6,
+          delta: -6,
+          value: 0,
+          saleDetails: null,
+          notes: "Consumo em evento de confraternização com a equipe",
+          potreiro: "f1-potreiro-2",
+          sourceId: "",
+          photos: []
+        }
+      ],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
@@ -1409,7 +1460,58 @@ const seedData = {
           }
         }
       ],
-      movements: [],
+      movements: [
+        {
+          id: "seed-mov-f2-01",
+          code: "F200001",
+          type: "morte",
+          date: "2026-01-30",
+          categoryId: "novilhas-entouradas",
+          categoryName: "Novilhas entouradas",
+          quantity: 4,
+          delta: -4,
+          value: 0,
+          saleDetails: null,
+          notes: "Indícios de ataque de predador próximo à mata ciliar",
+          potreiro: "f2-potreiro-3",
+          sourceId: "",
+          cause: "predador",
+          customCause: "",
+          photos: []
+        },
+        {
+          id: "seed-mov-f2-02",
+          code: "F200002",
+          type: "consumo",
+          date: "2026-02-25",
+          categoryId: "bois-abate",
+          categoryName: "Bois de abate",
+          quantity: 12,
+          delta: -12,
+          value: 0,
+          saleDetails: null,
+          notes: "Abate programado para consumo interno",
+          potreiro: "f2-potreiro-1",
+          sourceId: "",
+          photos: []
+        },
+        {
+          id: "seed-mov-f2-03",
+          code: "F200003",
+          type: "consumo",
+          date: "2026-05-08",
+          categoryId: "vacas-entouradas",
+          categoryName: "Vacas entouradas",
+          quantity: 5,
+          delta: -5,
+          value: 0,
+          saleDetails: null,
+          notes: "Consumo em evento com colaboradores",
+          potreiro: "f2-potreiro-4",
+          sourceId: "",
+          photos: []
+        }
+      ],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
@@ -1914,7 +2016,58 @@ const seedData = {
           }
         }
       ],
-      movements: [],
+      movements: [
+        {
+          id: "seed-mov-f3-01",
+          code: "F300001",
+          type: "consumo",
+          date: "2026-01-20",
+          categoryId: "bois-abate",
+          categoryName: "Bois de abate",
+          quantity: 9,
+          delta: -9,
+          value: 0,
+          saleDetails: null,
+          notes: "Abate para consumo interno da equipe",
+          potreiro: "f3-potreiro-2",
+          sourceId: "",
+          photos: []
+        },
+        {
+          id: "seed-mov-f3-02",
+          code: "F300002",
+          type: "morte",
+          date: "2026-04-05",
+          categoryId: "vacas-cria",
+          categoryName: "Vacas de cria",
+          quantity: 2,
+          delta: -2,
+          value: 0,
+          saleDetails: null,
+          notes: "Animal encontrado após forte tempestade com queda de granizo",
+          potreiro: "f3-potreiro-5",
+          sourceId: "",
+          cause: "clima",
+          customCause: "",
+          photos: []
+        },
+        {
+          id: "seed-mov-f3-03",
+          code: "F300003",
+          type: "consumo",
+          date: "2026-05-15",
+          categoryId: "touros",
+          categoryName: "Touros",
+          quantity: 4,
+          delta: -4,
+          value: 0,
+          saleDetails: null,
+          notes: "Consumo em evento institucional",
+          potreiro: "f3-potreiro-4",
+          sourceId: "",
+          photos: []
+        }
+      ],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
