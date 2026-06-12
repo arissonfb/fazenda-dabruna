@@ -138,6 +138,13 @@ const STANDARD_FARM_CATEGORIES = [
   { id: "vacas-entouradas", name: "Vacas entouradas" }
 ];
 
+const STANDARD_OVINO_CATEGORIES = [
+  { id: "cordeiro", name: "Cordeiro" },
+  { id: "borrego", name: "Borrego" },
+  { id: "ovelha", name: "Ovelha" },
+  { id: "carneiro", name: "Carneiro" }
+];
+
 const MONTHLY_REPORT_CATEGORIES = [
   { value: "estoque", label: "Controle de estoque animal" },
   { value: "sanitario", label: "Atividades sanitárias" },
@@ -4682,7 +4689,21 @@ function hasMeaningfulMonthlyData(summary) {
 }
 
 function getFarmTotal(farm) {
+  const bovinoTotal = farm.categories.reduce((sum, category) => sum + Number(category.quantity || 0), 0);
+  const ovinoTotal = Array.isArray(farm?.ovinos) 
+    ? farm.ovinos.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0)
+    : 0;
+  return bovinoTotal + ovinoTotal;
+}
+
+function getFarmBovinoTotal(farm) {
   return farm.categories.reduce((sum, category) => sum + Number(category.quantity || 0), 0);
+}
+
+function getFarmOvinoTotal(farm) {
+  return Array.isArray(farm?.ovinos) 
+    ? farm.ovinos.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0)
+    : 0;
 }
 
 function getDominantCategory(farm) {

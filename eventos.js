@@ -18,6 +18,9 @@ const MOVEMENT_DEATH_CAUSES = [
 
 const MOVEMENT_DEATH_PHOTO_MAX = 4;
 
+// Track selected species for evento dialogs
+runtime.eventoSelectedSpecies = runtime.eventoSelectedSpecies || {};
+
 const EVENTO_CONSUMO_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>`;
 const EVENTO_MORTE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4-4.5-7-8-7-11a7 7 0 0 1 14 0c0 3-3 6.5-7 11z"/><path d="M9 9h6"/><path d="M12 6v6"/></svg>`;
 
@@ -199,6 +202,13 @@ document.body.insertAdjacentHTML("beforeend", `
           <select id="eventoConsumoFarm" required></select>
         </label>
         <label>
+          Espécie
+          <select id="eventoConsumoSpecies" required>
+            <option value="bovino">Gado / Bovinos</option>
+            <option value="ovino">Ovinos</option>
+          </select>
+        </label>
+        <label>
           Categoria
           <select id="eventoConsumoCategory" required></select>
         </label>
@@ -239,6 +249,13 @@ document.body.insertAdjacentHTML("beforeend", `
         <label>
           Fazenda
           <select id="eventoMorteFarm" required></select>
+        </label>
+        <label>
+          Espécie
+          <select id="eventoMorteSpecies" required>
+            <option value="bovino">Gado / Bovinos</option>
+            <option value="ovino">Ovinos</option>
+          </select>
         </label>
         <label>
           Categoria
@@ -298,8 +315,20 @@ function populateEventoFarmSelect(select, defaultFarmId) {
   select.value = defaultFarmId;
 }
 
-function populateEventoCategorySelect(select, farm) {
-  select.innerHTML = farm.categories
+function getEventoCategoriesForSpecies(farm, species) {
+  if (species === "ovino" && Array.isArray(farm?.ovinos)) {
+    return farm.ovinos.map(entry => ({
+      id: entry.categoryId,
+      name: entry.categoryName,
+      quantity: entry.quantity
+    }));
+  }
+  return farm.categories;
+}
+
+function populateEventoCategorySelect(select, farm, species = "bovino") {
+  const categories = getEventoCategoriesForSpecies(farm, species);
+  select.innerHTML = categories
     .map((cat) => `<option value="${cat.id}">${escapeHtml(cat.name)} (${formatInteger(cat.quantity)} em estoque)</option>`)
     .join("");
 }
@@ -310,8 +339,9 @@ function populateEventoPotreiroSelect(select, farm) {
   select.innerHTML = options.join("");
 }
 
-function updateEventoStockHint(hintEl, farm, categoryId) {
-  const category = farm.categories.find((c) => c.id === categoryId);
+function updateEventoStockHint(hintEl, farm, categoryId, species = "bovino") {
+  const categories = getEventoCategoriesForSpecies(farm, species);
+  const category = categories.find((c) => c.id === categoryId);
   hintEl.textContent = category ? `Estoque atual da categoria: ${formatInteger(category.quantity)} cabeças.` : "";
 }
 
@@ -323,20 +353,25 @@ function openEventoConsumoDialog() {
   if (!defaultFarm) return;
 
   const farmSelect = document.getElementById("eventoConsumoFarm");
+  const speciesSelect = document.getElementById("eventoConsumoSpecies");
   const categorySelect = document.getElementById("eventoConsumoCategory");
   const potreiroSelect = document.getElementById("eventoConsumoPotreiro");
   const hint = document.getElementById("eventoConsumoStockHint");
 
   populateEventoFarmSelect(farmSelect, defaultFarm.id);
+  runtime.eventoSelectedSpecies.consumo = "bovino";
 
   const refresh = () => {
     const farm = state.data.farms[farmSelect.value];
-    populateEventoCategorySelect(categorySelect, farm);
+    const species = speciesSelect.value;
+    runtime.eventoSelectedSpecies.consumo = species;
+    populateEventoCategorySelect(categorySelect, farm, species);
     populateEventoPotreiroSelect(potreiroSelect, farm);
-    updateEventoStockHint(hint, farm, categorySelect.value);
+    updateEventoStockHint(hint, farm, categorySelect.value, species);
   };
   farmSelect.onchange = refresh;
-  categorySelect.onchange = () => updateEventoStockHint(hint, state.data.farms[farmSelect.value], categorySelect.value);
+  speciesSelect.onchange = refresh;
+  categorySelect.onchange = () => updateEventoStockHint(hint, state.data.farms[farmSelect.value], categorySelect.value, speciesSelect.value);
   refresh();
 
   document.getElementById("eventoConsumoDate").value = new Date().toISOString().slice(0, 10);
@@ -352,6 +387,7 @@ function openEventoMorteDialog() {
   if (!defaultFarm) return;
 
   const farmSelect = document.getElementById("eventoMorteFarm");
+  const speciesSelect = document.getElementById("eventoMorteSpecies");
   const categorySelect = document.getElementById("eventoMorteCategory");
   const potreiroSelect = document.getElementById("eventoMortePotreiro");
   const hint = document.getElementById("eventoMorteStockHint");
@@ -359,6 +395,19 @@ function openEventoMorteDialog() {
   const customCauseWrap = document.getElementById("eventoMorteCustomCauseWrap");
 
   populateEventoFarmSelect(farmSelect, defaultFarm.id);
+  runtime.eventoSelectedSpecies.morte = "bovino";
+
+  const refresh = () => {
+    const farm = state.data.farms[farmSelect.value];
+    const species = speciesSelect.value;
+    runtime.eventoSelectedSpecies.morte = species;
+    populateEventoCategorySelect(categorySelect, farm, species);
+    populateEventoPotreiroSelect(potreiroSelect, farm);
+    updateEventoStockHint(hint, farm, categorySelect.value, species);
+  };
+  farmSelect.onchange = refresh;
+  speciesSelect.onchange = refresh;
+  categorySelect.onchange = () => updateEventoStockHint(hint, state.data.farms[farmSelect.value], categorySelect.value, speciesSelect.value);
 
   causeSelect.innerHTML = MOVEMENT_DEATH_CAUSES.map((c) => `<option value="${c.value}">${escapeHtml(c.label)}</option>`).join("");
   causeSelect.value = MOVEMENT_DEATH_CAUSES[0].value;
@@ -470,6 +519,7 @@ function handleEventoConsumoSubmit(event) {
   event.preventDefault();
 
   const farm = state.data.farms[document.getElementById("eventoConsumoFarm").value];
+  const species = document.getElementById("eventoConsumoSpecies").value || "bovino";
   const categoryId = document.getElementById("eventoConsumoCategory").value;
   const potreiroId = document.getElementById("eventoConsumoPotreiro").value;
   const date = document.getElementById("eventoConsumoDate").value;
@@ -477,7 +527,16 @@ function handleEventoConsumoSubmit(event) {
   const notes = document.getElementById("eventoConsumoNotes").value.trim();
 
   if (!farm) return;
-  const category = farm.categories.find((c) => c.id === categoryId);
+  
+  let category;
+  if (species === "ovino") {
+    const ovinoEntry = farm.ovinos?.find((o) => o.categoryId === categoryId);
+    if (!ovinoEntry) return;
+    category = { id: ovinoEntry.categoryId, name: ovinoEntry.categoryName, quantity: ovinoEntry.quantity, allocation: {} };
+  } else {
+    category = farm.categories.find((c) => c.id === categoryId);
+  }
+  
   if (!category) return;
   if (!date) {
     alert("Informe a data do registro.");
@@ -488,20 +547,32 @@ function handleEventoConsumoSubmit(event) {
     return;
   }
 
-  ensureCategoryAllocation(category);
-  if (qty > category.quantity) {
-    alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
-    return;
+  if (species === "bovino") {
+    ensureCategoryAllocation(category);
+    if (qty > category.quantity) {
+      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
+      return;
+    }
+    category.quantity -= qty;
+    category.allocation[potreiroId] = Math.max(0, Number(category.allocation[potreiroId] || 0) - qty);
+    updatePotreroQuantitiesFromAllocation(farm);
+  } else {
+    // Ovinos
+    if (qty > category.quantity) {
+      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
+      return;
+    }
+    const ovinoEntry = farm.ovinos.find((o) => o.categoryId === categoryId);
+    if (ovinoEntry) {
+      ovinoEntry.quantity -= qty;
+    }
   }
-
-  category.quantity -= qty;
-  category.allocation[potreiroId] = Math.max(0, Number(category.allocation[potreiroId] || 0) - qty);
-  updatePotreroQuantitiesFromAllocation(farm);
 
   farm.movements.push({
     id: createMovementId(),
     code: generateMovementCode(farm),
     type: "consumo",
+    especie: species,
     date,
     categoryId: category.id,
     categoryName: category.name,
@@ -525,6 +596,7 @@ function handleEventoMorteSubmit(event) {
   event.preventDefault();
 
   const farm = state.data.farms[document.getElementById("eventoMorteFarm").value];
+  const species = document.getElementById("eventoMorteSpecies").value || "bovino";
   const categoryId = document.getElementById("eventoMorteCategory").value;
   const potreiroId = document.getElementById("eventoMortePotreiro").value;
   const date = document.getElementById("eventoMorteDate").value;
@@ -534,7 +606,16 @@ function handleEventoMorteSubmit(event) {
   const notes = document.getElementById("eventoMorteNotes").value.trim();
 
   if (!farm) return;
-  const category = farm.categories.find((c) => c.id === categoryId);
+  
+  let category;
+  if (species === "ovino") {
+    const ovinoEntry = farm.ovinos?.find((o) => o.categoryId === categoryId);
+    if (!ovinoEntry) return;
+    category = { id: ovinoEntry.categoryId, name: ovinoEntry.categoryName, quantity: ovinoEntry.quantity, allocation: {} };
+  } else {
+    category = farm.categories.find((c) => c.id === categoryId);
+  }
+  
   if (!category) return;
   if (!date) {
     alert("Informe a data do registro.");
@@ -549,20 +630,32 @@ function handleEventoMorteSubmit(event) {
     return;
   }
 
-  ensureCategoryAllocation(category);
-  if (qty > category.quantity) {
-    alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
-    return;
+  if (species === "bovino") {
+    ensureCategoryAllocation(category);
+    if (qty > category.quantity) {
+      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
+      return;
+    }
+    category.quantity -= qty;
+    category.allocation[potreiroId] = Math.max(0, Number(category.allocation[potreiroId] || 0) - qty);
+    updatePotreroQuantitiesFromAllocation(farm);
+  } else {
+    // Ovinos
+    if (qty > category.quantity) {
+      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
+      return;
+    }
+    const ovinoEntry = farm.ovinos.find((o) => o.categoryId === categoryId);
+    if (ovinoEntry) {
+      ovinoEntry.quantity -= qty;
+    }
   }
-
-  category.quantity -= qty;
-  category.allocation[potreiroId] = Math.max(0, Number(category.allocation[potreiroId] || 0) - qty);
-  updatePotreroQuantitiesFromAllocation(farm);
 
   farm.movements.push({
     id: createMovementId(),
     code: generateMovementCode(farm),
     type: "morte",
+    especie: species,
     date,
     categoryId: category.id,
     categoryName: category.name,
