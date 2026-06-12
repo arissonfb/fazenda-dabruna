@@ -142,7 +142,8 @@ const STANDARD_OVINO_CATEGORIES = [
   { id: "cordeiro", name: "Cordeiro" },
   { id: "borrego", name: "Borrego" },
   { id: "ovelha", name: "Ovelha" },
-  { id: "carneiro", name: "Carneiro" }
+  { id: "carneiro", name: "Carneiro" },
+  { id: "outros-ovinos", name: "Outros" }
 ];
 
 const MONTHLY_REPORT_CATEGORIES = [
@@ -2451,7 +2452,8 @@ const state = {
   data: loadData(),
   filters: {
     year: String(today.getFullYear()),
-    month: "all"
+    month: "all",
+    especie: "todas"
   },
   activeView: "home",
   charts: {
@@ -2525,6 +2527,7 @@ const elements = {
   heroFarmNote: document.getElementById("heroFarmNote"),
   yearFilter: document.getElementById("yearFilter"),
   monthFilter: document.getElementById("monthFilter"),
+  especieFilter: document.getElementById("especieFilter"),
   movementDialog: document.getElementById("movementDialog"),
   movementDialogTitle: document.getElementById("movementDialogTitle"),
   movementForm: document.getElementById("movementForm"),
@@ -2532,6 +2535,7 @@ const elements = {
   movementFarmWrap: document.getElementById("movementFarmWrap"),
   movementType: document.getElementById("movementType"),
   movementDate: document.getElementById("movementDate"),
+  movementSpecies: document.getElementById("movementSpecies"),
   movementCategory: document.getElementById("movementCategory"),
   movementQuantity: document.getElementById("movementQuantity"),
   movementPotreiroWrap: document.getElementById("movementPotreiroWrap"),
@@ -2539,6 +2543,8 @@ const elements = {
   movementPotreiro: document.getElementById("movementPotreiro"),
   movementPotreirowDestWrap: document.getElementById("movementPotreirowDestWrap"),
   movementPotreiroDest: document.getElementById("movementPotreiroDest"),
+  movementOvinoDestFarmWrap: document.getElementById("movementOvinoDestFarmWrap"),
+  movementOvinoDestFarm: document.getElementById("movementOvinoDestFarm"),
   adjustDirectionWrap: document.getElementById("adjustDirectionWrap"),
   adjustDirection: document.getElementById("adjustDirection"),
   movementSaleModeWrap: document.getElementById("movementSaleModeWrap"),
@@ -2575,9 +2581,11 @@ const elements = {
   categoryDialog: document.getElementById("categoryDialog"),
   categoryForm: document.getElementById("categoryForm"),
   categoryFarm: document.getElementById("categoryFarm"),
+  categorySpecies: document.getElementById("categorySpecies"),
   categoryName: document.getElementById("categoryName"),
   categoryInitialQuantity: document.getElementById("categoryInitialQuantity"),
   categoryPotreiro: document.getElementById("categoryPotreiro"),
+  categoryPotreiroWrap: document.getElementById("categoryPotreiroWrap"),
   sanitaryForm: document.getElementById("sanitaryForm"),
   sanitaryDialog: document.getElementById("sanitaryDialog"),
   sanitaryDialogTitle: document.getElementById("sanitaryDialogTitle"),
@@ -2586,6 +2594,7 @@ const elements = {
   sanitaryEditingId: document.getElementById("sanitaryEditingId"),
   sanitaryFarm: document.getElementById("sanitaryFarm"),
   sanitaryDate: document.getElementById("sanitaryDate"),
+  sanitarySpecies: document.getElementById("sanitarySpecies"),
   sanitaryQuantity: document.getElementById("sanitaryQuantity"),
   sanitaryCategory: document.getElementById("sanitaryCategory"),
   sanitaryProduct: document.getElementById("sanitaryProduct"),
@@ -4453,6 +4462,7 @@ function getFarm() {
 function getAggregateFarm() {
   const farms = getAllFarms();
   const categoryMap = new Map();
+  const ovinoMap = new Map();
   const sanitaryProducts = new Set();
   const potreroMap = new Map();
   let declaredTotal = 0;
@@ -4471,6 +4481,19 @@ function getAggregateFarm() {
           id: category.id,
           name: category.name,
           quantity: Number(category.quantity || 0)
+        });
+      }
+    });
+    getOvinoEntries(farm).forEach((entry) => {
+      const existing = ovinoMap.get(entry.categoryId);
+      if (existing) {
+        existing.quantity += Number(entry.quantity || 0);
+      } else {
+        ovinoMap.set(entry.categoryId, {
+          id: entry.categoryId,
+          categoryId: entry.categoryId,
+          categoryName: entry.categoryName,
+          quantity: Number(entry.quantity || 0)
         });
       }
     });
@@ -4509,6 +4532,7 @@ function getAggregateFarm() {
     sanitaryProducts: [...sanitaryProducts],
     potreiros: [...potreroMap.values()].sort((a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name)),
     categories: [...categoryMap.values()],
+    ovinos: [...ovinoMap.values()],
     movements,
     sanitaryRecords,
     monthlyRecords
@@ -4701,9 +4725,37 @@ function getFarmBovinoTotal(farm) {
 }
 
 function getFarmOvinoTotal(farm) {
-  return Array.isArray(farm?.ovinos) 
+  return Array.isArray(farm?.ovinos)
     ? farm.ovinos.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0)
     : 0;
+}
+
+function getFarmOvinoCategories(farm) {
+  const categoryMap = new Map();
+  STANDARD_OVINO_CATEGORIES.forEach((category) => categoryMap.set(category.id, { id: category.id, name: category.name }));
+  (Array.isArray(farm?.ovinos) ? farm.ovinos : []).forEach((entry) => {
+    if (!categoryMap.has(entry.categoryId)) {
+      categoryMap.set(entry.categoryId, { id: entry.categoryId, name: entry.categoryName });
+    }
+  });
+  return [...categoryMap.values()];
+}
+
+function findOrCreateOvinoEntry(farm, categoryId, categoryName) {
+  if (!Array.isArray(farm.ovinos)) farm.ovinos = [];
+  let entry = farm.ovinos.find((item) => item.categoryId === categoryId);
+  if (!entry) {
+    entry = { id: `ovino-${farm.id}-${categoryId}-${Date.now()}`, categoryId, categoryName, breedType: "", breedOther: "", quantity: 0 };
+    farm.ovinos.push(entry);
+  }
+  return entry;
+}
+
+function validateStockExit(quantity, available, label = "estoque disponível") {
+  if (quantity > available) {
+    return `Quantidade maior que o ${label} (${formatInteger(available)} cabeças).`;
+  }
+  return null;
 }
 
 function getDominantCategory(farm) {
@@ -4980,6 +5032,11 @@ function bindEvents() {
     render();
   });
 
+  elements.especieFilter?.addEventListener("change", (event) => {
+    state.filters.especie = event.target.value;
+    render();
+  });
+
   elements.movementFarm.addEventListener("change", () => {
     syncMovementCategoryOptionsForFarm(getMovementDialogFarm());
     syncMovementPotreirosOptions();
@@ -4989,6 +5046,11 @@ function bindEvents() {
   elements.movementCategory.addEventListener("change", () => {
     syncMovementPotreirosOptions();
     updateMovementCategoryTotal();
+  });
+
+  elements.movementSpecies?.addEventListener("change", () => {
+    syncMovementCategoryOptionsForFarm(getMovementDialogFarm());
+    updateMovementFormForType(elements.movementType.value);
   });
 
   elements.movementType.addEventListener("change", () => {
@@ -5050,6 +5112,10 @@ function bindEvents() {
 
   elements.sanitaryPotrero?.addEventListener("change", () => {
     updateSanitaryPotreroMode();
+  });
+
+  elements.sanitarySpecies?.addEventListener("change", () => {
+    syncSanitaryFormOptions();
   });
 
   elements.sanitaryTableBody.addEventListener("click", (event) => {
@@ -5157,6 +5223,7 @@ function bindEvents() {
   elements.potrManejPhotos?.addEventListener("change", handlePotrManejPhotosChange);
   elements.closeCategoryDialog.addEventListener("click", () => elements.categoryDialog.close());
   elements.categoryFarm.addEventListener("change", syncCategoryPotreirosOptions);
+  elements.categorySpecies?.addEventListener("change", updateCategoryPotreiroVisibility);
   elements.closeEditStockDialog.addEventListener("click", () => elements.editStockDialog.close());
   elements.georefSaveButton.addEventListener("click", handleGeorefSave);
   elements.georefLegend.addEventListener("click", handleGeorefLegendInteraction);
@@ -5357,12 +5424,15 @@ function renderOverviewPanel() {
     const purchases = summarizePurchasePeriod(farm, state.filters.year, state.filters.month);
     const balance = sales.totalValue - purchases.totalValue;
     const total = getFarmTotal(farm);
+    const bovinoTotal = getFarmBovinoTotal(farm);
+    const ovinoTotal = getFarmOvinoTotal(farm);
     return `
       <article class="global-farm-card ops-farm-card">
         <div class="farm-card-header">
           <div>
             <p class="panel-kicker">${escapeHtml(farm.name)}</p>
             <strong class="farm-card-total">${formatInteger(total)}</strong>
+            <span class="farm-card-species">🐄 ${formatInteger(bovinoTotal)} · 🐑 ${formatInteger(ovinoTotal)}</span>
           </div>
           <div class="farm-card-chips">
             <span class="chip chip-entry">+${formatInteger(movements.byType.compra + movements.byType.nascimento)} ent.</span>
@@ -5385,8 +5455,8 @@ function renderOverviewPanel() {
 
 function renderConsolidatedCategories(farms, isTotalView) {
   if (!elements.globalCategoryBreakdown) return;
-  elements.globalCategoryBreakdown.hidden = !isTotalView;
-  if (!isTotalView) return;
+  elements.globalCategoryBreakdown.hidden = !isTotalView || state.filters.especie === "ovino";
+  if (!isTotalView || state.filters.especie === "ovino") return;
 
   const categoryMap = new Map();
   farms.forEach((farm) => {
@@ -5547,13 +5617,15 @@ function renderFinancialPanel(farms, isTotalView) {
 
 function renderHeadlineMetrics(farm) {
   const totalAnimals = getFarmTotal(farm);
+  const bovinoTotal = getFarmBovinoTotal(farm);
+  const ovinoTotal = getFarmOvinoTotal(farm);
   const discrepancy = getDiscrepancy(farm);
   const registeredAnimals = getRegisteredPotreroAnimals(farm);
   const metrics = [
     {
       label: state.data.selectedFarmId === TOTAL_FARM_ID ?"Grupo" : "Rebanho",
       value: formatInteger(totalAnimals),
-      text: state.data.selectedFarmId === TOTAL_FARM_ID ?"animais consolidados no grupo" : "animais no estoque atual"
+      text: `${state.data.selectedFarmId === TOTAL_FARM_ID ?"animais consolidados no grupo" : "animais no estoque atual"}<br>🐄 Bovinos: ${formatInteger(bovinoTotal)} · 🐑 Ovinos: ${formatInteger(ovinoTotal)}`
     },
     {
       label: "Declarado",
@@ -5590,6 +5662,7 @@ function renderOpsPanel(farm) {
       const mo = (m.date || "").slice(5, 7);
       if (state.filters.year !== "all" && yr !== String(state.filters.year)) return;
       if (state.filters.month !== "all" && mo !== String(state.filters.month).padStart(2, "0")) return;
+      if (state.filters.especie !== "todas" && (m.especie || "bovino") !== state.filters.especie) return;
       if (Object.prototype.hasOwnProperty.call(counts, m.type)) {
         counts[m.type] += Number(m.quantity || 0);
       }
@@ -6906,6 +6979,7 @@ function getUnifiedHistoryRecords(baseFarm, options = {}) {
       code: movement.code || "",
       operation: movement.type || "movimento",
       categoryName: movement.categoryName || "—",
+      especie: movement.especie || "bovino",
       quantity: Number(movement.quantity || 0),
       details: [
         movement.potreiro ?`Potreiro: ${movement.potreiro}` : "",
@@ -6926,6 +7000,7 @@ function getUnifiedHistoryRecords(baseFarm, options = {}) {
       code: record.code || "",
       operation: "sanitario",
       categoryName: record.categoryName || "—",
+      especie: record.especie || "bovino",
       quantity: Number(record.quantity || 0),
       details: [
         record.product ?`Produto: ${record.product}` : "",
@@ -6945,7 +7020,7 @@ function getUnifiedHistoryRecords(baseFarm, options = {}) {
 
 function renderMovementsTable(farm) {
   const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
-  const colCount = isTotalView ?8 : 7;
+  const colCount = isTotalView ?9 : 8;
   const allRecords = getUnifiedHistoryRecords(farm);
   const years = [...new Set(allRecords.map((record) => record.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
   const categories = [...new Set(allRecords.map((record) => record.categoryName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -6965,8 +7040,9 @@ function renderMovementsTable(farm) {
     const matchesCategory = runtime.movementsCategoryFilter === "all" || record.categoryName === runtime.movementsCategoryFilter;
     const matchesOperation = runtime.movementsOperationFilter === "all" || record.operation === runtime.movementsOperationFilter;
     const matchesFarm = !isTotalView || runtime.movementsFarmFilter === "all" || record.farmId === runtime.movementsFarmFilter;
+    const matchesSpecies = state.filters.especie === "todas" || record.especie === state.filters.especie;
 
-    return matchesQuery && matchesYear && matchesCategory && matchesOperation && matchesFarm;
+    return matchesQuery && matchesYear && matchesCategory && matchesOperation && matchesFarm && matchesSpecies;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / MOVEMENTS_PAGE_SIZE));
@@ -6978,7 +7054,7 @@ function renderMovementsTable(farm) {
     elements.movementsTableHead.innerHTML = `<tr>
       <th>Código</th>
       ${isTotalView ?"<th>Fazenda</th>" : ""}
-      <th>Data</th><th>Operação</th><th>Categoria</th><th>Qtd.</th><th>Registro</th><th></th>
+      <th>Data</th><th>Espécie</th><th>Operação</th><th>Categoria</th><th>Qtd.</th><th>Registro</th><th></th>
     </tr>`;
   }
 
@@ -7086,6 +7162,7 @@ function renderMovementsTable(farm) {
         <td data-label="Código">${codeDisplay}</td>
         ${farmCell}
         <td data-label="Data">${formatDate(record.date)}</td>
+        <td data-label="Espécie">${record.especie === "ovino" ?"🐑 Ovino" : "🐄 Bovino"}</td>
         <td data-label="Operação"><span class="badge ${badgeClass}">${escapeHtml(getHistoryOperationLabel(record.operation))}</span></td>
         <td data-label="Categoria">${escapeHtml(record.categoryName)}</td>
         <td data-label="Qtd.">${formatInteger(record.quantity)}</td>
@@ -7281,7 +7358,7 @@ function openEditMovementDialog(farmId, movementId) {
   elements.movementDialog.showModal();
 }
 
-function getFilteredSaleMovements(farm, year, month) {
+function getFilteredSaleMovements(farm, year, month, especie = state.filters.especie) {
   return farm.movements
     .filter((movement) => {
       if (movement.type !== "venda") {
@@ -7293,7 +7370,8 @@ function getFilteredSaleMovements(farm, year, month) {
       const movementMonth = String(movementDate.getMonth() + 1).padStart(2, "0");
       const matchesYear = movementYear === String(year);
       const matchesMonth = month === "all" || movementMonth === month;
-      return matchesYear && matchesMonth;
+      const matchesSpecies = especie === "todas" || (movement.especie || "bovino") === especie;
+      return matchesYear && matchesMonth && matchesSpecies;
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 }
@@ -7325,7 +7403,7 @@ function summarizeSalePeriod(farm, year, month) {
   }, { count: 0, totalValue: 0, liveKg: 0, carcassKg: 0, movements: [] });
 }
 
-function getFilteredPurchaseMovements(farm, year, month) {
+function getFilteredPurchaseMovements(farm, year, month, especie = state.filters.especie) {
   return farm.movements
     .filter((movement) => {
       if (movement.type !== "compra") return false;
@@ -7334,7 +7412,8 @@ function getFilteredPurchaseMovements(farm, year, month) {
       const movementMonth = String(movementDate.getMonth() + 1).padStart(2, "0");
       const matchesYear = movementYear === String(year);
       const matchesMonth = month === "all" || movementMonth === month;
-      return matchesYear && matchesMonth;
+      const matchesSpecies = especie === "todas" || (movement.especie || "bovino") === especie;
+      return matchesYear && matchesMonth && matchesSpecies;
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 }
@@ -7679,7 +7758,7 @@ function renderSanitaryTable(farm) {
         <td>${code}</td>
         <td data-label="Data">${formatDate(record.date)}</td>
         <td data-label="Fazenda"><span class="sanitary-origin manual">${escapeHtml(record._farmName)}</span></td>
-        <td data-label="Categoria"><strong>${escapeHtml(record.categoryName)}</strong></td>
+        <td data-label="Categoria"><span class="cat-total-icon">${(record.especie || "bovino") === "ovino" ?"🐑" : "🐄"}</span> <strong>${escapeHtml(record.categoryName)}</strong></td>
         <td data-label="Qtd.">${formatMaybeQuantity(record.quantity)} cab.</td>
         <td data-label="Produto">
           <div class="sanitary-product-cell">
@@ -9248,6 +9327,13 @@ function renderInventoryRankedList(farm) {
   const container = document.getElementById("inventoryChart");
   if (!container) return;
 
+  const panel = container.closest(".chart-panel");
+  if (state.filters.especie === "ovino") {
+    if (panel) panel.hidden = true;
+    return;
+  }
+  if (panel) panel.hidden = false;
+
   const categories = [...farm.categories]
     .filter((cat) => Number(cat.quantity || 0) > 0)
     .sort((a, b) => b.quantity - a.quantity);
@@ -9799,6 +9885,7 @@ function openMovementDialog(initialType) {
   if (catHintWrap) catHintWrap.hidden = true;
   syncMovementFarmOptions();
   syncMovementTypeOptions(initialType);
+  if (elements.movementSpecies) elements.movementSpecies.value = "bovino";
   syncMovementCategoryOptionsForFarm(getMovementDialogFarm());
   syncMovementPotreirosOptions();
   elements.movementDate.value = new Date().toISOString().slice(0, 10);
@@ -9946,6 +10033,13 @@ function syncCategoryPotreirosOptions() {
   ].join("");
 }
 
+function updateCategoryPotreiroVisibility() {
+  const species = elements.categorySpecies?.value || "bovino";
+  if (elements.categoryPotreiroWrap) {
+    elements.categoryPotreiroWrap.hidden = species === "ovino";
+  }
+}
+
 function openCategoryDialog() {
   const farms = getAllFarms();
   const defaultFarmId = state.data.selectedFarmId !== TOTAL_FARM_ID
@@ -9954,9 +10048,11 @@ function openCategoryDialog() {
   elements.categoryFarm.innerHTML = farms.map((f) =>
     `<option value="${escapeHtml(f.id)}" ${f.id === defaultFarmId ? "selected" : ""}>${escapeHtml(f.name)}</option>`
   ).join("");
+  if (elements.categorySpecies) elements.categorySpecies.value = "bovino";
   elements.categoryName.value = "";
   elements.categoryInitialQuantity.value = "0";
   syncCategoryPotreirosOptions();
+  updateCategoryPotreiroVisibility();
   elements.categoryDialog.showModal();
 }
 
@@ -10344,6 +10440,7 @@ function resetSanitaryForm() {
   elements.sanitaryNotes.value = "";
   elements.newProductName.value = "";
   elements.newPotreroName.value = "";
+  if (elements.sanitarySpecies) elements.sanitarySpecies.value = "bovino";
   if (elements.sanitaryDialogTitle) {
     elements.sanitaryDialogTitle.textContent = "Registro Sanitário";
   }
@@ -10417,6 +10514,7 @@ function openSanitaryEditor(recordId) {
 
   state.activeView = "sanitary";
   renderActiveView();
+  if (elements.sanitarySpecies) elements.sanitarySpecies.value = record.especie || "bovino";
   syncSanitaryFormOptions();
   ensureSanitaryCategoryOption(record.categoryId, record.categoryName);
   ensureSelectOption(elements.sanitaryProduct, record.product, record.product);
@@ -10452,14 +10550,22 @@ function updateMovementFormForType(type) {
   elements.adjustDirectionWrap.hidden = type !== "ajuste";
   const isTransfer = type === "transferencia";
   const isExit = typeMeta?.direction === -1;
+  const species = elements.movementSpecies?.value || "bovino";
+  const isOvino = species === "ovino";
   if (elements.movementPotreiroWrap) {
-    elements.movementPotreiroWrap.hidden = false;
+    elements.movementPotreiroWrap.hidden = isOvino;
     if (elements.movementPotreiroLabel) {
       elements.movementPotreiroLabel.textContent = (isExit || isTransfer) ?"Potreiro de origem" : "Potreiro de destino";
     }
   }
   if (elements.movementPotreirowDestWrap) {
-    elements.movementPotreirowDestWrap.hidden = !isTransfer;
+    elements.movementPotreirowDestWrap.hidden = isOvino || !isTransfer;
+  }
+  if (elements.movementOvinoDestFarmWrap) {
+    elements.movementOvinoDestFarmWrap.hidden = !(isOvino && isTransfer);
+    if (isOvino && isTransfer) {
+      syncMovementOvinoDestFarmOptions(farm);
+    }
   }
   // hide quantity/value for transfer (keep notes)
   if (elements.movementValueWrap) elements.movementValueWrap.hidden = isTransfer;
@@ -10723,6 +10829,7 @@ function refreshMovementValueHint(sym) {
 }
 
 function syncMovementCategoryOptionsForFarm(farm) {
+  const species = elements.movementSpecies?.value || "bovino";
   if (!farm) {
     elements.movementCategory.innerHTML = '<option value="">Selecione uma fazenda primeiro</option>';
     elements.movementCategory.value = "";
@@ -10730,9 +10837,17 @@ function syncMovementCategoryOptionsForFarm(farm) {
     updateMovementCategoryTotal();
     return;
   }
-  elements.movementCategory.innerHTML = farm.categories.map((category) => `
-    <option value="${category.id}">${escapeHtml(category.name)} — ${formatInteger(category.quantity)} cab.</option>
-  `).join("");
+  if (species === "ovino") {
+    elements.movementCategory.innerHTML = getFarmOvinoCategories(farm).map((category) => {
+      const entry = (farm.ovinos || []).find((item) => item.categoryId === category.id);
+      const quantity = Number(entry?.quantity || 0);
+      return `<option value="${category.id}">${escapeHtml(category.name)} — ${formatInteger(quantity)} cab.</option>`;
+    }).join("");
+  } else {
+    elements.movementCategory.innerHTML = farm.categories.map((category) => `
+      <option value="${category.id}">${escapeHtml(category.name)} — ${formatInteger(category.quantity)} cab.</option>
+    `).join("");
+  }
   syncMovementPotreirosOptions();
   updateMovementCategoryTotal();
 }
@@ -10747,6 +10862,16 @@ function updateMovementCategoryTotal() {
     wrapEl.hidden = true;
     return;
   }
+  const species = elements.movementSpecies?.value || "bovino";
+  if (species === "ovino") {
+    const cat = getFarmOvinoCategories(farm).find((c) => c.id === catId);
+    if (!cat) { wrapEl.hidden = true; return; }
+    const entry = (farm.ovinos || []).find((item) => item.categoryId === catId);
+    const quantity = Number(entry?.quantity || 0);
+    hintEl.innerHTML = `<span class="cat-total-icon">🐑</span> <strong>${escapeHtml(cat.name)}</strong> — estoque atual: <strong>${formatInteger(quantity)} cabeças</strong> em ${escapeHtml(farm.name)}`;
+    wrapEl.hidden = false;
+    return;
+  }
   const cat = farm.categories.find((c) => c.id === catId);
   if (!cat) { wrapEl.hidden = true; return; }
   hintEl.innerHTML = `<span class="cat-total-icon">🐄</span> <strong>${escapeHtml(cat.name)}</strong> — estoque atual: <strong>${formatInteger(cat.quantity)} cabeças</strong> em ${escapeHtml(farm.name)}`;
@@ -10755,6 +10880,14 @@ function updateMovementCategoryTotal() {
 
 function syncCategoryOptions() {
   syncMovementCategoryOptionsForFarm(getMovementDialogFarm());
+}
+
+function syncMovementOvinoDestFarmOptions(farm) {
+  if (!elements.movementOvinoDestFarm) return;
+  const farms = getAllFarms().filter((item) => item.id !== farm?.id);
+  elements.movementOvinoDestFarm.innerHTML = farms.map((item) => `
+    <option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>
+  `).join("");
 }
 
 function syncMovementPotreirosOptions() {
@@ -10766,6 +10899,17 @@ function syncMovementPotreirosOptions() {
     elements.movementPotreiro.value = "";
     if (elements.movementPotreiroDest) {
       elements.movementPotreiroDest.innerHTML = '<option value="">Selecione uma fazenda primeiro</option>';
+      elements.movementPotreiroDest.value = "";
+    }
+    return;
+  }
+
+  const species = elements.movementSpecies?.value || "bovino";
+  if (species === "ovino") {
+    elements.movementPotreiro.innerHTML = "";
+    elements.movementPotreiro.value = "";
+    if (elements.movementPotreiroDest) {
+      elements.movementPotreiroDest.innerHTML = "";
       elements.movementPotreiroDest.value = "";
     }
     return;
@@ -10843,6 +10987,7 @@ function syncSanitaryFormOptions() {
     ?elements.sanitaryFarm.value
     : (state.data.selectedFarmId !== TOTAL_FARM_ID ?state.data.selectedFarmId : availableFarms[0].id);
   const farm = state.data.farms[currentFarmId] || availableFarms[0];
+  const species = elements.sanitarySpecies?.value || "bovino";
   const selectedCategory = elements.sanitaryCategory.value;
   const selectedProduct = elements.sanitaryProduct.value;
   const selectedPotrero = elements.sanitaryPotrero?.value || "";
@@ -10851,7 +10996,7 @@ function syncSanitaryFormOptions() {
     <option value="${item.id}" ${item.id === farm.id ?"selected" : ""}>${escapeHtml(item.name)}</option>
   `).join("");
 
-  elements.sanitaryCategory.innerHTML = getSanitaryCategoryOptions(farm).map((category) => `
+  elements.sanitaryCategory.innerHTML = getSanitaryCategoryOptions(farm, species).map((category) => `
     <option value="${category.id}" ${category.id === selectedCategory ?"selected" : ""}>${escapeHtml(category.name)}</option>
   `).join("");
 
@@ -10884,13 +11029,17 @@ function syncSanitaryFormOptions() {
   updateSanitaryPotreroMode();
 }
 
-function getSanitaryCategoryOptions(farm) {
+function getSanitaryCategoryOptions(farm, species = "bovino") {
   const categoryMap = new Map();
-  farm.categories.forEach((category) => {
-    categoryMap.set(category.id, { id: category.id, name: category.name });
-  });
+  if (species === "ovino") {
+    getFarmOvinoCategories(farm).forEach((category) => categoryMap.set(category.id, { id: category.id, name: category.name }));
+  } else {
+    farm.categories.forEach((category) => {
+      categoryMap.set(category.id, { id: category.id, name: category.name });
+    });
+  }
   farm.sanitaryRecords.forEach((record) => {
-    if (!categoryMap.has(record.categoryId)) {
+    if ((record.especie || "bovino") === species && !categoryMap.has(record.categoryId)) {
       categoryMap.set(record.categoryId, { id: record.categoryId, name: record.categoryName });
     }
   });
@@ -11003,11 +11152,18 @@ async function handleMovementSubmit(event) {
   let value = Number(elements.movementValue.value || 0);
   let saleDetails = null;
   let purchaseDetails = null;
+  const species = elements.movementSpecies?.value || "bovino";
+
+  if (species === "ovino") {
+    handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value });
+    return;
+  }
 
   // Handle transfer between potreiros (no stock change, only reallocation)
   if (type === "transferencia") {
     if (!category || !date || !quantity || quantity < 1) {
       rollbackEditing();
+      alert("Selecione uma categoria, informe a data e uma quantidade válida (mínimo 1) para a transferência.");
       return;
     }
     const originId = elements.movementPotreiro?.value || UNALLOCATED_POTREIRO_KEY;
@@ -11040,6 +11196,7 @@ async function handleMovementSubmit(event) {
       value: 0,
       saleDetails: null,
       notes,
+      especie: "bovino",
       potreiro: originId,
       potreiroDest: destId,
       photos: []
@@ -11054,6 +11211,7 @@ async function handleMovementSubmit(event) {
 
   if (!category || !date || !quantity || quantity < 1) {
     rollbackEditing();
+    alert("Selecione uma categoria, informe a data e uma quantidade válida (mínimo 1) para o lançamento.");
     return;
   }
 
@@ -11139,6 +11297,7 @@ async function handleMovementSubmit(event) {
     purchaseDetails,
     currency: getFarmCurrency(farm.id),
     notes,
+    especie: "bovino",
     potreiro: selectedPotreiro,
     photos: movementTypeSupportsPhotos(type) ?runtime.movementPhotoDrafts.map((photo) => ({ ...photo })) : [],
     userModified: true,
@@ -11162,23 +11321,194 @@ async function handleMovementSubmit(event) {
   render();
 }
 
+function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value }) {
+  const categoryMeta = getFarmOvinoCategories(farm).find((item) => item.id === categoryId);
+  if (!categoryMeta || !date || !quantity || quantity < 1) {
+    alert("Selecione uma categoria, informe a data e uma quantidade válida (mínimo 1) para o lançamento.");
+    return;
+  }
+
+  const exchangeRate = (!elements.movUsdRateWrap?.hidden && elements.movUsdRate?.value)
+    ? Number(elements.movUsdRate.value) || null
+    : null;
+
+  if (type === "transferencia") {
+    const destFarmId = elements.movementOvinoDestFarm?.value || "";
+    const destFarm = destFarmId ? state.data.farms[destFarmId] : null;
+    if (!destFarm || destFarm.id === farm.id) {
+      alert("Selecione uma fazenda de destino diferente para a transferência.");
+      return;
+    }
+
+    const originEntry = findOrCreateOvinoEntry(farm, categoryMeta.id, categoryMeta.name);
+    const stockError = validateStockExit(quantity, originEntry.quantity);
+    if (stockError) {
+      alert(stockError);
+      return;
+    }
+
+    originEntry.quantity -= quantity;
+    const destEntry = findOrCreateOvinoEntry(destFarm, categoryMeta.id, categoryMeta.name);
+    destEntry.quantity += quantity;
+
+    farm.movements.push({
+      id: createMovementId(),
+      code: generateMovementCode(farm),
+      type: "transferencia",
+      date,
+      categoryId: categoryMeta.id,
+      categoryName: categoryMeta.name,
+      quantity,
+      delta: -quantity,
+      value: 0,
+      saleDetails: null,
+      purchaseDetails: null,
+      notes,
+      especie: "ovino",
+      transferTo: destFarm.name,
+      photos: []
+    });
+    destFarm.movements.push({
+      id: createMovementId(),
+      code: generateMovementCode(destFarm),
+      type: "transferencia",
+      date,
+      categoryId: categoryMeta.id,
+      categoryName: categoryMeta.name,
+      quantity,
+      delta: quantity,
+      value: 0,
+      saleDetails: null,
+      purchaseDetails: null,
+      notes,
+      especie: "ovino",
+      transferFrom: farm.name,
+      photos: []
+    });
+
+    logAuditEvent("Adição", "movimentação", `Transferência de ovinos: ${categoryMeta.name} de ${farm.name} para ${destFarm.name}`, {
+      farmId: farm.id,
+      farmName: farm.name,
+      recordCode: farm.movements[farm.movements.length - 1].code
+    });
+    saveData();
+    populateYearFilter();
+    resetMovementPhotoDrafts();
+    elements.movementDialog.close();
+    render();
+    return;
+  }
+
+  let saleDetails = null;
+  let purchaseDetails = null;
+
+  if (type === "compra") {
+    const sourceProperty = elements.movPurchaseSource?.value?.trim() || "";
+    const avgWeight   = Number(elements.movPurchaseAvgWeight?.value) || null;
+    const rawTw       = (elements.movPurchaseTotalWeight?.value || "").replace(/[^\d,.]/g, "").replace(/\./g, "").replace(",", ".");
+    const totalWeight = parseFloat(rawTw) || null;
+    const pricePerKg  = Number(elements.movPurchasePricePerKg?.value) || null;
+    const rawVph      = (elements.movPurchaseValuePerHead?.value || "").replace(/[^\d,.]/g, "").replace(/\./g, "").replace(",", ".");
+    const valuePerHead = parseFloat(rawVph) || null;
+    purchaseDetails = { sourceProperty, avgWeight, totalWeight, pricePerKg, valuePerHead, exchangeRate };
+  }
+
+  if (type === "venda") {
+    const saleMode = isPremiumSaleFarm(farm) ? elements.movementSaleMode.value : "vivo";
+    const pricePerKg = Number(saleMode === "carcaca" ? elements.movementCarcassPrice.value : elements.movementLivePrice.value);
+    const weightKg = Number(saleMode === "carcaca" ? elements.movementCarcassKg.value : elements.movementLiveKg.value);
+
+    if (!Number.isFinite(pricePerKg) || pricePerKg <= 0 || !Number.isFinite(weightKg) || weightKg <= 0) {
+      alert("Preencha o valor por kg e o peso da venda para calcular o total.");
+      return;
+    }
+
+    value = pricePerKg * weightKg;
+    const buyer = elements.movSaleBuyer?.value?.trim() || "";
+    const yieldPct = Number(elements.movSaleYieldPct?.value) || null;
+    const valuePerHead = quantity > 0 ? +(value / quantity).toFixed(2) : null;
+    saleDetails = { mode: saleMode, pricePerKg, weightKg, buyer, yieldPct, valuePerHead, exchangeRate };
+  }
+
+  const delta = getMovementDelta(type, quantity, adjustDirection);
+  if (!Number.isFinite(delta)) {
+    return;
+  }
+
+  const entry = findOrCreateOvinoEntry(farm, categoryMeta.id, categoryMeta.name);
+  if (delta < 0) {
+    const stockError = validateStockExit(quantity, entry.quantity);
+    if (stockError) {
+      alert(stockError);
+      return;
+    }
+  }
+  entry.quantity += delta;
+
+  farm.movements.push({
+    id: createMovementId(),
+    code: generateMovementCode(farm),
+    type,
+    date,
+    categoryId: categoryMeta.id,
+    categoryName: categoryMeta.name,
+    quantity,
+    delta,
+    value,
+    saleDetails,
+    purchaseDetails,
+    currency: getFarmCurrency(farm.id),
+    notes,
+    especie: "ovino",
+    photos: movementTypeSupportsPhotos(type) ? runtime.movementPhotoDrafts.map((photo) => ({ ...photo })) : [],
+    userModified: true,
+    updatedAt: new Date().toISOString()
+  });
+
+  if (farm.declaredTotal === 0) {
+    farm.declaredTotal = getFarmTotal(farm);
+  }
+
+  const latestMovement = farm.movements[farm.movements.length - 1];
+  logAuditEvent("Adição", "movimentação", `Novo lançamento do rebanho registrado: ${capitalize(type)} - ${categoryMeta.name}`, {
+    farmId: farm.id,
+    farmName: farm.name,
+    recordCode: latestMovement?.code || ""
+  });
+  saveData();
+  populateYearFilter();
+  resetMovementPhotoDrafts();
+  elements.movementDialog.close();
+  render();
+}
+
 function handleCategorySubmit(event) {
   event.preventDefault();
   const farmId = elements.categoryFarm.value;
   const farm = state.data.farms[farmId];
   if (!farm) return;
+  const species = elements.categorySpecies?.value || "bovino";
   const name = elements.categoryName.value.trim();
   const quantity = Number(elements.categoryInitialQuantity.value || 0);
   const potreirosId = elements.categoryPotreiro?.value || "";
 
-  if (!name) return;
+  if (!name) {
+    alert("Informe um nome para a nova categoria.");
+    return;
+  }
 
-  farm.categories.push({ id: slugify(`${name}-${Date.now()}`), name, quantity });
+  if (species === "ovino") {
+    const categoryId = slugify(`${name}-${Date.now()}`);
+    const entry = findOrCreateOvinoEntry(farm, categoryId, name);
+    entry.quantity = (Number(entry.quantity) || 0) + quantity;
+  } else {
+    farm.categories.push({ id: slugify(`${name}-${Date.now()}`), name, quantity });
 
-  if (potreirosId && quantity > 0) {
-    const potrero = getPotreroEntries(farm).find((p) => p.id === potreirosId);
-    if (potrero) {
-      potrero.quantity = (Number(potrero.quantity) || 0) + quantity;
+    if (potreirosId && quantity > 0) {
+      const potrero = getPotreroEntries(farm).find((p) => p.id === potreirosId);
+      if (potrero) {
+        potrero.quantity = (Number(potrero.quantity) || 0) + quantity;
+      }
     }
   }
 
@@ -11263,6 +11593,7 @@ function handleSanitarySubmit(event) {
   }
 
   const editingId = elements.sanitaryEditingId.value;
+  const species = elements.sanitarySpecies?.value || "bovino";
   const date = elements.sanitaryDate.value;
   const quantity = Number(elements.sanitaryQuantity.value);
   const categoryId = elements.sanitaryCategory.value;
@@ -11277,6 +11608,7 @@ function handleSanitarySubmit(event) {
   const isEditingSanitary = Boolean(editingId);
 
   if (!date || !categoryId || !Number.isFinite(quantity) || quantity < 1 || !product || !potreiro) {
+    alert("Preencha data, categoria, quantidade (mínimo 1), produto e potreiro para registrar o manejo sanitário.");
     return;
   }
 
@@ -11294,6 +11626,7 @@ function handleSanitarySubmit(event) {
   const recordPayload = {
     date,
     farmId: farm.id,
+    especie: species,
     quantity,
     categoryId,
     categoryName: categoryLabel,
@@ -11426,7 +11759,7 @@ function handleEditStockSubmit(event) {
   render();
 }
 
-function summarizePeriod(farm, year, month) {
+function summarizePeriod(farm, year, month, especie = state.filters.especie) {
   const summary = {
     totalMovements: 0,
     netChange: 0,
@@ -11444,7 +11777,8 @@ function summarizePeriod(farm, year, month) {
     const movementMonth = String(movementDate.getMonth() + 1).padStart(2, "0");
     const matchesYear = movementYear === String(year);
     const matchesMonth = month === "all" || movementMonth === month;
-    if (!matchesYear || !matchesMonth) {
+    const matchesSpecies = especie === "todas" || (movement.especie || "bovino") === especie;
+    if (!matchesYear || !matchesMonth || !matchesSpecies) {
       return;
     }
 

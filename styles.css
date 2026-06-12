@@ -5576,6 +5576,13 @@ th {
   line-height: 1;
 }
 
+.farm-card-species {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.85);
+}
+
 .farm-card-chips {
   display: flex;
   flex-direction: column;

@@ -316,12 +316,11 @@ function populateEventoFarmSelect(select, defaultFarmId) {
 }
 
 function getEventoCategoriesForSpecies(farm, species) {
-  if (species === "ovino" && Array.isArray(farm?.ovinos)) {
-    return farm.ovinos.map(entry => ({
-      id: entry.categoryId,
-      name: entry.categoryName,
-      quantity: entry.quantity
-    }));
+  if (species === "ovino") {
+    return getFarmOvinoCategories(farm).map((category) => {
+      const entry = (farm?.ovinos || []).find((item) => item.categoryId === category.id);
+      return { id: category.id, name: category.name, quantity: Number(entry?.quantity || 0) };
+    });
   }
   return farm.categories;
 }
@@ -417,14 +416,6 @@ function openEventoMorteDialog() {
   customCauseWrap.hidden = true;
   document.getElementById("eventoMorteCustomCause").value = "";
 
-  const refresh = () => {
-    const farm = state.data.farms[farmSelect.value];
-    populateEventoCategorySelect(categorySelect, farm);
-    populateEventoPotreiroSelect(potreiroSelect, farm);
-    updateEventoStockHint(hint, farm, categorySelect.value);
-  };
-  farmSelect.onchange = refresh;
-  categorySelect.onchange = () => updateEventoStockHint(hint, state.data.farms[farmSelect.value], categorySelect.value);
   refresh();
 
   document.getElementById("eventoMorteDate").value = new Date().toISOString().slice(0, 10);
@@ -526,18 +517,29 @@ function handleEventoConsumoSubmit(event) {
   const qty = Math.round(Number(document.getElementById("eventoConsumoQuantity").value) || 0);
   const notes = document.getElementById("eventoConsumoNotes").value.trim();
 
-  if (!farm) return;
-  
+  if (!farm) {
+    alert("Selecione uma fazenda válida para registrar o abate/consumo.");
+    return;
+  }
+
   let category;
+  let ovinoEntry = null;
   if (species === "ovino") {
-    const ovinoEntry = farm.ovinos?.find((o) => o.categoryId === categoryId);
-    if (!ovinoEntry) return;
+    const categoryMeta = getFarmOvinoCategories(farm).find((c) => c.id === categoryId);
+    if (!categoryMeta) {
+      alert("Selecione uma categoria válida para o abate/consumo.");
+      return;
+    }
+    ovinoEntry = findOrCreateOvinoEntry(farm, categoryMeta.id, categoryMeta.name);
     category = { id: ovinoEntry.categoryId, name: ovinoEntry.categoryName, quantity: ovinoEntry.quantity, allocation: {} };
   } else {
     category = farm.categories.find((c) => c.id === categoryId);
   }
-  
-  if (!category) return;
+
+  if (!category) {
+    alert("Selecione uma categoria válida para o abate/consumo.");
+    return;
+  }
   if (!date) {
     alert("Informe a data do registro.");
     return;
@@ -547,25 +549,19 @@ function handleEventoConsumoSubmit(event) {
     return;
   }
 
+  const stockError = validateStockExit(qty, category.quantity);
+  if (stockError) {
+    alert(stockError);
+    return;
+  }
+
   if (species === "bovino") {
     ensureCategoryAllocation(category);
-    if (qty > category.quantity) {
-      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
-      return;
-    }
     category.quantity -= qty;
     category.allocation[potreiroId] = Math.max(0, Number(category.allocation[potreiroId] || 0) - qty);
     updatePotreroQuantitiesFromAllocation(farm);
   } else {
-    // Ovinos
-    if (qty > category.quantity) {
-      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
-      return;
-    }
-    const ovinoEntry = farm.ovinos.find((o) => o.categoryId === categoryId);
-    if (ovinoEntry) {
-      ovinoEntry.quantity -= qty;
-    }
+    ovinoEntry.quantity -= qty;
   }
 
   farm.movements.push({
@@ -605,18 +601,29 @@ function handleEventoMorteSubmit(event) {
   const customCause = document.getElementById("eventoMorteCustomCause").value.trim();
   const notes = document.getElementById("eventoMorteNotes").value.trim();
 
-  if (!farm) return;
-  
+  if (!farm) {
+    alert("Selecione uma fazenda válida para registrar a morte.");
+    return;
+  }
+
   let category;
+  let ovinoEntry = null;
   if (species === "ovino") {
-    const ovinoEntry = farm.ovinos?.find((o) => o.categoryId === categoryId);
-    if (!ovinoEntry) return;
+    const categoryMeta = getFarmOvinoCategories(farm).find((c) => c.id === categoryId);
+    if (!categoryMeta) {
+      alert("Selecione uma categoria válida para registrar a morte.");
+      return;
+    }
+    ovinoEntry = findOrCreateOvinoEntry(farm, categoryMeta.id, categoryMeta.name);
     category = { id: ovinoEntry.categoryId, name: ovinoEntry.categoryName, quantity: ovinoEntry.quantity, allocation: {} };
   } else {
     category = farm.categories.find((c) => c.id === categoryId);
   }
-  
-  if (!category) return;
+
+  if (!category) {
+    alert("Selecione uma categoria válida para registrar a morte.");
+    return;
+  }
   if (!date) {
     alert("Informe a data do registro.");
     return;
@@ -630,25 +637,19 @@ function handleEventoMorteSubmit(event) {
     return;
   }
 
+  const stockError = validateStockExit(qty, category.quantity);
+  if (stockError) {
+    alert(stockError);
+    return;
+  }
+
   if (species === "bovino") {
     ensureCategoryAllocation(category);
-    if (qty > category.quantity) {
-      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
-      return;
-    }
     category.quantity -= qty;
     category.allocation[potreiroId] = Math.max(0, Number(category.allocation[potreiroId] || 0) - qty);
     updatePotreroQuantitiesFromAllocation(farm);
   } else {
-    // Ovinos
-    if (qty > category.quantity) {
-      alert(`Quantidade maior que o estoque disponível (${formatInteger(category.quantity)} cabeças).`);
-      return;
-    }
-    const ovinoEntry = farm.ovinos.find((o) => o.categoryId === categoryId);
-    if (ovinoEntry) {
-      ovinoEntry.quantity -= qty;
-    }
+    ovinoEntry.quantity -= qty;
   }
 
   farm.movements.push({

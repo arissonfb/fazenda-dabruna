@@ -195,12 +195,7 @@ renderFarmSwitch = function () {
 };
 
 /* ── Rebanho Ovino ────────────────────────────────────────────────── */
-const OVINO_CATEGORIES = [
-  { id: "cordeiro", name: "Cordeiro" },
-  { id: "borrego", name: "Borrego" },
-  { id: "ovelha", name: "Ovelha" },
-  { id: "carneiro", name: "Carneiro" }
-];
+const OVINO_CATEGORIES = STANDARD_OVINO_CATEGORIES;
 
 const OVINO_BREED_TYPES = ["Corriedale", "Ideal", "Merino", "Texel", "Outra"];
 
@@ -326,6 +321,12 @@ document.getElementById("saveOvinoEditBtn").addEventListener("click", () => {
 function renderOvinoSection() {
   const section = document.getElementById("ovinoSection");
   if (!section) return;
+
+  if (state.filters.especie === "bovino") {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
 
   const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
   const farm = state.data.farms[state.data.selectedFarmId];

@@ -187,6 +187,14 @@
                   <option value="all">Ano inteiro</option>
                 </select>
               </label>
+              <label>
+                Espécie
+                <select id="especieFilter">
+                  <option value="todas">Todas as espécies</option>
+                  <option value="bovino">🐄 Bovinos</option>
+                  <option value="ovino">🐑 Ovinos</option>
+                </select>
+              </label>
             </div>
           </div>
         </section>
@@ -476,6 +484,13 @@
                 <label>
                   Data
                   <input type="date" id="sanitaryDate" required>
+                </label>
+                <label>
+                  Espécie
+                  <select id="sanitarySpecies">
+                    <option value="bovino">🐄 Bovinos</option>
+                    <option value="ovino">🐑 Ovinos</option>
+                  </select>
                 </label>
                 <label>
                   Quantidade de animais
@@ -919,6 +934,13 @@
           <input type="date" id="movementDate" required>
         </label>
         <label>
+          Espécie
+          <select id="movementSpecies">
+            <option value="bovino">🐄 Bovinos</option>
+            <option value="ovino">🐑 Ovinos</option>
+          </select>
+        </label>
+        <label>
           Categoria
           <select id="movementCategory" required></select>
         </label>
@@ -933,6 +955,10 @@
         <label id="movementPotreirowDestWrap" hidden>
           Potreiro de destino
           <select id="movementPotreiroDest"></select>
+        </label>
+        <label id="movementOvinoDestFarmWrap" hidden>
+          Fazenda de destino
+          <select id="movementOvinoDestFarm"></select>
         </label>
         <div class="form-span-2" id="movCategoryTotalWrap" hidden>
           <p class="category-total-hint" id="movCategoryTotalHint"></p>
@@ -1075,6 +1101,13 @@
           <select id="categoryFarm" required></select>
         </label>
         <label>
+          Espécie
+          <select id="categorySpecies">
+            <option value="bovino">🐄 Bovinos</option>
+            <option value="ovino">🐑 Ovinos</option>
+          </select>
+        </label>
+        <label>
           Nome da categoria
           <input type="text" id="categoryName" maxlength="60" required placeholder="Ex.: Vacas em terminação">
         </label>
@@ -1082,7 +1115,7 @@
           Estoque inicial
           <input type="number" id="categoryInitialQuantity" min="0" step="1" required value="0">
         </label>
-        <label>
+        <label id="categoryPotreiroWrap">
           Potreiro (opcional)
           <select id="categoryPotreiro"></select>
         </label>
