@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: fazendas-da-bruna
+    runtime: static
+    plan: free
+    branch: master
+    repo: https://github.com/arissonfb/fazenda-dabruna
+    staticPublishPath: .
+    buildCommand: ""
+    autoDeployTrigger: commit
