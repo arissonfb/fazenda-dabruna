@@ -1,0 +1,426 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" fill="none">
+  <defs>
+    <!-- Corpo: preto profundo com brilho no dorso -->
+    <radialGradient id="bodyMain" cx="44%" cy="36%" r="62%" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"  stop-color="#1e1c18"/>
+      <stop offset="38%" stop-color="#0f0e0c"/>
+      <stop offset="100%" stop-color="#060504"/>
+    </radialGradient>
+
+    <!-- Reflexo dourado no dorso (rim light de cima) -->
+    <linearGradient id="rimGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#c9a84c" stop-opacity="0.55"/>
+      <stop offset="28%" stop-color="#c9a84c" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#c9a84c" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Reflexo lateral suave (specular highlight no ombro) -->
+    <radialGradient id="shoulderShine" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#2e2b24" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0a0908" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Brilho no pescoço/cabeça -->
+    <radialGradient id="headShine" cx="60%" cy="35%" r="55%">
+      <stop offset="0%"  stop-color="#252219"/>
+      <stop offset="100%" stop-color="#0a0908"/>
+    </radialGradient>
+
+    <!-- Sombra projetada no chão -->
+    <radialGradient id="groundShadow" cx="50%" cy="20%" r="50%">
+      <stop offset="0%"  stop-color="#000000" stop-opacity="0.52"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Filtro: brilho suave nas bordas iluminadas -->
+    <filter id="glow" x="-8%" y="-8%" width="116%" height="116%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#c9a84c" flood-opacity="0.18" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Reflexo úmido do focinho -->
+    <radialGradient id="muzzleGrad" cx="50%" cy="45%" r="52%">
+      <stop offset="0%"  stop-color="#302b24"/>
+      <stop offset="70%"  stop-color="#1a1713"/>
+      <stop offset="100%" stop-color="#0c0a08"/>
+    </radialGradient>
+
+    <!-- Chifre -->
+    <linearGradient id="hornGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"  stop-color="#d4b060"/>
+      <stop offset="60%"  stop-color="#8a6c30"/>
+      <stop offset="100%" stop-color="#4a3a18"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ── Sombra no chão ── -->
+  <ellipse cx="448" cy="628" rx="310" ry="38" fill="url(#groundShadow)" opacity="0.7"/>
+
+  <!-- ══════════════════════════════════════
+       CORPO PRINCIPAL — Angus em perfil esquerdo
+  ══════════════════════════════════════ -->
+
+  <!-- CORPO (tronco e ventre) -->
+  <path filter="url(#glow)"
+    d="
+      M 255 230
+      C 240 222  222 210  208 195
+      C 194 180  185 162  182 144
+      C 179 126  183 108  192 95
+      C 202 81   216 72   232 68
+      C 248 64   266 66   282 74
+      C 294 80   304 90   310 102
+      C 318 96   328 90   340 86
+      C 356 81   374 80   392 82
+      C 410 84   428 90   444 98
+      C 460 106  474 116  486 128
+      C 498 140  508 154  516 168
+      C 524 182  528 197  530 213
+      C 536 210  544 207  552 205
+      C 568 201  586 200  604 202
+      C 620 204  636 209  650 217
+      C 665 225  678 236  688 250
+      C 698 264  705 280  708 298
+      C 712 316  711 334  706 352
+      C 700 370  690 386  676 400
+      C 668 408  658 416  648 422
+      C 655 434  660 448  661 462
+      C 662 474  660 487  655 498
+      C 648 510  638 520  626 527
+      C 616 533  604 537  592 538
+      L 590 590
+      C 588 598  582 604  574 606
+      C 566 608  558 604  554 597
+      L 546 590
+      L 542 538
+      C 530 536  518 532  507 526
+      C 496 520  487 512  480 502
+      C 474 508  468 514  462 518
+      C 452 524  440 528  428 530
+      L 424 590
+      C 422 598  416 604  408 606
+      C 400 608  392 604  388 597
+      L 382 588
+      L 378 530
+      C 366 528  354 524  344 518
+      C 334 512  326 504  320 494
+      C 315 484  312 472  312 460
+      C 312 448  316 436  322 426
+      C 310 418  298 408  288 396
+      C 278 384  270 370  264 355
+      C 258 340  255 324  255 308
+      L 255 230
+      Z
+    "
+    fill="url(#bodyMain)"
+  />
+
+  <!-- REFLEXO DOURADO (rim light) no dorso — sobreposto ao corpo -->
+  <path
+    d="
+      M 255 230
+      C 268 222  282 214  298 208
+      C 314 202  332 198  350 196
+      C 368 194  388 194  408 196
+      C 428 198  448 202  468 208
+      C 488 214  508 222  526 232
+      C 544 242  560 254  574 268
+      C 588 282  598 298  604 316
+      C 616 310  628 306  640 304
+      C 654 302  668 302  680 306
+      C 692 310  702 318  708 328
+      C 708 312  706 296  702 280
+      C 698 264  692 250  684 238
+      C 676 226  666 216  654 208
+      C 642 200  628 195  614 193
+      C 600 191  586 192  572 196
+      C 558 200  546 206  534 214
+      C 530 198  524 183  516 170
+      C 508 157  498 146  486 136
+      C 474 126  460 118  444 112
+      C 428 106  410 102  392 100
+      C 374 98   356 98   340 102
+      C 328 105  316 110  306 118
+      C 302 108  296 98   288 90
+      C 278 80   266 72   252 68
+      L 248 90
+      C 260 88   272 90   282 96
+      C 292 102  300 112  306 124
+      C 296 128  288 134  282 142
+      C 276 150  272 160  272 172
+      C 272 184  276 196  282 206
+      C 270 212  260 220  255 230
+      Z
+    "
+    fill="url(#rimGold)"
+    opacity="0.80"
+  />
+
+  <!-- OMBRO — especular shine -->
+  <ellipse cx="318" cy="275" rx="95" ry="80" fill="url(#shoulderShine)" opacity="0.70"/>
+
+  <!-- GARUPA — shine -->
+  <ellipse cx="630" cy="315" rx="72" ry="60" fill="url(#shoulderShine)" opacity="0.55"/>
+
+
+  <!-- ══════════════════════════════════════
+       PATAS DIANTEIRAS
+  ══════════════════════════════════════ -->
+
+  <!-- Pata dianteira traseira (direita, levemente atrás) -->
+  <path d="
+    M 352 458
+    C 350 466  348 476  348 488
+    C 348 510  350 532  354 554
+    L 356 590
+    C 356 598  362 604  370 604
+    C 378 604  384 598  384 590
+    L 384 554
+    C 390 532  394 510  392 488
+    C 392 476  390 466  386 458
+    Z
+    " fill="#0b0a08"/>
+
+  <!-- Pata dianteira frente (esquerda, mais à frente) -->
+  <path d="
+    M 295 448
+    C 292 456  290 468  290 480
+    C 290 504  292 528  296 552
+    L 298 590
+    C 298 598  304 604  312 604
+    C 320 604  326 598  326 590
+    L 328 552
+    C 334 528  336 504  334 480
+    C 334 468  332 456  328 448
+    Z
+    " fill="#0c0b09"/>
+
+  <!-- Casco dianteiro frente -->
+  <path d="M 292 590 C 290 596 290 604 296 608 C 306 614 326 614 330 608 C 334 604 334 598 332 592 Z" fill="#161412"/>
+  <!-- Casco dianteiro trás -->
+  <path d="M 356 588 C 354 596 354 604 360 608 C 370 614 386 614 390 608 C 394 604 394 598 392 590 Z" fill="#161412"/>
+
+  <!-- ══════════════════════════════════════
+       PATAS TRASEIRAS
+  ══════════════════════════════════════ -->
+
+  <!-- Pata traseira frente (esquerda, mais à frente) -->
+  <path d="
+    M 542 538
+    C 540 548  538 560  538 572
+    L 538 590
+    C 538 598  544 604  552 604
+    C 560 604  566 598  566 590
+    L 568 572
+    C 572 560  574 548  572 536
+    Z
+    " fill="#0b0a08"/>
+
+  <!-- Pata traseira trás (direita, levemente atrás) -->
+  <path d="
+    M 594 536
+    C 592 546  590 558  590 570
+    L 590 590
+    C 590 598  596 604  604 604
+    C 612 604  618 598  618 590
+    L 620 570
+    C 622 558  622 546  620 534
+    Z
+    " fill="#0c0b09"/>
+
+  <!-- Cascos traseiros -->
+  <path d="M 540 588 C 538 596 538 604 544 608 C 554 614 566 614 570 608 C 574 604 572 598 570 590 Z" fill="#161412"/>
+  <path d="M 592 588 C 590 596 590 604 596 608 C 606 614 620 614 624 608 C 628 604 626 598 624 590 Z" fill="#161412"/>
+
+
+  <!-- ══════════════════════════════════════
+       CABEÇA E PESCOÇO
+  ══════════════════════════════════════ -->
+
+  <!-- Pescoço -->
+  <path d="
+    M 210 195
+    C 200 182  192 167  188 150
+    C 184 133  184 114  190 98
+    C 197 82   210 70   226 64
+    C 242 58   260 60   276 70
+    C 290 79   300 93   306 110
+    C 298 118  290 128  284 140
+    C 278 152  274 166  274 180
+    C 274 194  278 208  286 220
+    C 274 222  262 226  252 232
+    C 240 220  224 208  210 195
+    Z
+    " fill="url(#headShine)"/>
+
+  <!-- CABEÇA -->
+  <path d="
+    M 170 72
+    C 158 82   148 96   144 112
+    C 140 128  142 146  150 162
+    C 158 178  170 191  184 200
+    C 196 209  210 214  224 215
+    C 234 216  244 213  252 208
+    C 258 204  262 198  264 192
+    C 270 196  276 198  282 198
+    C 288 198  294 196  298 192
+    C 302 188  304 182  304 176
+    C 310 178  316 178  322 174
+    C 328 170  332 164  334 157
+    C 336 150  334 142  330 136
+    C 326 130  320 126  314 124
+    C 318 116  318 107  314 99
+    C 310 91   302 85   293 82
+    C 284 79   274 80   266 84
+    C 262 76   256 69   248 64
+    C 240 59   230 56   220 57
+    C 210 58   200 63   192 70
+    L 170 72
+    Z
+    " fill="url(#headShine)"/>
+
+  <!-- Focinho (muzzle) -->
+  <path d="
+    M 148 162
+    C 144 172  142 184  144 195
+    C 146 207  152 218  162 226
+    C 172 234  184 238  197 238
+    C 210 238  222 234  230 226
+    C 238 218  240 207  238 195
+    C 236 184  230 173  222 165
+    C 212 172  200 176  188 176
+    C 176 176  162 170  148 162
+    Z
+    " fill="url(#muzzleGrad)" opacity="0.95"/>
+
+  <!-- Narina esquerda -->
+  <ellipse cx="167" cy="202" rx="10" ry="7" fill="#0a0806" opacity="0.85"/>
+  <!-- Narina direita -->
+  <ellipse cx="210" cy="208" rx="10" ry="7" fill="#0a0806" opacity="0.85"/>
+
+  <!-- Olho -->
+  <ellipse cx="292" cy="112" rx="18" ry="16" fill="#0a0806"/>
+  <ellipse cx="292" cy="112" rx="13" ry="11" fill="#110f0c"/>
+  <!-- Reflexo do olho -->
+  <circle cx="297" cy="107" r="4" fill="#e0c270" opacity="0.62"/>
+  <circle cx="288" cy="116" r="2" fill="#ffffff" opacity="0.30"/>
+
+  <!-- Reflexo dourado na testa -->
+  <ellipse cx="270" cy="88" rx="32" ry="20" fill="#c9a84c" opacity="0.10" transform="rotate(-15 270 88)"/>
+
+  <!-- Orelha -->
+  <path d="
+    M 318 135
+    C 328 122  340 113  352 108
+    C 360 104  368 103  372 107
+    C 376 111  374 119  368 127
+    C 362 135  352 142  342 147
+    C 332 152  322 154  316 150
+    C 310 146  310 140  318 135
+    Z
+    " fill="#0f0e0c"/>
+  <path d="
+    M 324 136
+    C 332 126  342 118  350 114
+    C 356 111  360 112  360 116
+    C 360 122  354 130  346 136
+    C 338 142  330 146  324 146
+    C 318 146  318 142  324 136
+    Z
+    " fill="#181512"/>
+
+  <!-- Chifre (curto e grosso, típico do Angus) -->
+  <path d="
+    M 306 75
+    C 316 64  330 56  345 53
+    C 355 51  364 53  368 59
+    C 372 65  368 74  360 80
+    C 352 86  340 88  330 84
+    C 322 80  312 76  306 75
+    Z
+    " fill="url(#hornGrad)"/>
+
+
+  <!-- ══════════════════════════════════════
+       CAUDA
+  ══════════════════════════════════════ -->
+  <path d="
+    M 702 340
+    C 712 356  718 374  720 393
+    C 722 412  718 432  712 450
+    C 706 468  696 484  688 498
+    C 682 508  676 516  672 522
+    " stroke="#0d0c0a" stroke-width="12" stroke-linecap="round" fill="none"/>
+
+  <!-- Vassoura da cauda -->
+  <path d="
+    M 672 522
+    C 668 530  664 538  660 545
+    C 656 552  650 558  644 562
+    C 638 566  632 566  628 562
+    " stroke="#141210" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="
+    M 672 522
+    C 674 530  676 538  676 546
+    C 676 553  674 560  670 564
+    " stroke="#141210" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="
+    M 672 522
+    C 676 530  682 537  686 544
+    C 690 551  692 558  690 564
+    " stroke="#141210" stroke-width="6" stroke-linecap="round" fill="none"/>
+
+
+  <!-- ══════════════════════════════════════
+       DETALHES: LINHA DO VENTRE E PEITO
+  ══════════════════════════════════════ -->
+
+  <!-- Linha divisória ventre / peito (brisket) -->
+  <path d="
+    M 258 422
+    C 272 435  288 445  306 452
+    C 322 458  340 460  358 460
+    " stroke="#161410" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+
+  <!-- Articulação joelho dianteiro esquerdo -->
+  <ellipse cx="308" cy="502" rx="18" ry="12" fill="#0d0c0a" opacity="0.55"/>
+  <!-- Articulação joelho dianteiro direito -->
+  <ellipse cx="364" cy="508" rx="18" ry="12" fill="#0d0c0a" opacity="0.45"/>
+
+  <!-- Articulação jarrete esquerdo -->
+  <ellipse cx="552" cy="498" rx="16" ry="11" fill="#0d0c0a" opacity="0.50"/>
+  <!-- Articulação jarrete direito -->
+  <ellipse cx="604" cy="496" rx="16" ry="11" fill="#0d0c0a" opacity="0.42"/>
+
+
+  <!-- ══════════════════════════════════════
+       LINHA DE BRILHO: borda superior do dorso
+  ══════════════════════════════════════ -->
+  <path d="
+    M 258 225
+    C 272 215  290 207  310 202
+    C 330 197  352 195  374 195
+    C 396 195  418 198  440 204
+    C 462 210  484 219  504 230
+    C 524 241  542 254  558 268
+    C 570 280  580 294  586 310
+    C 598 304  610 300  622 298
+    C 636 296  650 296  662 300
+    C 672 304  682 310  688 318
+    C 696 328  700 340  700 352
+    " stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.38"/>
+
+  <!-- Reflexo lateral no ombro (specular) -->
+  <path d="
+    M 270 236
+    C 280 224  294 214  310 208
+    C 318 204  326 202  332 204
+    C 324 210  316 218  310 228
+    C 302 238  296 250  294 264
+    C 284 256  276 247  270 236
+    Z
+    " fill="#c9a84c" opacity="0.08"/>
+
+</svg>
