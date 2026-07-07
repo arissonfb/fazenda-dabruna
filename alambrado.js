@@ -25,7 +25,8 @@ const ALAMBRADO_SERVICE_TYPES = [
   { id: "cerca-eletrica", label: "Cerca elétrica", medida: "metro", valorUnitario: 3.00 },
   { id: "retoque-cerca-eletrica", label: "Retoque de cerca elétrica", medida: "metro", valorUnitario: 2.00 },
   { id: "desmanche-cerca", label: "Desmanche de cerca", medida: "metro", valorUnitario: 2.50 },
-  { id: "peala-egua", label: "Peala égua", medida: "unidade", valorUnitario: 220.00 }
+  { id: "peala-egua", label: "Peala égua", medida: "unidade", valorUnitario: 220.00 },
+  { id: "outros", label: "Outros", medida: "metro", valorUnitario: 0 }
 ];
 
 const ALAMBRADO_MEDIA_ACCEPT = "image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm";
@@ -282,9 +283,16 @@ document.body.insertAdjacentHTML("beforeend", `
               Tipo de serviço de alambrado
               <select id="albFormTipo" required></select>
             </label>
+            <label class="form-span-2" id="albFormTipoOutroWrap" hidden>
+              Especifique o serviço
+              <input type="text" id="albFormTipoOutro" maxlength="80" placeholder="Nome do serviço executado">
+            </label>
             <label>
               Medida
-              <input type="text" id="albFormMedida" disabled>
+              <select id="albFormMedida" required>
+                <option value="metro">Metro</option>
+                <option value="unidade">Unidade</option>
+              </select>
             </label>
             <label>
               Quantidade / metragem
@@ -479,12 +487,16 @@ function populateAlambradoTipoSelect(select) {
 }
 
 function refreshAlambradoTipoDerivedFields() {
-  const tipo = getAlambradoServiceType(document.getElementById("albFormTipo").value);
+  const tipoSelect = document.getElementById("albFormTipo");
+  const tipo = getAlambradoServiceType(tipoSelect.value);
+  const isOutros = tipoSelect.value === "outros";
+
+  document.getElementById("albFormTipoOutroWrap").hidden = !isOutros;
+  if (!isOutros) document.getElementById("albFormTipoOutro").value = "";
+
   if (tipo) {
-    document.getElementById("albFormMedida").value = tipo.medida === "metro" ? "Metro" : "Unidade";
+    document.getElementById("albFormMedida").value = tipo.medida;
     document.getElementById("albFormValorUnitario").value = tipo.valorUnitario.toFixed(2);
-  } else {
-    document.getElementById("albFormMedida").value = "";
   }
   refreshAlambradoValorTotal();
 }
@@ -531,7 +543,10 @@ function openAlambradoEditor(farm, record) {
   document.getElementById("albFormPotreiro").value = record.potreiroId || "";
   populateAlambradoTipoSelect(document.getElementById("albFormTipo"));
   document.getElementById("albFormTipo").value = record.tipoServicoId;
-  document.getElementById("albFormMedida").value = record.medida === "metro" ? "Metro" : "Unidade";
+  const isOutros = record.tipoServicoId === "outros";
+  document.getElementById("albFormTipoOutroWrap").hidden = !isOutros;
+  document.getElementById("albFormTipoOutro").value = isOutros ? record.tipoServicoLabel : "";
+  document.getElementById("albFormMedida").value = record.medida;
   document.getElementById("albFormQuantidade").value = record.quantidade;
   document.getElementById("albFormValorUnitario").value = record.valorUnitario;
   document.getElementById("albFormData").value = record.data;
@@ -638,6 +653,15 @@ async function handleAlambradoFormSubmit(event) {
   const tipo = getAlambradoServiceType(document.getElementById("albFormTipo").value);
   if (!tipo) { alert("Selecione o tipo de serviço de alambrado."); return; }
 
+  let tipoLabel = tipo.label;
+  if (tipo.id === "outros") {
+    tipoLabel = document.getElementById("albFormTipoOutro").value.trim();
+    if (!tipoLabel) { alert('Informe o nome do serviço para o tipo "Outros".'); return; }
+  }
+
+  const medida = document.getElementById("albFormMedida").value;
+  if (medida !== "metro" && medida !== "unidade") { alert("Selecione a medida do serviço (metro ou unidade)."); return; }
+
   const quantidade = Number(document.getElementById("albFormQuantidade").value);
   if (!(quantidade > 0)) { alert("Informe uma quantidade/metragem maior que zero."); return; }
 
@@ -672,8 +696,8 @@ async function handleAlambradoFormSubmit(event) {
         record.potreiroId = potreiroId;
         record.potreiroName = potreiroEntry ? potreiroEntry.name : "";
         record.tipoServicoId = tipo.id;
-        record.tipoServicoLabel = tipo.label;
-        record.medida = tipo.medida;
+        record.tipoServicoLabel = tipoLabel;
+        record.medida = medida;
         record.quantidade = quantidade;
         record.valorUnitario = valorUnitario;
         record.valorTotal = valorTotal;
@@ -681,7 +705,7 @@ async function handleAlambradoFormSubmit(event) {
         record.observacoes = observacoes;
         record.anexos = [...(runtime.albExistingMedia || []), ...newAttachments];
         record.updatedAt = new Date().toISOString();
-        logAuditEvent("Edição", "alambrado", `${record.codigo} - ${tipo.label}`, { farmId: farm.id, farmName: farm.name, recordCode: record.codigo });
+        logAuditEvent("Edição", "alambrado", `${record.codigo} - ${tipoLabel}`, { farmId: farm.id, farmName: farm.name, recordCode: record.codigo });
       }
     } else {
       const record = {
@@ -691,8 +715,8 @@ async function handleAlambradoFormSubmit(event) {
         potreiroId,
         potreiroName: potreiroEntry ? potreiroEntry.name : "",
         tipoServicoId: tipo.id,
-        tipoServicoLabel: tipo.label,
-        medida: tipo.medida,
+        tipoServicoLabel: tipoLabel,
+        medida,
         quantidade,
         valorUnitario,
         valorTotal,
@@ -703,7 +727,7 @@ async function handleAlambradoFormSubmit(event) {
         updatedAt: new Date().toISOString()
       };
       getAlambradoRecords(farm).push(record);
-      logAuditEvent("Cadastro", "alambrado", `${record.codigo} - ${tipo.label}`, { farmId: farm.id, farmName: farm.name, recordCode: record.codigo });
+      logAuditEvent("Cadastro", "alambrado", `${record.codigo} - ${tipoLabel}`, { farmId: farm.id, farmName: farm.name, recordCode: record.codigo });
     }
 
     saveData();
@@ -1391,23 +1415,49 @@ async function exportAlambradoPdf() {
   });
 
   const chartIds = ["albChartMonthlyTotal", "albChartAnnualTotal", "albChartMonthlyByType", "albChartAnnualByType", "albChartPercentByType", "albChartByFarm", "albChartByPotreiro"];
-  for (const id of chartIds) {
-    const canvas = document.getElementById(id);
-    if (!canvas || !canvas.width || !canvas.height) continue;
-    try {
-      const imgData = canvas.toDataURL("image/png", 1.0);
+  const chartCanvases = chartIds.map((id) => document.getElementById(id)).filter((c) => c && c.width && c.height);
+
+  const cols = 2;
+  const rowsPerPage = 2;
+  const gap = 8;
+  const rowH = 70;
+  const rowPitch = 86;
+  const colW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
+  let col = 0;
+  let row = 0;
+
+  chartCanvases.forEach((canvas) => {
+    if (col === 0 && row === 0) {
       doc.addPage();
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
+      doc.setFontSize(13);
       doc.setTextColor(45, 35, 25);
-      doc.text(canvas.dataset.albChartTitle || "Gráfico", margin, 16);
-      const imgW = pageW - margin * 2;
-      const imgH = Math.min(imgW * (canvas.height / canvas.width), 160);
-      doc.addImage(imgData, "PNG", margin, 24, imgW, imgH);
-    } catch (error) {
-      console.warn("Não foi possível incluir o gráfico no PDF.", id, error);
+      doc.text("Gráficos do Relatório", margin, 14);
+      doc.setDrawColor(140, 80, 45);
+      doc.setLineWidth(0.5);
+      doc.line(margin, 18, pageW - margin, 18);
     }
-  }
+
+    const x = margin + col * (colW + gap);
+    const y = 26 + row * rowPitch;
+    try {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(87, 69, 52);
+      doc.text(canvas.dataset.albChartTitle || "Gráfico", x, y);
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      const ratio = Math.min(colW / canvas.width, rowH / canvas.height);
+      const w = canvas.width * ratio;
+      const h = canvas.height * ratio;
+      doc.addImage(imgData, "PNG", x + (colW - w) / 2, y + 3, w, h);
+    } catch (error) {
+      console.warn("Não foi possível incluir o gráfico no PDF.", canvas.id, error);
+    }
+
+    col++;
+    if (col >= cols) { col = 0; row++; }
+    if (row >= rowsPerPage) { row = 0; col = 0; }
+  });
 
   doc.save(`relatorio-alambrado-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
