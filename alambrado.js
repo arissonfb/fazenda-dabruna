@@ -29,9 +29,23 @@ const ALAMBRADO_SERVICE_TYPES = [
   { id: "outros", label: "Outros", medida: "metro", valorUnitario: 0 }
 ];
 
-const ALAMBRADO_MEDIA_ACCEPT = "image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm";
-const ALAMBRADO_MEDIA_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const ALAMBRADO_MEDIA_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
+const ALAMBRADO_MEDIA_ACCEPT = "image/*,video/*,.heic,.heif";
+const ALAMBRADO_MEDIA_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "heic", "heif", "gif", "bmp", "tif", "tiff"];
+const ALAMBRADO_MEDIA_VIDEO_EXTENSIONS = ["mp4", "mov", "webm", "avi", "mkv", "3gp", "m4v", "wmv"];
+
+function alambradoDetectMediaKind(file) {
+  const type = String(file.type || "").toLowerCase();
+  const name = String(file.name || "").toLowerCase();
+  const ext = name.slice(name.lastIndexOf(".") + 1);
+  if (type.startsWith("image/") || ALAMBRADO_MEDIA_IMAGE_EXTENSIONS.includes(ext)) return "imagem";
+  if (type.startsWith("video/") || ALAMBRADO_MEDIA_VIDEO_EXTENSIONS.includes(ext)) return "video";
+  return null;
+}
+
+function applyCloudinaryAutoFormat(url, isVideo) {
+  const transform = isVideo ? "f_auto,q_auto" : "f_auto,q_auto,w_1280,c_limit";
+  return url.includes("/upload/") ? url.replace("/upload/", `/upload/${transform}/`) : url;
+}
 const ALAMBRADO_LIST_PAGE_SIZE = 10;
 const ALAMBRADO_CHART_COLORS = COLORS.concat(COLORS.map((c) => lightenColor(c, 0.35)));
 
@@ -131,28 +145,12 @@ function formatFileSize(bytes) {
 /* ── Upload de mídia (Cloudinary) ─────────────────────────────────── */
 
 async function uploadAlambradoMedia(file) {
-  const isVideo = ALAMBRADO_MEDIA_VIDEO_TYPES.includes(file.type);
-  let blob = file;
-  let fileName = file.name || `${isVideo ? "video" : "foto"}-${Date.now()}`;
-
-  if (!isVideo) {
-    const dataUrl = await readFileAsDataUrl(file);
-    const image = await loadImageFromDataUrl(dataUrl);
-    const scale = Math.min(1, MOVEMENT_PHOTO_MAX_DIMENSION / Math.max(image.width, image.height));
-    const targetWidth = Math.max(1, Math.round(image.width * scale));
-    const targetHeight = Math.max(1, Math.round(image.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-    const context = canvas.getContext("2d");
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, targetWidth, targetHeight);
-    context.drawImage(image, 0, 0, targetWidth, targetHeight);
-    blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", MOVEMENT_PHOTO_QUALITY));
-  }
+  const kind = alambradoDetectMediaKind(file);
+  const isVideo = kind === "video";
+  const fileName = file.name || `${isVideo ? "video" : "foto"}-${Date.now()}`;
 
   const formData = new FormData();
-  formData.append("file", blob, fileName);
+  formData.append("file", file, fileName);
   formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
   formData.append("folder", "painel-pecuario/alambrado");
 
@@ -171,8 +169,8 @@ async function uploadAlambradoMedia(file) {
     id: createMovementId(),
     nome_arquivo: fileName,
     tipo_arquivo: isVideo ? "video" : "imagem",
-    url: data.secure_url,
-    tamanho: blob.size || file.size || 0,
+    url: applyCloudinaryAutoFormat(data.secure_url, isVideo),
+    tamanho: file.size || 0,
     createdAt: new Date().toISOString()
   };
 }
@@ -317,7 +315,7 @@ document.body.insertAdjacentHTML("beforeend", `
             <label class="form-span-2">
               Fotos e vídeos do serviço
               <input type="file" id="albFormMedia" accept="${ALAMBRADO_MEDIA_ACCEPT}" multiple>
-              <span class="field-note">Formatos aceitos: JPG, PNG, WEBP (fotos) e MP4, MOV, WEBM (vídeos). Múltiplos arquivos.</span>
+              <span class="field-note">Formatos aceitos: JPG, JPEG, PNG, WEBP, HEIC, GIF, BMP (fotos) e MP4, MOV, WEBM, AVI, MKV (vídeos). Múltiplos arquivos — convertidos automaticamente para exibição no navegador.</span>
             </label>
           </div>
 
@@ -576,13 +574,12 @@ document.getElementById("albCancelEditBtn").addEventListener("click", resetAlamb
 function handleAlambradoMediaChange(event) {
   const files = [...(event.target.files || [])];
   files.forEach((file) => {
-    const isImage = ALAMBRADO_MEDIA_IMAGE_TYPES.includes(file.type);
-    const isVideo = ALAMBRADO_MEDIA_VIDEO_TYPES.includes(file.type);
-    if (!isImage && !isVideo) return;
+    const kind = alambradoDetectMediaKind(file);
+    if (!kind) return;
     runtime.albMediaDrafts.push({
       id: createMovementId(),
       file,
-      kind: isVideo ? "video" : "imagem",
+      kind,
       previewUrl: URL.createObjectURL(file),
       name: file.name,
       size: file.size
@@ -1311,21 +1308,42 @@ function renderAlambradoReportTable(records) {
   const tfoot = document.getElementById("albReportTableFoot");
   if (!tbody) return;
 
-  tbody.innerHTML = records.length ? records.map((r) => `
-    <tr>
-      <td>${escapeHtml(r.codigo)}</td>
-      <td>${formatDate(r.data)}</td>
-      <td>${escapeHtml(r._farmName)}</td>
-      <td>${escapeHtml(r.potreiroName || "—")}</td>
-      <td>${escapeHtml(r.tipoServicoLabel)}</td>
-      <td>${r.medida === "metro" ? "Metro" : "Unidade"}</td>
-      <td>${formatInteger(r.quantidade)}</td>
-      <td>${formatCurrency(r.valorUnitario)}</td>
-      <td>${formatCurrency(r.valorTotal)}</td>
-      <td>${escapeHtml(trimLabel(r.observacoes || "—", 50))}</td>
-      <td>${formatInteger((r.anexos || []).length)}</td>
-    </tr>
-  `).join("") : `<tr><td colspan="11" class="table-empty-cell">Nenhum serviço encontrado para os filtros selecionados.</td></tr>`;
+  tbody.innerHTML = records.length ? records.map((r) => {
+    const anexos = r.anexos || [];
+    const mainRow = `
+      <tr>
+        <td>${escapeHtml(r.codigo)}</td>
+        <td>${formatDate(r.data)}</td>
+        <td>${escapeHtml(r._farmName)}</td>
+        <td>${escapeHtml(r.potreiroName || "—")}</td>
+        <td>${escapeHtml(r.tipoServicoLabel)}</td>
+        <td>${r.medida === "metro" ? "Metro" : "Unidade"}</td>
+        <td>${formatInteger(r.quantidade)}</td>
+        <td>${formatCurrency(r.valorUnitario)}</td>
+        <td>${formatCurrency(r.valorTotal)}</td>
+        <td>${escapeHtml(trimLabel(r.observacoes || "—", 50))}</td>
+        <td>${formatInteger(anexos.length)}</td>
+      </tr>
+    `;
+    const mediaRow = anexos.length ? `
+      <tr class="alb-report-media-row">
+        <td colspan="11">
+          <div class="alb-report-media-label">Fotos e vídeos do serviço ${escapeHtml(r.codigo)}</div>
+          <div class="movement-photo-grid alb-report-media-grid">
+            ${anexos.map((a) => `
+              <div class="movement-photo-card">
+                ${a.tipo_arquivo === "video"
+                  ? `<video src="${a.url}" controls preload="metadata"></video>`
+                  : `<img src="${a.url}" alt="${escapeHtml(a.nome_arquivo)}">`}
+                <div class="movement-photo-meta"><strong>${escapeHtml(a.nome_arquivo)}</strong></div>
+              </div>
+            `).join("")}
+          </div>
+        </td>
+      </tr>
+    ` : "";
+    return mainRow + mediaRow;
+  }).join("") : `<tr><td colspan="11" class="table-empty-cell">Nenhum serviço encontrado para os filtros selecionados.</td></tr>`;
 
   const totalGeral = records.reduce((s, r) => s + Number(r.valorTotal || 0), 0);
   const totalMetros = records.filter((r) => r.medida === "metro").reduce((s, r) => s + Number(r.quantidade || 0), 0);
@@ -1353,6 +1371,7 @@ async function exportAlambradoPdf() {
   const records = getFilteredAlambradoRecords(runtime.albReportFilters);
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const margin = 14;
 
   try {
@@ -1413,6 +1432,74 @@ async function exportAlambradoPdf() {
     foot: [["", "", "", "", "", "", "", "Total geral", formatCurrency(valorTotal), "", ""]],
     footStyles: { fillColor: [245, 234, 218], textColor: [45, 35, 25], fontStyle: "bold" }
   });
+
+  const recordsWithMedia = records.filter((r) => (r.anexos || []).length > 0);
+  if (recordsWithMedia.length) {
+    doc.addPage();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(45, 35, 25);
+    doc.text("Anexos por Serviço", margin, 14);
+    doc.setDrawColor(140, 80, 45);
+    doc.setLineWidth(0.5);
+    doc.line(margin, 18, pageW - margin, 18);
+
+    const thumbSize = 30;
+    const thumbGap = 4;
+    const thumbsPerRow = Math.max(1, Math.floor((pageW - margin * 2) / (thumbSize + thumbGap)));
+    let y = 26;
+
+    for (const record of recordsWithMedia) {
+      const imagens = (record.anexos || []).filter((a) => a.tipo_arquivo !== "video");
+      const videos = (record.anexos || []).filter((a) => a.tipo_arquivo === "video");
+      const rowsNeeded = imagens.length ? Math.ceil(imagens.length / thumbsPerRow) : 0;
+      const blockHeight = 6 + rowsNeeded * (thumbSize + thumbGap) + (videos.length ? 5 : 0) + 6;
+
+      if (y + blockHeight > pageH - margin) {
+        doc.addPage();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.setTextColor(45, 35, 25);
+        doc.text("Anexos por Serviço (continuação)", margin, 14);
+        doc.setDrawColor(140, 80, 45);
+        doc.setLineWidth(0.5);
+        doc.line(margin, 18, pageW - margin, 18);
+        y = 26;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(45, 35, 25);
+      doc.text(`${record.codigo} — ${record.tipoServicoLabel} (${formatDate(record.data)}, ${record._farmName})`, margin, y);
+      y += 4;
+
+      let x = margin;
+      let col = 0;
+      for (const photo of imagens) {
+        try {
+          const dataUrl = await fetchPhotoForPdf(photo);
+          if (dataUrl) doc.addImage(dataUrl, "JPEG", x, y, thumbSize, thumbSize);
+        } catch (error) {
+          console.warn("Não foi possível incluir anexo no PDF.", error);
+        }
+        doc.setDrawColor(219, 209, 191);
+        doc.rect(x, y, thumbSize, thumbSize);
+        col++;
+        if (col >= thumbsPerRow) { col = 0; x = margin; y += thumbSize + thumbGap; }
+        else { x += thumbSize + thumbGap; }
+      }
+      if (col !== 0) y += thumbSize + thumbGap;
+
+      if (videos.length) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(112, 94, 76);
+        doc.text(`${videos.length} vídeo(s) anexado(s) — disponível na consulta do serviço no sistema.`, margin, y);
+        y += 5;
+      }
+      y += 6;
+    }
+  }
 
   const chartIds = ["albChartMonthlyTotal", "albChartAnnualTotal", "albChartMonthlyByType", "albChartAnnualByType", "albChartPercentByType", "albChartByFarm", "albChartByPotreiro"];
   const chartCanvases = chartIds.map((id) => document.getElementById(id)).filter((c) => c && c.width && c.height);
@@ -1506,6 +1593,18 @@ function printAlambradoReport() {
   `).join("");
   const valorTotal = records.reduce((s, r) => s + Number(r.valorTotal || 0), 0);
 
+  const mediaBlocksHtml = records.filter((r) => (r.anexos || []).length > 0).map((r) => `
+    <div class="p-media-block">
+      <h4>${escapeHtml(r.codigo)} — ${escapeHtml(r.tipoServicoLabel)} (${formatDate(r.data)}, ${escapeHtml(r._farmName)})</h4>
+      <div class="p-media-grid">
+        ${(r.anexos || []).map((a) => a.tipo_arquivo === "video"
+          ? `<video src="${a.url}" controls preload="metadata"></video>`
+          : `<img src="${a.url}" alt="${escapeHtml(a.nome_arquivo)}">`
+        ).join("")}
+      </div>
+    </div>
+  `).join("");
+
   const win = window.open("", "_blank");
   if (!win) { alert("Habilite pop-ups para imprimir o relatório."); return; }
   win.document.write(`
@@ -1523,6 +1622,10 @@ function printAlambradoReport() {
       th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
       th{background:#f2ede4;}
       tfoot td{font-weight:bold;background:#f7f1e6;}
+      .p-media-block{margin-top:18px;page-break-inside:avoid;}
+      .p-media-block h4{margin:0 0 8px;font-size:12px;color:#375b43;}
+      .p-media-grid{display:flex;flex-wrap:wrap;gap:8px;}
+      .p-media-grid img,.p-media-grid video{width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid #ccc;background:#000;}
       @media print { .p-charts { grid-template-columns:repeat(2,1fr); } }
     </style></head><body>
     <h1>Relatório de Serviços de Alambrado</h1>
@@ -1534,6 +1637,7 @@ function printAlambradoReport() {
       <tbody>${rowsHtml}</tbody>
       <tfoot><tr><td colspan="7">Total geral</td><td>${formatCurrency(valorTotal)}</td></tr></tfoot>
     </table>
+    ${mediaBlocksHtml ? `<h2>Anexos por Serviço</h2>${mediaBlocksHtml}` : ""}
     </body></html>
   `);
   win.document.close();
@@ -1583,6 +1687,7 @@ function seedAlambradoDemoRecords() {
     ""
   ];
 
+  const seedableTypes = ALAMBRADO_SERVICE_TYPES.filter((t) => t.id !== "outros");
   const today = new Date();
   let seeded = 0;
   let farmIndex = 0;
@@ -1595,7 +1700,7 @@ function seedAlambradoDemoRecords() {
 
     const potreiros = getPotreroEntries(farm);
     const potreiro = potreiros.length ? potreiros[Math.floor(Math.random() * potreiros.length)] : null;
-    const tipo = ALAMBRADO_SERVICE_TYPES[Math.floor(Math.random() * ALAMBRADO_SERVICE_TYPES.length)];
+    const tipo = seedableTypes[Math.floor(Math.random() * seedableTypes.length)];
     const monthsAgo = Math.floor(Math.random() * 14);
     const date = new Date(today.getFullYear(), today.getMonth() - monthsAgo, 1 + Math.floor(Math.random() * 27));
     const quantidade = tipo.medida === "metro"
@@ -1604,6 +1709,7 @@ function seedAlambradoDemoRecords() {
     const valorUnitario = tipo.valorUnitario;
     const valorTotal = computeAlambradoValorTotal(quantidade, valorUnitario);
     const observacoes = observacoesPool[Math.floor(Math.random() * observacoesPool.length)];
+    const hasDemoPhoto = seeded % 4 === 0;
 
     getAlambradoRecords(farm).push({
       id: createMovementId(),
@@ -1619,7 +1725,14 @@ function seedAlambradoDemoRecords() {
       valorTotal,
       data: date.toISOString().slice(0, 10),
       observacoes,
-      anexos: [],
+      anexos: hasDemoPhoto ? [{
+        id: createMovementId(),
+        nome_arquivo: "cerca-executada.png",
+        tipo_arquivo: "imagem",
+        url: "./assets/alambrado-demo-1.png",
+        tamanho: 365219,
+        createdAt: new Date().toISOString()
+      }] : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });

@@ -936,6 +936,35 @@
   background: #000;
 }
 
+.alb-report-media-row td {
+  padding: 10px 16px 20px;
+  background: rgba(55, 91, 67, 0.04);
+  border-bottom: 1px solid rgba(75, 56, 34, 0.08);
+}
+
+.alb-report-media-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.alb-report-media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.alb-report-media-grid .movement-photo-card {
+  padding: 8px;
+}
+
+.alb-report-media-grid .movement-photo-meta strong {
+  font-size: 0.76rem;
+  word-break: break-word;
+}
+
 @media (max-width: 900px) {
   .alb-charts-grid {
     grid-template-columns: 1fr;
