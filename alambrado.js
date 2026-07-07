@@ -105,6 +105,23 @@ function getAlambradoAvailableYears() {
   return [...years].sort((a, b) => b.localeCompare(a));
 }
 
+function getAlambradoFilterFarms(filters) {
+  if (!filters.farmId || filters.farmId === "all") return getAllFarms();
+  const farm = state.data.farms[filters.farmId];
+  return farm ? [farm] : getAllFarms();
+}
+
+function getAlambradoPeriodLabel(filters) {
+  if (filters.dataIni && filters.dataFim) return `${formatDate(filters.dataIni)} até ${formatDate(filters.dataFim)}`;
+  if (filters.dataIni) return `A partir de ${formatDate(filters.dataIni)}`;
+  if (filters.dataFim) return `Até ${formatDate(filters.dataFim)}`;
+  if (filters.ano && filters.ano !== "all") {
+    if (filters.mes && filters.mes !== "all") return `${MONTH_NAMES[Number(filters.mes) - 1]}/${filters.ano}`;
+    return `Ano ${filters.ano}`;
+  }
+  return "Histórico completo";
+}
+
 function alambradoRecordMatchesFilters(record, filters) {
   if (filters.farmId && filters.farmId !== "all" && record._farmId !== filters.farmId) return false;
   if (filters.potreiroId && filters.potreiroId !== "all" && (record.potreiroId || "") !== filters.potreiroId) return false;
@@ -1369,10 +1386,15 @@ async function exportAlambradoPdf() {
   }
   const { jsPDF } = window.jspdf;
   const records = getFilteredAlambradoRecords(runtime.albReportFilters);
+  const farms = getAlambradoFilterFarms(runtime.albReportFilters);
+  const periodLabel = getAlambradoPeriodLabel(runtime.albReportFilters);
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 14;
+
+  await appendPdfCoverPage(doc, farms, periodLabel, "Serviços de Alambrado");
+  doc.addPage();
 
   try {
     const logoData = await loadLogoForPdf("#ffffff");
@@ -1386,7 +1408,7 @@ async function exportAlambradoPdf() {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor(87, 69, 52);
-  doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")}`, margin + 22, 22);
+  doc.text(`Período: ${periodLabel}   |   Responsável Técnico: ${TECHNICAL_MANAGER_NAME}   |   Gerado em ${new Date().toLocaleString("pt-BR")}`, margin + 22, 22);
   doc.setDrawColor(140, 80, 45);
   doc.setLineWidth(0.6);
   doc.line(margin, 27, pageW - margin, 27);
