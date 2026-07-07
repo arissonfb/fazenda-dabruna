@@ -1408,7 +1408,7 @@ async function exportAlambradoPdf() {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor(87, 69, 52);
-  doc.text(`Período: ${periodLabel}   |   Responsável Técnico: ${TECHNICAL_MANAGER_NAME}   |   Gerado em ${new Date().toLocaleString("pt-BR")}`, margin + 22, 22);
+  doc.text(`Período: ${periodLabel}   |   Responsável Técnica: ${TECHNICAL_MANAGER_NAME}   |   Gerado em ${new Date().toLocaleString("pt-BR")}`, margin + 22, 22);
   doc.setDrawColor(140, 80, 45);
   doc.setLineWidth(0.6);
   doc.line(margin, 27, pageW - margin, 27);

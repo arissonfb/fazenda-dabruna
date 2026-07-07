@@ -186,7 +186,6 @@ const ARAPEY_PRIMARY_GEO_KEYS = new Set([
 ]);
 const PDF_LOGO_PATH = "./assets/logo-da-bruna-transp.svg";
 const PDF_COVER_IMAGE_PATH = "./assets/angus.jpg";
-const ADMINISTRATOR_NAME = "Bruna Carvalho";
 const TECHNICAL_MANAGER_NAME = "Bruna Castro";
 const MOVEMENT_PHOTO_TYPES = new Set(["compra", "venda", "morte", "consumo", "nascimento", "transferencia", "ajuste"]);
 const MAX_MOVEMENT_PHOTOS = 6;
@@ -3191,7 +3190,7 @@ async function exportAuditTrailPdf() {
   doc.setFontSize(9.5);
   doc.setTextColor(87, 69, 52);
   doc.text(
-    `Administrador: ${ADMINISTRATOR_NAME}   |   Responsável Técnico: ${TECHNICAL_MANAGER_NAME}   |   Gerado em: ${generatedAt}`,
+    `Responsável Técnica: ${TECHNICAL_MANAGER_NAME}   |   Gerado em: ${generatedAt}`,
     margin + 21, 21
   );
   doc.setDrawColor(140, 80, 45);
@@ -3223,8 +3222,7 @@ async function exportAuditTrailPdf() {
       ["Primeiro evento", firstEvent],
       ["Último evento", lastEvent],
       ["Ações mais frequentes", topActions],
-      ["Administrador responsável", ADMINISTRATOR_NAME],
-      ["Responsável Técnico", TECHNICAL_MANAGER_NAME],
+      ["Responsável Técnica", TECHNICAL_MANAGER_NAME],
     ],
     theme: "striped",
     headStyles: { fillColor: [43, 132, 184], fontSize: 9 },
@@ -11959,7 +11957,7 @@ async function addPdfHeader(doc, farm, periodLabel, monthly) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   doc.text(`Período analisado: ${periodLabel}`, 42, 33);
-  doc.text(`Responsável técnico: ${TECHNICAL_MANAGER_NAME}`, 42, 39);
+  doc.text(`Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, 42, 39);
   doc.text(`Movimentações no período: ${formatInteger(monthly.totalMovements)}`, 14, 50);
   doc.text(`Saldo do período: ${monthly.netChange > 0 ?"+" : ""}${formatInteger(monthly.netChange)}`, 92, 50);
   return 56;
@@ -12034,45 +12032,12 @@ async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Rel
   doc.text("Fazendas Da Bruna", left, 101);
   doc.setFontSize(8);
   doc.setTextColor(170, 170, 170);
-  doc.text(`Fazenda: ${scopeLabel}`, left, height - 37);
-  doc.text(`Período: ${periodLabel}`, left, height - 29);
-  doc.text(`Administrador: ${ADMINISTRATOR_NAME}`, left, height - 21);
-  doc.text(`Responsável Técnico: ${TECHNICAL_MANAGER_NAME}`, left, height - 13);
+  doc.text(`Fazenda: ${scopeLabel}`, left, height - 29);
+  doc.text(`Período: ${periodLabel}`, left, height - 21);
+  doc.text(`Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, left, height - 13);
   doc.setDrawColor(197, 167, 74);
   doc.setLineWidth(0.5);
   doc.line(left, height - 7, left + 74, height - 7);
-  return;
-
-  drawPdfPastureBackground(doc);
-
-  try {
-    const imageData = await loadLogoForPdf("#1b4d2f");
-    doc.addImage(imageData, "JPEG", (width / 2) - 45, 18, 90, 90);
-  } catch (error) {
-    console.warn("Não foi possível carregar o logo para a capa do PDF.", error);
-  }
-
-  doc.setTextColor(248, 244, 236);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text("Painel Pecuário", width / 2, 122, { align: "center" });
-  doc.setFontSize(12);
-  doc.text("Fazendas Da Bruna", width / 2, 131, { align: "center" });
-
-  doc.setDrawColor(225, 232, 214);
-  doc.setLineWidth(0.7);
-  doc.line(58, 141, width - 58, 141);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.text(scopeLabel, width / 2, 152, { align: "center" });
-  doc.text(`Período analisado: ${periodLabel}`, width / 2, 161, { align: "center" });
-  doc.text(`Responsável técnico: ${TECHNICAL_MANAGER_NAME}`, width / 2, 170, { align: "center" });
-
-  doc.text(`Administrador: ${ADMINISTRATOR_NAME}`, width / 2, 179, { align: "center" });
-  doc.setFontSize(9.5);
-  doc.setTextColor(230, 239, 223);
-  doc.text("Relatório gerencial com consolidado, movimentações, sanitário e dados mensais.", width / 2, height - 26, { align: "center" });
 }
 
 function appendFarmDividerPage(doc, farm, periodLabel, year, month, sectionIndex, sectionCount) {
@@ -12210,12 +12175,12 @@ function addPdfFooters(doc, options = {}) {
     doc.setFontSize(9);
     doc.setTextColor(112, 94, 76);
     if (height < 260) {
-      doc.text(`Fazendas Da Bruna | Responsável tecnico: ${TECHNICAL_MANAGER_NAME}`, margin, height - 6);
+      doc.text(`Fazendas Da Bruna | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, height - 6);
       doc.text(`Pagina ${coverPage ?page - 1 : page} de ${visiblePageCount}`, width - margin, height - 6, { align: "right" });
       doc.setTextColor(45, 35, 25);
       continue;
     }
-    doc.text(`Fazendas Da Bruna | Responsável técnico: ${TECHNICAL_MANAGER_NAME}`, 14, 291);
+    doc.text(`Fazendas Da Bruna | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, 14, 291);
     doc.text(`Página ${coverPage ?page - 1 : page} de ${visiblePageCount}`, 196, 291, { align: "right" });
     doc.setTextColor(45, 35, 25);
   }
@@ -12241,7 +12206,7 @@ function appendExecutivePdfTable(doc, farm, monthly, discrepancy, topY) {
       ["Saldo da distribuição", potreroBalance === 0 ?"Alinhado" : `${potreroBalance > 0 ?"+" : ""}${formatInteger(potreroBalance)} animais`],
       ["Movimentações no período", formatInteger(monthly.totalMovements)],
       ["Saldo do período", `${monthly.netChange > 0 ?"+" : ""}${formatInteger(monthly.netChange)}`],
-      ["Responsável técnico", TECHNICAL_MANAGER_NAME]
+      ["Responsável Técnica", TECHNICAL_MANAGER_NAME]
     ],
     theme: "striped",
     headStyles: { fillColor: [43, 132, 184] }
@@ -12976,7 +12941,7 @@ async function exportReproducaoPdf() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
     doc.setTextColor(87, 69, 52);
-    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
+    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
 
     doc.setDrawColor(140, 80, 45);
     doc.setLineWidth(0.6);
@@ -13098,7 +13063,7 @@ function appendReproductionConsolidatedPdfIntro(doc, farms, periodLabel, year, m
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(87, 69, 52);
-  doc.text(`Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável: ${TECHNICAL_MANAGER_NAME}`, margin, 24);
+  doc.text(`Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, 24);
   doc.setDrawColor(140, 80, 45);
   doc.line(margin, 30, pageW - margin, 30);
 
@@ -13223,7 +13188,7 @@ function appendSanitaryConsolidatedPdfIntro(doc, farms) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(87, 69, 52);
-  doc.text(`Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável: ${TECHNICAL_MANAGER_NAME}`, margin, 24);
+  doc.text(`Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, 24);
   doc.setDrawColor(55, 91, 67);
   doc.line(margin, 30, pageW - margin, 30);
 
@@ -13261,7 +13226,7 @@ async function appendSanitaryPdfReport(doc, farm) {
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}`, margin + 22, 20);
-  doc.text(`Responsável técnico: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 26);
+  doc.text(`Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 26);
 
   // Divider
   doc.setDrawColor(55, 91, 67);
@@ -16422,7 +16387,7 @@ async function exportComprasPdfReport() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
     doc.setTextColor(87, 69, 52);
-    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
+    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
     doc.setDrawColor(140, 80, 45);
     doc.setLineWidth(0.6);
     doc.line(margin, 27, pageW - margin, 27);
@@ -17078,7 +17043,7 @@ async function exportVendasPdfReport() {
     doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(45, 35, 25);
     doc.text("Relatório de Vendas", margin + 22, 14);
     doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(87, 69, 52);
-    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
+    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
     doc.setDrawColor(140, 80, 45); doc.setLineWidth(0.6); doc.line(margin, 27, pageW - margin, 27);
 
     let xBox = margin;
