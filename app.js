@@ -1,11 +1,11 @@
 ﻿const STORAGE_KEY = "painelPecuarioBruna.v1";
-const API_URL = "https://painel-pecuario-api.onrender.com";
+const API_URL = "https://wolf-pecuaria-api.onrender.com";
 const MOBILE_APP_CONFIG = {
   androidDownloadUrl: "",
   iosDownloadUrl: "",
   androidFallbackUrl: "",
   iosFallbackUrl: "",
-  webUrl: "https://fazenda-dabruna.onrender.com/"
+  webUrl: "https://wolf-pecuaria.onrender.com/"
 };
 
 const FARM_CODE_PREFIXES = {
