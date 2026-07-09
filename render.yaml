@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: fazendas-da-bruna
+    name: wolf-pecuaria
     runtime: static
     plan: free
     branch: master
