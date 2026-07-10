@@ -102,135 +102,70 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: 40;
-  display: grid;
-  place-items: center;
   cursor: pointer;
   overflow: hidden;
-  background: radial-gradient(ellipse at 58% 38%, #0d1a10 0%, #080d09 52%, var(--ink-900) 100%);
+  background: #000;
 }
 
 .splash-shell[hidden] {
   display: none !important;
 }
 
-/* Imagem do rebanho — preenche o lado direito */
-.splash-bull-frame {
+/* Metade esquerda: logo + paisagem, sempre estatica */
+.splash-wrap-bg,
+.splash-wrap-bull {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  pointer-events: none;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.splash-bull-img {
-  width: min(560px, 46vw);
+.splash-wrap-bg { left: 0; }
+.splash-wrap-bull { right: 0; }
+
+.splash-wrap-bg img,
+.splash-wrap-bull img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
-  opacity: 0.82;
-  filter: brightness(0.88) contrast(1.08);
-  transform: translateX(-3%);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
-  animation: splashBullIn 1.4s ease-out both;
+  object-position: center center;
+  animation: splashFadeIn 1s ease-out both;
 }
 
-@keyframes splashBullIn {
-  from { opacity: 0; transform: translateX(4%) scale(0.97); }
-  to   { opacity: 0.70; transform: translateX(-3%) scale(1); }
+/* Metade direita: o touro, com respiracao/zoom sutil continuo */
+.splash-wrap-bull img {
+  transform: translateX(-50%) scale(1);
+  animation: splashFadeIn 1s ease-out both, splashBullBreathe 4.5s ease-in-out infinite;
 }
 
-/* Brilho gold sutil no centro-direita */
-.splash-glow {
-  position: absolute;
-  bottom: -15%;
-  right: 10%;
-  width: 52%;
-  height: 64%;
-  background: radial-gradient(circle, rgba(201, 168, 76, 0.07) 0%, transparent 68%);
-  pointer-events: none;
+@keyframes splashFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* Bloco de conteúdo — alinhado à esquerda */
-.splash-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  width: 100%;
-  max-width: 1200px;
-  padding: 0 60px;
-  gap: 48px;
-  animation: splashContentIn 1.2s 0.3s ease-out both;
-}
-
-@keyframes splashContentIn {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.splash-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-/* Anel com logo circular */
-.splash-logo-ring {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(201, 168, 76, 0.36);
-  background: rgba(201, 168, 76, 0.06);
-  display: grid;
-  place-items: center;
-  padding: 6px;
-}
-
-.splash-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: none;
-  box-shadow: none;
-}
-
-.splash-kicker {
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--gold);
-}
-
-.splash-title {
-  font-family: "Yrsa", serif;
-  font-size: clamp(3rem, 6.5vw, 5.8rem);
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: -0.02em;
-  line-height: 1.02;
-}
-
-.splash-sub {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.42);
-  font-size: 1.05rem;
-  font-weight: 400;
+@keyframes splashBullBreathe {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50%      { transform: translateX(-50%) scale(1.03); }
 }
 
 .splash-cta {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  z-index: 2;
+  margin: 0;
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.28);
-  letter-spacing: 0.07em;
+  color: rgba(241, 211, 138, 0.85);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 18px;
-  align-self: stretch;
+  text-shadow: 0 0 12px rgba(241, 211, 138, 0.35);
+  pointer-events: none;
+  animation: splashFadeIn 1.4s 0.4s ease-out both;
 }
 
 /* Compatibilidade — estrutura antiga não usada */
@@ -1241,17 +1176,28 @@ body::before {
   display: none;
 }
 
+/* Mostra so a metade direita da imagem (o touro, sem o texto "WOLF"),
+   que so faz sentido no formato largo da tela de abertura */
 .auth-angus-image {
-  position: relative;
+  position: absolute;
   z-index: 0;
   display: block;
-  width: 100%;
+  top: 0;
+  left: 0;
+  width: 200%;
   height: 100%;
   min-height: auto;
   object-fit: cover;
-  object-position: center top;
+  object-position: center center;
   opacity: 0.82;
   filter: brightness(0.85) contrast(1.08);
+  transform: translateX(-50%) scale(1);
+  animation: authBullBreathe 5s ease-in-out infinite;
+}
+
+@keyframes authBullBreathe {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50%      { transform: translateX(-50%) scale(1.04); }
 }
 
 /* Badge + copytext — canto inferior esquerdo, rente à borda */
@@ -1720,6 +1666,12 @@ body::before {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  animation: heroBullBreathe 5s ease-in-out infinite;
+}
+
+@keyframes heroBullBreathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
 }
 
 .hero-highlight-copy {
@@ -7058,6 +7010,7 @@ body::before {
   opacity: 0.82;
   filter: brightness(0.85) contrast(1.06);
   display: block;
+  animation: heroBullBreathe 5s ease-in-out infinite;
 }
 
 .hero-highlight-copy {

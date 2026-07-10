@@ -2403,7 +2403,7 @@ const runtime = {
   storageEnabled: true,
   appInitialized: false,
   splashDismissed: false,
-  authLoginMode: "usuario",
+  authLoginMode: "admin",
   pendingMovementDialogType: "",
   returnToMovTypeRecords: null,
   movementPhotoDrafts: [],
