@@ -202,28 +202,46 @@ h2 { font-size: clamp(34px, 5vw, 64px); line-height: 1; }
 .diagram::before {
   content: "";
   position: absolute;
-  inset: 12% 14%;
-  border: 1px solid var(--line);
-  border-radius: 50%;
+  left: 50%;
+  top: 108px;
+  bottom: 52px;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(245,218,142,.42), transparent);
+  transform: translateX(-50%);
   pointer-events: none;
 }
 .diagram-center {
-  width: min(100%, 330px);
-  margin: 0 auto 34px;
-  padding: 34px 24px;
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  margin: 0 auto 28px;
+  padding: 24px clamp(20px, 4vw, 42px);
   border: 1px solid rgba(245,218,142,.36);
-  border-radius: 50%;
-  aspect-ratio: 1;
+  border-radius: 16px;
   display: grid;
-  place-content: center;
+  gap: 7px;
+  place-items: center;
   text-align: center;
-  background: radial-gradient(circle, rgba(217,173,76,.16), rgba(13,9,4,.88));
+  background:
+    linear-gradient(135deg, rgba(245,218,142,.1), transparent 34%),
+    rgba(13,9,4,.92);
   box-shadow: var(--shadow);
 }
-.diagram-center strong { font-family: Georgia, serif; color: var(--gold-light); font-size: 34px; line-height: 1; }
-.diagram-center span { margin-top: 10px; color: var(--ink); text-transform: uppercase; letter-spacing: .16em; font-size: 12px; }
-.diagram-center em { color: var(--muted); font-style: normal; font-size: 13px; }
+.diagram-center::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -29px;
+  width: 1px;
+  height: 28px;
+  background: rgba(245,218,142,.42);
+}
+.diagram-center strong { font-family: Georgia, serif; color: var(--gold-light); font-size: clamp(30px, 4vw, 44px); line-height: 1; }
+.diagram-center span { color: var(--ink); text-transform: uppercase; letter-spacing: .16em; font-size: 12px; }
+.diagram-center em { color: var(--muted); font-style: normal; font-size: 14px; }
 .diagram-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
@@ -237,7 +255,17 @@ h2 { font-size: clamp(34px, 5vw, 64px); line-height: 1; }
 .diagram-card {
   min-height: 164px;
   padding: 20px;
+  position: relative;
   transition: transform 180ms ease, border-color 180ms ease;
+}
+.diagram-card::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -17px;
+  width: 1px;
+  height: 16px;
+  background: rgba(245,218,142,.28);
 }
 .diagram-card:hover { transform: translateY(-4px); border-color: rgba(245,218,142,.6); }
 .diagram-card span { color: var(--gold); font-weight: 800; }
@@ -470,13 +498,60 @@ h2 { font-size: clamp(34px, 5vw, 64px); line-height: 1; }
     transition: transform 240ms ease;
   }
   .nav.is-open { transform: translateX(0); }
-  .hero { min-height: 92vh; }
-  .hero-content { padding-inline: 18px; }
+  .hero {
+    min-height: auto;
+    padding-top: 104px;
+    padding-bottom: 72px;
+  }
+  .hero::after {
+    background:
+      linear-gradient(180deg, rgba(5,3,1,.72), rgba(5,3,1,.9)),
+      linear-gradient(90deg, rgba(5,3,1,.84), rgba(5,3,1,.42));
+  }
+  .hero-content {
+    padding: 20px 18px;
+    border-left: 0;
+    border: 1px solid rgba(245,218,142,.18);
+    border-radius: 16px;
+    background: rgba(8,5,2,.62);
+    backdrop-filter: blur(8px);
+  }
+  .hero-text {
+    font-size: 14.5px;
+    line-height: 1.65;
+  }
+  .scroll-hint {
+    position: static;
+    transform: none;
+    width: min(100%, 260px);
+    margin: 24px auto 0;
+    line-height: 1.45;
+  }
   .diagram::before { display: none; }
-  .diagram-center { width: min(100%, 260px); }
+  .diagram-center {
+    width: 100%;
+    margin-bottom: 22px;
+    padding: 22px 18px;
+    border-radius: 14px;
+  }
+  .diagram-center::after {
+    left: 22px;
+    bottom: -22px;
+    height: 22px;
+  }
+  .diagram-center strong {
+    font-size: 30px;
+  }
+  .diagram-center span {
+    font-size: 11px;
+  }
+  .diagram-center em {
+    font-size: 13px;
+  }
   .diagram-grid {
     position: relative;
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .diagram-grid::before {
     content: "";
@@ -485,7 +560,38 @@ h2 { font-size: clamp(34px, 5vw, 64px); line-height: 1; }
     width: 1px;
     background: var(--line);
   }
-  .diagram-card { margin-left: 36px; }
+  .diagram-card {
+    min-height: auto;
+    margin-left: 38px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .diagram-card::before {
+    left: -17px;
+    top: 27px;
+    width: 17px;
+    height: 1px;
+  }
+  .diagram-card span {
+    position: absolute;
+    left: -38px;
+    top: 17px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(245,218,142,.34);
+    border-radius: 50%;
+    background: #100a04;
+    font-size: 10px;
+  }
+  .diagram-card h3 {
+    margin-top: 0;
+    font-size: 17px;
+  }
+  .diagram-card p {
+    font-size: 13.5px;
+  }
   .competency-list, .detail-grid, .pillars, .dashboard, .gallery { grid-template-columns: 1fr; }
   .timeline {
     grid-template-columns: 1fr;
