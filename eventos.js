@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
-   Fazendas Da Bruna — Eventos do Rebanho
+   Wolf Agricultura e Pecuária — Eventos do Rebanho
    Cards "Abate/Consumo" e "Mortes", registros recentes vinculados ao
    estoque e destaques no PDF geral. Carregado depois de pastagens.js.
    ════════════════════════════════════════════════════════════════════ */

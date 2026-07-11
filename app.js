@@ -184,8 +184,8 @@ const ARAPEY_PRIMARY_GEO_KEYS = new Set([
   "prad 7",
   "prad 8"
 ]);
-const PDF_LOGO_PATH = "./assets/logo-da-bruna-transp.svg";
-const PDF_COVER_IMAGE_PATH = "./assets/angus.jpg";
+const PDF_LOGO_PATH = "./assets/wolf-seal.jpg";
+const PDF_COVER_IMAGE_PATH = "./assets/wolf-banner-hero.png";
 const TECHNICAL_MANAGER_NAME = "Bruna Castro";
 const MOVEMENT_PHOTO_TYPES = new Set(["compra", "venda", "morte", "consumo", "nascimento", "transferencia", "ajuste"]);
 const MAX_MOVEMENT_PHOTOS = 6;
@@ -3272,7 +3272,7 @@ async function exportAuditTrailPdf() {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
         doc.setTextColor(87, 69, 52);
-        doc.text("Trilha de Auditoria  |  Fazendas Da Bruna", margin, 7);
+        doc.text("Trilha de Auditoria  |  Wolf Agricultura e Pecuária", margin, 7);
         doc.setDrawColor(140, 80, 45);
         doc.setLineWidth(0.35);
         doc.line(margin, 9, pageW - margin, 9);
@@ -5383,7 +5383,7 @@ function renderOverviewPanel() {
 
   elements.globalPanelKicker.textContent = isTotalView ?"Operação consolidada" : "Operação da fazenda";
   elements.globalPanelTitle.textContent = isTotalView ?"Manejo total das fazendas" : `Manejo de ${selectedFarm?.name || "fazenda"}`;
-  elements.globalPanelChip.textContent = isTotalView ?"Grupo Da Bruna" : selectedFarm?.name || "Fazenda";
+  elements.globalPanelChip.textContent = isTotalView ?"Grupo Wolf" : selectedFarm?.name || "Fazenda";
 
   const cards = [
     {
@@ -5907,7 +5907,7 @@ function renderHomeView() {
   el.innerHTML = `
     <div class="home-hero">
       <div class="home-hero-copy">
-        <p class="eyebrow">Fazendas Da Bruna</p>
+        <p class="eyebrow">Wolf Agricultura e Pecuária</p>
         <h2 class="home-hero-title">Painel Pecuário</h2>
         <p class="home-hero-farm">${escapeHtml(farmContext)}</p>
       </div>
@@ -6466,7 +6466,7 @@ function renderGlobalSummary() {
 
   elements.globalPanelKicker.textContent = isTotalView ?"Painel inicial" : "Fazenda selecionada";
   elements.globalPanelTitle.textContent = isTotalView ?"Consolidado das fazendas" : `Resumo de ${selectedFarm?.name || "fazenda"}`;
-  elements.globalPanelChip.textContent = isTotalView ?"Grupo Da Bruna" : selectedFarm?.name || "Fazenda";
+  elements.globalPanelChip.textContent = isTotalView ?"Grupo Wolf" : selectedFarm?.name || "Fazenda";
 
   const cards = [
     {
@@ -11951,7 +11951,7 @@ async function addPdfHeader(doc, farm, periodLabel, monthly) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Fazendas Da Bruna", 42, 18);
+  doc.text("Wolf Agricultura e Pecuária", 42, 18);
   doc.setFontSize(15);
   doc.text(`Relatório Pecuário - ${farm.name}`, 42, 26);
   doc.setFont("helvetica", "normal");
@@ -12029,7 +12029,7 @@ async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Rel
   doc.text(reportSubtitle, left, 91);
   doc.setFontSize(9);
   doc.setTextColor(197, 167, 74);
-  doc.text("Fazendas Da Bruna", left, 101);
+  doc.text("Wolf Agricultura e Pecuária", left, 101);
   doc.setFontSize(8);
   doc.setTextColor(170, 170, 170);
   doc.text(`Fazenda: ${scopeLabel}`, left, height - 29);
@@ -12156,7 +12156,7 @@ function appendPdfFarmReportDivider(doc, farm, periodLabel, reportTitle, cards, 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(112, 94, 76);
-  doc.text("Painel Pecuário Premium | Fazendas Da Bruna", 14, height - 18);
+  doc.text("Painel Pecuário Premium | Wolf Agricultura e Pecuária", 14, height - 18);
 }
 
 function addPdfFooters(doc, options = {}) {
@@ -12175,12 +12175,12 @@ function addPdfFooters(doc, options = {}) {
     doc.setFontSize(9);
     doc.setTextColor(112, 94, 76);
     if (height < 260) {
-      doc.text(`Fazendas Da Bruna | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, height - 6);
+      doc.text(`Wolf Agricultura e Pecuária | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, height - 6);
       doc.text(`Pagina ${coverPage ?page - 1 : page} de ${visiblePageCount}`, width - margin, height - 6, { align: "right" });
       doc.setTextColor(45, 35, 25);
       continue;
     }
-    doc.text(`Fazendas Da Bruna | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, 14, 291);
+    doc.text(`Wolf Agricultura e Pecuária | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, 14, 291);
     doc.text(`Página ${coverPage ?page - 1 : page} de ${visiblePageCount}`, 196, 291, { align: "right" });
     doc.setTextColor(45, 35, 25);
   }
@@ -12743,7 +12743,7 @@ function appendConsolidatedPdfIntro(doc, farms, periodLabel, year, month) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.setTextColor(27, 77, 47);
-  doc.text("Grupo Fazendas Da Bruna", margin, 16);
+  doc.text("Grupo Wolf Agricultura e Pecuária", margin, 16);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor(87, 69, 52);
@@ -13030,7 +13030,7 @@ async function exportReproducaoPdf() {
       doc.setFontSize(7.5);
       doc.setTextColor(150, 130, 100);
       doc.text(`Página ${i} de ${pageCount}`, pageW - margin, pageH - 6, { align: "right" });
-      doc.text(`Fazendas Da Bruna · Reprodução · ${periodLabel}`, margin, pageH - 6);
+      doc.text(`Wolf Agricultura e Pecuária · Reprodução · ${periodLabel}`, margin, pageH - 6);
     }
     */
   }
@@ -13327,7 +13327,7 @@ async function appendSanitaryPdfReport(doc, farm) {
     doc.setFontSize(7.5);
     doc.setTextColor(150, 130, 100);
     doc.text(`Página ${i} de ${pageCount}`, pageW - margin, pageH - 6, { align: "right" });
-    doc.text(`Fazendas Da Bruna · Manejo Sanitário · ${periodLabel}`, margin, pageH - 6);
+    doc.text(`Wolf Agricultura e Pecuária · Manejo Sanitário · ${periodLabel}`, margin, pageH - 6);
   }
   */
 }
@@ -14187,7 +14187,7 @@ function exportBackup() {
   };
 
   const payload = {
-    sistema: "Painel Pecuário Da Bruna",
+    sistema: "Painel Pecuário Wolf",
     versao: 2,
     dataBackup: new Date().toISOString(),
     dados: snapshot
@@ -16535,7 +16535,7 @@ async function exportComprasPdfReport() {
     doc.setFontSize(8);
     doc.setTextColor(160, 140, 120);
     doc.text(`Página ${i} de ${pageCount}`, pageW - margin, doc.internal.pageSize.getHeight() - 5, { align: "right" });
-    doc.text(`Fazendas Da Bruna — Relatório de Compras — ${periodLabel}`, margin, doc.internal.pageSize.getHeight() - 5);
+    doc.text(`Wolf Agricultura e Pecuária — Relatório de Compras — ${periodLabel}`, margin, doc.internal.pageSize.getHeight() - 5);
   }
 
   doc.save(`compras-${isTotalView ? "todas-fazendas" : farms[0]?.name?.toLowerCase().replace(/\s+/g, "-") || "fazenda"}-${periodLabel.replace(/\//g, "-")}.pdf`);
@@ -17134,7 +17134,7 @@ async function exportVendasPdfReport() {
     doc.setPage(i);
     doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(160, 140, 120);
     doc.text(`Página ${i} de ${pageCount}`, pageW - margin, doc.internal.pageSize.getHeight() - 5, { align: "right" });
-    doc.text(`Fazendas Da Bruna — Relatório de Vendas — ${periodLabel}`, margin, doc.internal.pageSize.getHeight() - 5);
+    doc.text(`Wolf Agricultura e Pecuária — Relatório de Vendas — ${periodLabel}`, margin, doc.internal.pageSize.getHeight() - 5);
   }
 
   doc.save(`vendas-${isTotalView ? "todas-fazendas" : farms[0]?.name?.toLowerCase().replace(/\s+/g, "-") || "fazenda"}-${periodLabel.replace(/\//g, "-")}.pdf`);

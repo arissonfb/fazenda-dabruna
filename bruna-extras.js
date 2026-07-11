@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
-   Fazendas Da Bruna — extras da demonstração
+   Wolf Agricultura e Pecuária — extras da demonstração
    Carregado depois de app.js / __commercial_new.js.
    Reaproveita as globais já existentes: state, runtime, elements,
    saveData, render, formatInteger, formatCurrency, escapeHtml,
@@ -33,9 +33,9 @@ function showDemoExpiredScreen() {
   document.body.insertAdjacentHTML("beforeend", `
     <div class="demo-expired-shell" id="demoExpiredShell">
       <div class="demo-expired-card">
-        <img src="./assets/logo-da-bruna.svg" alt="Fazendas Da Bruna" />
+        <img src="./assets/wolf-seal.jpg" alt="Wolf Agricultura e Pecuária" />
         <h1>Período de demonstração encerrado</h1>
-        <p>O acesso de demonstração ao Painel Pecuário Da Bruna expirou.</p>
+        <p>O acesso de demonstração ao Painel Pecuário Wolf expirou.</p>
         <p>Entre em contato para liberar o acesso completo ou agendar uma nova apresentação.</p>
         <a class="whatsapp-cta" href="${DEMO_CONTACT_WHATSAPP}" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
       </div>

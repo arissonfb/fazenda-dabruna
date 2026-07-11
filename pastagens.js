@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
-   Fazendas Da Bruna — Pastagens / Custo por Hectare
+   Wolf Agricultura e Pecuária — Pastagens / Custo por Hectare
    Carregado depois de app.js / __commercial_new.js / bruna-extras.js.
    Reaproveita as globais já existentes: state, runtime, elements,
    saveData, render, formatInteger, formatCurrency, formatWeight,
@@ -1132,7 +1132,7 @@ async function exportPasturePdf() {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Fazendas Da Bruna", 42, 18);
+  doc.text("Wolf Agricultura e Pecuária", 42, 18);
   doc.setFontSize(15);
   doc.text("Pastagens / Custo por Hectare", 42, 26);
   doc.setFont("helvetica", "normal");
@@ -1247,9 +1247,9 @@ async function exportPastureExcel() {
   let html = `<table border="0" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin-bottom:12px;font-family:Arial, sans-serif;">`;
   html += `<tr>`;
   if (logoDataUrl) {
-    html += `<td rowspan="4" style="width:90px;"><img src="${logoDataUrl}" width="80" height="80" alt="Fazendas Da Bruna"></td>`;
+    html += `<td rowspan="4" style="width:90px;"><img src="${logoDataUrl}" width="80" height="80" alt="Wolf Agricultura e Pecuária"></td>`;
   }
-  html += `<td style="font-size:18pt;font-weight:bold;color:#375b43;">Fazendas Da Bruna</td></tr>`;
+  html += `<td style="font-size:18pt;font-weight:bold;color:#375b43;">Wolf Agricultura e Pecuária</td></tr>`;
   html += `<tr><td style="font-size:13pt;font-weight:bold;color:#c9a84c;">Pastagens / Custo por Hectare</td></tr>`;
   html += `<tr><td>Escopo: ${escapeHtml(scopeLabel)}</td></tr>`;
   html += `<tr><td>Responsável técnico: ${escapeHtml(TECHNICAL_MANAGER_NAME)} &nbsp;|&nbsp; Emitido em: ${escapeHtml(emittedLabel)}</td></tr>`;

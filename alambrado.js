@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
-   Fazendas Da Bruna — Serviços de Alambrado
+   Wolf Agricultura e Pecuária — Serviços de Alambrado
    Cadastro, controle e relatório de serviços executados em cercas,
    porteiras, mangueiras e demais estruturas de alambrado.
    Carregado depois de eventos.js. Reaproveita helpers globais de app.js
