@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0702">
+  <meta name="description" content="Cartão digital de Bruna Castro, Zootecnista.">
+  <meta property="og:title" content="Bruna Castro | Zootecnista">
+  <meta property="og:description" content="Gestão técnica, compromisso e excelência no campo.">
+  <meta property="og:image" content="./assets/cartao-brunacastro-frente.png">
+  <title>Bruna Castro | Cartão Digital</title>
+  <style>
+    :root {
+      --gold: #f5d77f;
+      --gold-soft: rgba(245, 215, 127, 0.72);
+      --ink: #fff5d8;
+      --bg: #0b0702;
+      --line: rgba(245, 215, 127, 0.38);
+      --shadow: 0 30px 100px rgba(0, 0, 0, 0.62);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: clamp(12px, 3vw, 34px);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 75% 18%, rgba(185, 118, 34, 0.18), transparent 34%),
+        linear-gradient(135deg, #050301 0%, #140d05 48%, #070402 100%);
+      font-family: Arial, Helvetica, sans-serif;
+      overflow-x: hidden;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+      font: inherit;
+    }
+
+    .page {
+      width: min(100%, 1160px);
+      display: grid;
+      gap: 18px;
+      justify-items: center;
+    }
+
+    .card-shell {
+      width: min(100%, 1120px);
+      aspect-ratio: 16 / 9;
+      min-height: 190px;
+      max-height: min(74vh, 640px);
+      border-radius: clamp(10px, 1.8vw, 18px);
+      perspective: 1600px;
+      filter: drop-shadow(var(--shadow));
+    }
+
+    .card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      transform-style: preserve-3d;
+      transition: transform 720ms cubic-bezier(0.2, 0.78, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .card-shell.is-flipped .card {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: inherit;
+      backface-visibility: hidden;
+      background-color: #120b03;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+
+    .front {
+      background-image: url("./assets/cartao-brunacastro-frente.png");
+    }
+
+    .back {
+      transform: rotateY(180deg);
+      background-image: url("./assets/cartao-brunacastro-verso.png");
+    }
+
+    .hotspot {
+      position: absolute;
+      display: block;
+      border-radius: 18px;
+      outline-offset: 4px;
+    }
+
+    .hotspot:focus-visible {
+      outline: 2px solid var(--gold);
+    }
+
+    .hotspot-whatsapp {
+      left: 16.8%;
+      top: 22.1%;
+      width: 66.5%;
+      height: 26.5%;
+    }
+
+    .hotspot-email {
+      left: 16.8%;
+      top: 52.3%;
+      width: 66.5%;
+      height: 26.5%;
+    }
+
+    .tap-hint {
+      position: absolute;
+      right: clamp(12px, 2.4vw, 28px);
+      bottom: clamp(10px, 2vw, 22px);
+      z-index: 3;
+      padding: 8px 12px;
+      border: 1px solid rgba(245, 215, 127, 0.44);
+      border-radius: 999px;
+      color: var(--gold);
+      background: rgba(10, 6, 2, 0.42);
+      font-size: clamp(9px, 1.2vw, 11px);
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      line-height: 1.2;
+      text-transform: uppercase;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+    }
+
+    .toolbar {
+      width: min(100%, 900px);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .tool-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid rgba(245, 215, 127, 0.32);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(8, 5, 2, 0.66);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .tool-button:hover,
+    .tool-button:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(245, 215, 127, 0.72);
+      background: rgba(24, 16, 7, 0.88);
+      outline: none;
+    }
+
+    .tool-button svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2;
+    }
+
+    .status {
+      min-height: 18px;
+      margin: 0;
+      color: var(--gold-soft);
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    @media (max-width: 620px) {
+      body {
+        align-content: center;
+        padding: 10px;
+      }
+
+      .page {
+        gap: 14px;
+      }
+
+      .card-shell {
+        width: 100%;
+        min-height: auto;
+        max-height: none;
+      }
+
+      .tap-hint {
+        right: 10px;
+        bottom: 9px;
+        max-width: 52%;
+        padding: 7px 9px;
+        font-size: 8.5px;
+        letter-spacing: 0.08em;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+      }
+
+      .tool-button {
+        width: 100%;
+        min-height: 42px;
+        padding: 0 10px;
+        font-size: 10.5px;
+        letter-spacing: 0.06em;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card,
+      .tool-button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card-shell" id="cardShell" aria-label="Cartão digital de Bruna Castro">
+      <div class="card" id="businessCard" tabindex="0" role="button" aria-pressed="false" aria-label="Virar cartão digital">
+        <article class="face front" aria-label="Frente do cartão">
+          <span class="tap-hint">Toque para ver contatos</span>
+        </article>
+
+        <article class="face back" aria-label="Verso do cartão">
+          <a class="hotspot hotspot-whatsapp" id="whatsappLink" href="https://wa.me/555599627756" target="_blank" rel="noopener" aria-label="Abrir conversa no WhatsApp"></a>
+          <a class="hotspot hotspot-email" id="emailLink" href="mailto:zootecbruna@gmail.com" aria-label="Enviar e-mail"></a>
+        </article>
+      </div>
+    </section>
+
+    <div class="toolbar" aria-label="Ações do cartão">
+      <button class="tool-button" type="button" id="flipCard">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-9 9 8.7 8.7 0 0 1-5.8-2.2"></path><path d="M3 12a9 9 0 0 1 9-9 8.7 8.7 0 0 1 5.8 2.2"></path><path d="M18 2v4h-4"></path><path d="M6 22v-4h4"></path></svg>
+        Virar
+      </button>
+      <button class="tool-button" type="button" id="shareCard">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 10.7 6.8-4.4"></path><path d="m8.6 13.3 6.8 4.4"></path></svg>
+        Compartilhar
+      </button>
+      <button class="tool-button" type="button" id="copyLink">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        Copiar link
+      </button>
+      <button class="tool-button" type="button" id="saveContact">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z"></path><path d="M15 3v4h4"></path><path d="M9 15h6"></path><path d="M12 12v6"></path></svg>
+        Salvar contato
+      </button>
+    </div>
+
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </main>
+
+  <script>
+    const contact = {
+      brand: "Bruna Castro",
+      person: "Bruna Castro",
+      role: "Zootecnista",
+      whatsappPhone: "555599627756",
+      email: "zootecbruna@gmail.com",
+      whatsappMessage: "Olá, vim pelo cartão digital de Bruna Castro."
+    };
+
+    const cardShell = document.getElementById("cardShell");
+    const businessCard = document.getElementById("businessCard");
+    const status = document.getElementById("status");
+    const whatsappLink = document.getElementById("whatsappLink");
+    const emailLink = document.getElementById("emailLink");
+
+    function setStatus(message) {
+      status.textContent = message;
+      window.clearTimeout(setStatus.timer);
+      setStatus.timer = window.setTimeout(() => {
+        status.textContent = "";
+      }, 3200);
+    }
+
+    function isInteractiveElement(element) {
+      return Boolean(element.closest("a, button"));
+    }
+
+    function setFlipped(value) {
+      cardShell.classList.toggle("is-flipped", value);
+      businessCard.setAttribute("aria-pressed", String(value));
+    }
+
+    function toggleCard() {
+      setFlipped(!cardShell.classList.contains("is-flipped"));
+    }
+
+    async function copyCurrentLink() {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setStatus("Link copiado para compartilhar.");
+      } catch (error) {
+        setStatus("Copie o endereço do navegador para compartilhar.");
+      }
+    }
+
+    async function shareCard() {
+      const data = {
+        title: contact.person + " | " + contact.role,
+        text: "Cartão digital de " + contact.person + " - " + contact.role,
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share(data);
+          return;
+        } catch (error) {
+          if (error.name === "AbortError") return;
+        }
+      }
+
+      await copyCurrentLink();
+    }
+
+    function downloadVCard() {
+      const lines = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        "FN:" + contact.person,
+        "ORG:" + contact.brand,
+        "TITLE:" + contact.role,
+        "TEL;TYPE=CELL,VOICE:+" + contact.whatsappPhone,
+        "EMAIL;TYPE=INTERNET:" + contact.email,
+        "URL:" + window.location.href,
+        "END:VCARD"
+      ];
+
+      const blob = new Blob([lines.join("\n")], { type: "text/vcard;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "bruna-castro-zootecnista.vcf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setStatus("Contato pronto para salvar na agenda.");
+    }
+
+    whatsappLink.href = "https://wa.me/" + contact.whatsappPhone + "?text=" + encodeURIComponent(contact.whatsappMessage);
+    emailLink.href = "mailto:" + contact.email;
+
+    businessCard.addEventListener("click", (event) => {
+      if (isInteractiveElement(event.target)) return;
+      toggleCard();
+    });
+
+    businessCard.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleCard();
+      }
+
+      if (event.key === "Escape") {
+        setFlipped(false);
+      }
+    });
+
+    document.getElementById("flipCard").addEventListener("click", toggleCard);
+    document.getElementById("shareCard").addEventListener("click", shareCard);
+    document.getElementById("copyLink").addEventListener("click", copyCurrentLink);
+    document.getElementById("saveContact").addEventListener("click", downloadVCard);
+
+    if (window.location.hash === "#contatos") {
+      setFlipped(true);
+    }
+  </script>
+</body>
+</html>
