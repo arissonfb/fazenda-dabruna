@@ -500,6 +500,14 @@ body::before {
   font-size: 0.82rem;
 }
 
+.home-hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .home-hero-badge {
   display: flex;
   flex-direction: column;

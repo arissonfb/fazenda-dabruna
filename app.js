@@ -4385,9 +4385,12 @@ function renderHomeView() {
           <strong class="tech-credential-name">${TECHNICAL_MANAGER_NAME}</strong>
         </div>
       </div>
-      <div class="home-hero-badge">
-        <span class="home-hero-total">${formatInteger(totalAnimals)}</span>
-        <span class="home-hero-unit">animais</span>
+      <div class="home-hero-actions">
+        <button type="button" class="action-btn pdf" id="homeExecutivePdfBtn">Relatório Executivo</button>
+        <div class="home-hero-badge">
+          <span class="home-hero-total">${formatInteger(totalAnimals)}</span>
+          <span class="home-hero-unit">animais</span>
+        </div>
       </div>
     </div>
     <div class="home-module-grid">
@@ -4428,6 +4431,11 @@ function renderHomeView() {
       }
       render();
     });
+  });
+
+  document.getElementById("homeExecutivePdfBtn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    exportExecutivePdfReport();
   });
 }
 
@@ -11463,6 +11471,102 @@ async function appendFarmPdfSection(doc, farm, periodLabel, year, month) {
   appendChronologicalEvolutionPdfTable(doc, farm, year);
 }
 
+async function appendReproductionPdfSection(doc, farm, periodLabel, year, month) {
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  try {
+    const logoData = await loadLogoForPdf("#ffffff");
+    doc.addImage(logoData, "JPEG", margin, 8, 18, 18);
+  } catch (e) { /* ignore */ }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(45, 35, 25);
+  doc.text("Relatório de Reprodução", margin + 22, 14);
+  drawPdfTextSegments(doc, margin + 22, 22, [
+    { text: `Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: `, color: [87, 69, 52] },
+    { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] }
+  ], 10.5);
+
+  doc.setDrawColor(140, 80, 45);
+  doc.setLineWidth(0.6);
+  doc.line(margin, 27, pageW - margin, 27);
+
+  const repRecords = (farm.reproductionRecords || [])
+    .filter((r) => {
+      const d = r.date || "";
+      if (year !== "all" && !d.startsWith(year)) return false;
+      if (month !== "all" && d.slice(5, 7) !== String(month).padStart(2, "0")) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const stats = calcReproductionStats(repRecords);
+  const pendentes = repRecords.filter((r) => !r.verificationDate).length;
+  const taxaStr = stats.taxaSucesso != null ?`${stats.taxaSucesso.toFixed(1)}%` : "—";
+
+  const kpis = [
+    { label: "Total eventos", value: formatInteger(repRecords.length) },
+    { label: "Inseminações", value: formatInteger(stats.totalInseminacoes) },
+    { label: "Entouradas", value: formatInteger(stats.totalEntouradas) },
+    { label: "Prenhes", value: formatInteger(stats.totalPegou) },
+    { label: "Falhadas", value: formatInteger(stats.totalFalhou) },
+    { label: "Taxa prenhez", value: taxaStr },
+    { label: "Aguardando", value: formatInteger(pendentes) }
+  ];
+
+  const kpiW = (pageW - margin * 2 - 6 * kpis.length) / kpis.length;
+  kpis.forEach((kpi, i) => {
+    const x = margin + i * (kpiW + 6);
+    const y = 30;
+    doc.setFillColor(37, 88, 58);
+    doc.roundedRect(x, y, kpiW, 18, 2, 2, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(180, 210, 185);
+    doc.text(kpi.label, x + kpiW / 2, y + 5, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(248, 244, 236);
+    doc.text(kpi.value, x + kpiW / 2, y + 13, { align: "center" });
+  });
+
+  doc.autoTable({
+    startY: 52,
+    head: [["Código", "Data", "Tipo", "Categoria", "Qtd.", "Data Verif.", "Prenha", "Falhada", "% Prenhez", "Obs."]],
+    body: repRecords.length
+      ?repRecords.map((r) => {
+        const qty = Number(r.quantity || 0);
+        const pegou = r.quantityPegou != null ?formatInteger(r.quantityPegou) : "—";
+        const falhou = r.verificationDate && r.quantityPegou != null
+          ?formatInteger(Math.max(0, qty - Number(r.quantityPegou)))
+          : "—";
+        const taxa = r.verificationDate && r.quantityPegou != null && qty > 0
+          ?`${((Number(r.quantityPegou) / qty) * 100).toFixed(1)}%`
+          : "Aguardando";
+        return [
+          r.code || "—",
+          formatDate(r.date),
+          r.type === "inseminacao" ?"Inseminação" : "Entourada",
+          r.categoryName || "—",
+          formatInteger(qty),
+          r.verificationDate ?formatDate(r.verificationDate) : "Pendente",
+          pegou,
+          falhou,
+          taxa,
+          (r.notes || "").slice(0, 30)
+        ];
+      })
+      : [["—", "—", "—", "—", "—", "—", "—", "—", "Sem eventos no período", ""]],
+    theme: "striped",
+    headStyles: { fillColor: [43, 132, 184], fontSize: 8 },
+    styles: { fontSize: 8, cellPadding: 2 },
+    alternateRowStyles: { fillColor: [255, 247, 237] },
+    margin: { left: margin, right: margin }
+  });
+}
+
 async function exportReproducaoPdf() {
   if (!window.jspdf || typeof window.jspdf.jsPDF !== "function") {
     alert("A biblioteca de PDF não foi carregada. Verifique sua conexão e tente novamente.");
@@ -11513,99 +11617,7 @@ async function exportReproducaoPdf() {
       doc.addPage();
     }
 
-    // Header
-    try {
-      const logoData = await loadLogoForPdf("#ffffff");
-      doc.addImage(logoData, "JPEG", margin, 8, 18, 18);
-    } catch (e) { /* ignore */ }
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(45, 35, 25);
-    doc.text("Relatório de Reprodução", margin + 22, 14);
-    drawPdfTextSegments(doc, margin + 22, 22, [
-      { text: `Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: `, color: [87, 69, 52] },
-      { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] }
-    ], 10.5);
-
-    doc.setDrawColor(140, 80, 45);
-    doc.setLineWidth(0.6);
-    doc.line(margin, 27, pageW - margin, 27);
-
-    const repRecords = (farm.reproductionRecords || [])
-      .filter((r) => {
-        const d = r.date || "";
-        if (year !== "all" && !d.startsWith(year)) return false;
-        if (month !== "all" && d.slice(5, 7) !== String(month).padStart(2, "0")) return false;
-        return true;
-      })
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    const stats = calcReproductionStats(repRecords);
-    const pendentes = repRecords.filter((r) => !r.verificationDate).length;
-    const taxaStr = stats.taxaSucesso != null ?`${stats.taxaSucesso.toFixed(1)}%` : "—";
-
-    // KPI row
-    const kpis = [
-      { label: "Total eventos", value: formatInteger(repRecords.length) },
-      { label: "Inseminações", value: formatInteger(stats.totalInseminacoes) },
-      { label: "Entouradas", value: formatInteger(stats.totalEntouradas) },
-      { label: "Prenhes", value: formatInteger(stats.totalPegou) },
-      { label: "Falhadas", value: formatInteger(stats.totalFalhou) },
-      { label: "Taxa prenhez", value: taxaStr },
-      { label: "Aguardando", value: formatInteger(pendentes) }
-    ];
-
-    const kpiW = (pageW - margin * 2 - 6 * kpis.length) / kpis.length;
-    kpis.forEach((kpi, i) => {
-      const x = margin + i * (kpiW + 6);
-      const y = 30;
-      doc.setFillColor(37, 88, 58);
-      doc.roundedRect(x, y, kpiW, 18, 2, 2, "F");
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.5);
-      doc.setTextColor(180, 210, 185);
-      doc.text(kpi.label, x + kpiW / 2, y + 5, { align: "center" });
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(248, 244, 236);
-      doc.text(kpi.value, x + kpiW / 2, y + 13, { align: "center" });
-    });
-
-    // Events table
-    doc.autoTable({
-      startY: 52,
-      head: [["Código", "Data", "Tipo", "Categoria", "Qtd.", "Data Verif.", "Prenha", "Falhada", "% Prenhez", "Obs."]],
-      body: repRecords.length
-        ?repRecords.map((r) => {
-          const qty = Number(r.quantity || 0);
-          const pegou = r.quantityPegou != null ?formatInteger(r.quantityPegou) : "—";
-          const falhou = r.verificationDate && r.quantityPegou != null
-            ?formatInteger(Math.max(0, qty - Number(r.quantityPegou)))
-            : "—";
-          const taxa = r.verificationDate && r.quantityPegou != null && qty > 0
-            ?`${((Number(r.quantityPegou) / qty) * 100).toFixed(1)}%`
-            : "Aguardando";
-          return [
-            r.code || "—",
-            formatDate(r.date),
-            r.type === "inseminacao" ?"Inseminação" : "Entourada",
-            r.categoryName || "—",
-            formatInteger(qty),
-            r.verificationDate ?formatDate(r.verificationDate) : "Pendente",
-            pegou,
-            falhou,
-            taxa,
-            (r.notes || "").slice(0, 30)
-          ];
-        })
-        : [["—", "—", "—", "—", "—", "—", "—", "—", "Sem eventos no período", ""]],
-      theme: "striped",
-      headStyles: { fillColor: [43, 132, 184], fontSize: 8 },
-      styles: { fontSize: 8, cellPadding: 2 },
-      alternateRowStyles: { fillColor: [255, 247, 237] },
-      margin: { left: margin, right: margin }
-    });
+    await appendReproductionPdfSection(doc, farm, periodLabel, year, month);
 
     // Footer handled after all pages are assembled.
     /*
@@ -11971,6 +11983,62 @@ async function exportPdfReport(farmIds = [state.data.selectedFarmId], period = {
   addPdfFooters(doc, { coverPage: true });
 
   doc.save(getPdfFileName(farms, year, month));
+}
+
+// Full consolidated report: stock/comercial, sanitary and reproduction
+// sections for every card, scoped to the current farm selection (all farms
+// when "Todas as Fazendas" is active, otherwise just the selected farm).
+async function exportExecutivePdfReport() {
+  if (!window.jspdf || typeof window.jspdf.jsPDF !== "function") {
+    alert("A biblioteca de PDF não foi carregada. Verifique sua conexão e tente novamente.");
+    return;
+  }
+
+  const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
+  const farms = isTotalView ?getAllFarms() : [getFarm()].filter(Boolean);
+  if (!farms.length) {
+    alert("Nenhuma fazenda válida encontrada.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  if (typeof doc.autoTable !== "function") {
+    alert("O módulo de tabela do PDF não foi carregado. Verifique sua conexão e tente novamente.");
+    return;
+  }
+
+  const year = String(state.filters.year);
+  const month = state.filters.month;
+  const periodLabel = month === "all" ?`Ano de ${year}` : `${MONTH_NAMES[Number(month) - 1]} de ${year}`;
+  const periodSuffix = month === "all" ?year : `${year}-${month}`;
+
+  await appendPdfCoverPage(doc, farms, periodLabel, "Relatório Executivo");
+
+  if (farms.length > 1) {
+    doc.addPage();
+    appendConsolidatedPdfIntro(doc, farms, periodLabel, year, month);
+  }
+
+  for (const [index, farm] of farms.entries()) {
+    doc.addPage();
+    appendFarmDividerPage(doc, farm, periodLabel, year, month, index + 1, farms.length);
+
+    doc.addPage();
+    await appendFarmPdfSection(doc, farm, periodLabel, year, month);
+    await appendMovementPhotoPages(doc, farm, year, month);
+
+    doc.addPage();
+    await appendSanitaryPdfReport(doc, farm);
+
+    doc.addPage();
+    await appendReproductionPdfSection(doc, farm, periodLabel, year, month);
+  }
+
+  addPdfFooters(doc, { coverPage: true });
+
+  const farmSuffix = isTotalView ?"todas-fazendas" : slugify(farms[0]?.name || "");
+  doc.save(`relatorio-executivo-${farmSuffix}-${periodSuffix}.pdf`);
 }
 
 function cloneSeedData() {
