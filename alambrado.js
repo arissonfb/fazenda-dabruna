@@ -1768,6 +1768,6 @@ function seedAlambradoDemoRecords() {
 
 seedAlambradoDemoRecords();
 
-if (!isDemoExpired() && isAuthenticated()) {
+if (isAuthenticated()) {
   render();
 }

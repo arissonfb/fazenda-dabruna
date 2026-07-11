@@ -470,6 +470,21 @@ body::before {
   margin: 0 0 6px;
 }
 
+.home-hero-brand {
+  font-size: 0.86rem;
+  letter-spacing: 0.16em;
+  color: var(--sand-deep);
+}
+
+.tech-credential-compact {
+  margin-top: 10px;
+  padding: 6px 14px;
+}
+
+.tech-credential-compact .tech-credential-name {
+  font-size: 0.94rem;
+}
+
 .home-hero-title {
   margin: 0 0 6px;
   font-family: "Yrsa", serif;
@@ -1561,6 +1576,57 @@ body::before {
 .hero h1 {
   font-size: clamp(2.7rem, 4vw, 4.6rem);
   max-width: 11ch;
+}
+
+.brand-wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brand-wordmark .wm-main {
+  font-family: "Yrsa", serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: linear-gradient(135deg, #96692a 0%, #e8c874 42%, #96692a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-wordmark .wm-sub {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 0.94rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--sand-deep);
+}
+
+.tech-credential {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-top: 16px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.16), rgba(201, 168, 76, 0.05));
+  border: 1px solid rgba(201, 168, 76, 0.4);
+}
+
+.tech-credential-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.tech-credential-name {
+  font-family: "Yrsa", serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--sand-deep);
 }
 
 .hero-text {

@@ -4,7 +4,7 @@
    Reaproveita as globais já existentes: state, runtime, elements,
    saveData, render, formatInteger, formatCurrency, formatWeight,
    formatDate, formatMonthYear, escapeHtml, cloneDeep, slugify,
-   getAllFarms, getFarm, isAdmin, isAuthenticated, isDemoExpired,
+   getAllFarms, getFarm, isAdmin, isAuthenticated,
    logAuditEvent, drawChartFallback, loadLogoForPdf, Chart, jsPDF.
    ════════════════════════════════════════════════════════════════════ */
 
@@ -1490,6 +1490,6 @@ injectPastagensView();
    corretamente caso a sessão já esteja autenticada ao recarregar a
    página — boot() roda antes deste script terminar de aplicar os
    monkeypatches acima. */
-if (!isDemoExpired() && isAuthenticated()) {
+if (isAuthenticated()) {
   render();
 }

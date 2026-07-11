@@ -9,9 +9,11 @@ const MOBILE_APP_CONFIG = {
 };
 
 const FARM_CODE_PREFIXES = {
-  "fazenda-01": "F1",
-  "fazenda-02": "F2",
-  "fazenda-03": "F3",
+  "fazenda-remanso": "REM",
+  "fazenda-cerro-velho": "CVE",
+  "fazenda-sarandi": "SAR",
+  "fazenda-branquilho": "BRQ",
+  "fazenda-varzea": "VAR",
 };
 
 function getFarmCodePrefix(farmId) {
@@ -185,7 +187,7 @@ const ARAPEY_PRIMARY_GEO_KEYS = new Set([
   "prad 8"
 ]);
 const PDF_LOGO_PATH = "./assets/wolf-seal.jpg";
-const PDF_COVER_IMAGE_PATH = "./assets/wolf-banner-hero.png";
+const PDF_COVER_IMAGE_PATH = "./assets/wolf-bull-only.png";
 const TECHNICAL_MANAGER_NAME = "Bruna Castro";
 const MOVEMENT_PHOTO_TYPES = new Set(["compra", "venda", "morte", "consumo", "nascimento", "transferencia", "ajuste"]);
 const MAX_MOVEMENT_PHOTOS = 6;
@@ -196,7 +198,7 @@ const CLOUDINARY_UPLOAD_PRESET = "m6pymz4w";
 const BACKUP_DATE_KEY = "painelPecuarioBruna.lastBackup";
 const BACKUP_WARN_DAYS = 7;
 const DEFAULT_USERS = [
-  { id: "admin-bruna", login: "admin", role: "admin" },
+  { id: "admin-bruna", login: "Bruna Castro", role: "admin" },
   { id: "user-bruna", login: "demo", role: "usuario" }
 ];
 
@@ -776,1625 +778,90 @@ const seedData = {
     users: DEFAULT_USERS.map((user) => ({ ...user }))
   },
   farms: {
-    "fazenda-01": {
-      id: "fazenda-01",
-      name: "Fazenda 01",
-      declaredTotal: 14200,
-      note: "Estrutura pronta para receber o inventario inicial e futuras mudancas de manejo.",
+    "fazenda-remanso": {
+      id: "fazenda-remanso",
+      name: "Fazenda Remanso",
+      declaredTotal: 0,
+      note: "",
       importedBaselineVersion: 0,
-      sanitaryProducts: [
-        "Vacina aftosa",
-        "Vermífugo",
-        "Ivermectina"
-      ],
-      potreiros: [
-        {
-          id: "f1-potreiro-1",
-          name: "Potreiro 1",
-          quantity: 0
-        },
-        {
-          id: "f1-potreiro-2",
-          name: "Potreiro 2",
-          quantity: 0
-        },
-        {
-          id: "f1-potreiro-3",
-          name: "Potreiro 3",
-          quantity: 0
-        },
-        {
-          id: "f1-potreiro-4",
-          name: "Potreiro 4",
-          quantity: 0
-        },
-        {
-          id: "f1-potreiro-5",
-          name: "Potreiro 5",
-          quantity: 0
-        },
-        {
-          id: "f1-potreiro-6",
-          name: "Potreiro 6",
-          quantity: 0
-        }
-      ],
-      categories: [
-        {
-          id: "vacas-cria",
-          name: "Vacas de cria",
-          quantity: 1850,
-          allocation: {
-            "f1-potreiro-1": 313,
-            "f1-potreiro-2": 250,
-            "f1-potreiro-3": 375,
-            "f1-potreiro-4": 107,
-            "f1-potreiro-5": 447,
-            "f1-potreiro-6": 197,
-            __unallocated__: 161
-          }
-        },
-        {
-          id: "terneiros-machos",
-          name: "Terneiros 1 a 2 anos - machos",
-          quantity: 1700,
-          allocation: {
-            "f1-potreiro-1": 287,
-            "f1-potreiro-2": 230,
-            "f1-potreiro-3": 345,
-            "f1-potreiro-4": 98,
-            "f1-potreiro-5": 411,
-            "f1-potreiro-6": 181,
-            __unallocated__: 148
-          }
-        },
-        {
-          id: "terneiros-femeas",
-          name: "Terneiros 1 a 2 anos - fêmeas",
-          quantity: 1680,
-          allocation: {
-            "f1-potreiro-1": 284,
-            "f1-potreiro-2": 227,
-            "f1-potreiro-3": 341,
-            "f1-potreiro-4": 97,
-            "f1-potreiro-5": 406,
-            "f1-potreiro-6": 179,
-            __unallocated__: 146
-          }
-        },
-        {
-          id: "bois-abate",
-          name: "Bois de abate",
-          quantity: 2200,
-          allocation: {
-            "f1-potreiro-1": 372,
-            "f1-potreiro-2": 298,
-            "f1-potreiro-3": 446,
-            "f1-potreiro-4": 128,
-            "f1-potreiro-5": 531,
-            "f1-potreiro-6": 234,
-            __unallocated__: 191
-          }
-        },
-        {
-          id: "novilhas-entouradas",
-          name: "Novilhas entouradas",
-          quantity: 1900,
-          allocation: {
-            "f1-potreiro-1": 321,
-            "f1-potreiro-2": 257,
-            "f1-potreiro-3": 386,
-            "f1-potreiro-4": 110,
-            "f1-potreiro-5": 459,
-            "f1-potreiro-6": 202,
-            __unallocated__: 165
-          }
-        },
-        {
-          id: "touros",
-          name: "Touros",
-          quantity: 1750,
-          allocation: {
-            "f1-potreiro-1": 296,
-            "f1-potreiro-2": 237,
-            "f1-potreiro-3": 355,
-            "f1-potreiro-4": 101,
-            "f1-potreiro-5": 423,
-            "f1-potreiro-6": 186,
-            __unallocated__: 152
-          }
-        },
-        {
-          id: "vacas-invernar",
-          name: "Vacas de invernar",
-          quantity: 1500,
-          allocation: {
-            "f1-potreiro-1": 254,
-            "f1-potreiro-2": 203,
-            "f1-potreiro-3": 304,
-            "f1-potreiro-4": 87,
-            "f1-potreiro-5": 362,
-            "f1-potreiro-6": 159,
-            __unallocated__: 131
-          }
-        },
-        {
-          id: "vacas-entouradas",
-          name: "Vacas entouradas",
-          quantity: 1620,
-          allocation: {
-            "f1-potreiro-1": 274,
-            "f1-potreiro-2": 219,
-            "f1-potreiro-3": 329,
-            "f1-potreiro-4": 94,
-            "f1-potreiro-5": 391,
-            "f1-potreiro-6": 172,
-            __unallocated__: 141
-          }
-        }
-      ],
-      movements: [
-        {
-          id: "seed-mov-f1-01",
-          code: "F100001",
-          type: "consumo",
-          date: "2026-02-10",
-          categoryId: "bois-abate",
-          categoryName: "Bois de abate",
-          quantity: 10,
-          delta: -10,
-          value: 0,
-          saleDetails: null,
-          notes: "Abate para consumo interno na sede da fazenda",
-          potreiro: "f1-potreiro-1",
-          sourceId: "",
-          photos: []
-        },
-        {
-          id: "seed-mov-f1-02",
-          code: "F100002",
-          type: "morte",
-          date: "2026-03-22",
-          categoryId: "terneiros-femeas",
-          categoryName: "Terneiros 1 a 2 anos - fêmeas",
-          quantity: 3,
-          delta: -3,
-          value: 0,
-          saleDetails: null,
-          notes: "Pneumonia detectada tardiamente, tratamento iniciado sem sucesso",
-          potreiro: "f1-potreiro-4",
-          sourceId: "",
-          cause: "doenca",
-          customCause: "",
-          photos: []
-        },
-        {
-          id: "seed-mov-f1-03",
-          code: "F100003",
-          type: "consumo",
-          date: "2026-04-18",
-          categoryId: "vacas-invernar",
-          categoryName: "Vacas de invernar",
-          quantity: 6,
-          delta: -6,
-          value: 0,
-          saleDetails: null,
-          notes: "Consumo em evento de confraternização com a equipe",
-          potreiro: "f1-potreiro-2",
-          sourceId: "",
-          photos: []
-        }
-      ],
+      sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
+      potreiros: [],
+      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      movements: [],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
       reproductionCodeSequence: 0,
-      ovinos: [
-        {
-          id: "ovino-0001",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 220
-        },
-        {
-          id: "ovino-0002",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 180
-        },
-        {
-          id: "ovino-0003",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 150
-        },
-        {
-          id: "ovino-0004",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Texel",
-          breedOther: "",
-          quantity: 100
-        },
-        {
-          id: "ovino-0005",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Outra",
-          breedOther: "Dorper",
-          quantity: 50
-        },
-        {
-          id: "ovino-0006",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 110
-        },
-        {
-          id: "ovino-0007",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 90
-        },
-        {
-          id: "ovino-0008",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 60
-        },
-        {
-          id: "ovino-0009",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Texel",
-          breedOther: "",
-          quantity: 40
-        },
-        {
-          id: "ovino-0010",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 90
-        },
-        {
-          id: "ovino-0011",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 70
-        },
-        {
-          id: "ovino-0012",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 40
-        },
-        {
-          id: "ovino-0013",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 40
-        },
-        {
-          id: "ovino-0014",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 30
-        },
-        {
-          id: "ovino-0015",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 20
-        },
-        {
-          id: "ovino-0016",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Texel",
-          breedOther: "",
-          quantity: 10
-        }
-      ],
-      pastureAreas: [
-        {
-          id: "pasture-0017",
-          name: "Potreiro 4",
-          potreiroId: "f1-potreiro-4",
-          sizeHa: 12,
-          culture: "azevem",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-04-15",
-          status: "manejo",
-          procedures: [
-            {
-              id: "proc-0018",
-              date: "2026-04-15",
-              type: "preparo-solo",
-              customType: "",
-              description: "Preparo de solo para implantação do azevém",
-              responsible: "Equipe própria",
-              areaHa: 12,
-              quantity: 12,
-              unit: "hectare",
-              unitValue: 300,
-              totalValue: 3600,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0019",
-              date: "2026-04-22",
-              type: "semeadura",
-              customType: "",
-              description: "Semeadura de azevém",
-              responsible: "Carlos Silva",
-              areaHa: 12,
-              quantity: 12,
-              unit: "hectare",
-              unitValue: 250,
-              totalValue: 3000,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0020",
-              date: "2026-05-10",
-              type: "aplicacao-adubo-calcario",
-              customType: "",
-              description: "Adubação de cobertura",
-              responsible: "Equipe própria",
-              areaHa: 12,
-              quantity: 6,
-              unit: "saco",
-              unitValue: 400,
-              totalValue: 2400,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0021",
-          name: "Potreiro 1",
-          potreiroId: "f1-potreiro-1",
-          sizeHa: 35,
-          culture: "braquiaria",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-05-01",
-          status: "implantacao",
-          procedures: [
-            {
-              id: "proc-0022",
-              date: "2026-05-01",
-              type: "nivelamento",
-              customType: "",
-              description: "Nivelamento da área para plantio",
-              responsible: "Terraplanagem Bravo",
-              areaHa: 35,
-              quantity: 35,
-              unit: "hectare",
-              unitValue: 180,
-              totalValue: 6300,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0023",
-              date: "2026-05-10",
-              type: "plantio-aviao",
-              customType: "",
-              description: "Plantio aéreo de braquiária",
-              responsible: "Aviação Sul",
-              areaHa: 35,
-              quantity: 35,
-              unit: "hectare",
-              unitValue: 220,
-              totalValue: 7700,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0024",
-              date: "2026-05-12",
-              type: "combustivel",
-              customType: "",
-              description: "Combustível para maquinário",
-              responsible: "Equipe própria",
-              areaHa: 35,
-              quantity: 150,
-              unit: "litro",
-              unitValue: 6.2,
-              totalValue: 930,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0025",
-          name: "Potreiro 3",
-          potreiroId: "f1-potreiro-3",
-          sizeHa: 42,
-          culture: "milheto",
-          customCulture: "",
-          season: "2024/2025",
-          startDate: "2026-01-10",
-          status: "finalizada",
-          procedures: [
-            {
-              id: "proc-0026",
-              date: "2026-01-10",
-              type: "preparo-solo",
-              customType: "",
-              description: "Preparo de solo para milheto",
-              responsible: "Equipe própria",
-              areaHa: 42,
-              quantity: 42,
-              unit: "hectare",
-              unitValue: 280,
-              totalValue: 11760,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0027",
-              date: "2026-01-18",
-              type: "semeadura",
-              customType: "",
-              description: "Semeadura de milheto",
-              responsible: "Carlos Silva",
-              areaHa: 42,
-              quantity: 42,
-              unit: "hectare",
-              unitValue: 200,
-              totalValue: 8400,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0028",
-              date: "2026-02-05",
-              type: "pulverizacao",
-              customType: "",
-              description: "Pulverização contra plantas daninhas",
-              responsible: "AgroDrone",
-              areaHa: 42,
-              quantity: 42,
-              unit: "hectare",
-              unitValue: 90,
-              totalValue: 3780,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0029",
-              date: "2026-02-20",
-              type: "mao-obra",
-              customType: "",
-              description: "Mão de obra para manutenção",
-              responsible: "Equipe própria",
-              areaHa: 42,
-              quantity: 8,
-              unit: "diaria",
-              unitValue: 180,
-              totalValue: 1440,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0030",
-          name: "Potreiro 5",
-          potreiroId: "f1-potreiro-5",
-          sizeHa: 50,
-          culture: "campo-nativo-melhorado",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-07-01",
-          status: "planejada",
-          procedures: []
-        }
-      ]
+      ovinos: [],
+      pastureAreas: []
     },
-    "fazenda-02": {
-      id: "fazenda-02",
-      name: "Fazenda 02",
-      declaredTotal: 13040,
-      note: "Estrutura pronta para receber o inventario inicial e futuras mudancas de manejo.",
+    "fazenda-cerro-velho": {
+      id: "fazenda-cerro-velho",
+      name: "Fazenda Cerro Velho",
+      declaredTotal: 0,
+      note: "",
       importedBaselineVersion: 0,
-      sanitaryProducts: [
-        "Vacina aftosa",
-        "Vermífugo",
-        "Ivermectina"
-      ],
-      potreiros: [
-        {
-          id: "f2-potreiro-1",
-          name: "Potreiro 1",
-          quantity: 0
-        },
-        {
-          id: "f2-potreiro-2",
-          name: "Potreiro 2",
-          quantity: 0
-        },
-        {
-          id: "f2-potreiro-3",
-          name: "Potreiro 3",
-          quantity: 0
-        },
-        {
-          id: "f2-potreiro-4",
-          name: "Potreiro 4",
-          quantity: 0
-        },
-        {
-          id: "f2-potreiro-5",
-          name: "Potreiro 5",
-          quantity: 0
-        }
-      ],
-      categories: [
-        {
-          id: "vacas-cria",
-          name: "Vacas de cria",
-          quantity: 1620,
-          allocation: {
-            "f2-potreiro-1": 286,
-            "f2-potreiro-2": 429,
-            "f2-potreiro-3": 172,
-            "f2-potreiro-4": 362,
-            "f2-potreiro-5": 238,
-            __unallocated__: 133
-          }
-        },
-        {
-          id: "terneiros-machos",
-          name: "Terneiros 1 a 2 anos - machos",
-          quantity: 1750,
-          allocation: {
-            "f2-potreiro-1": 309,
-            "f2-potreiro-2": 463,
-            "f2-potreiro-3": 185,
-            "f2-potreiro-4": 391,
-            "f2-potreiro-5": 258,
-            __unallocated__: 144
-          }
-        },
-        {
-          id: "terneiros-femeas",
-          name: "Terneiros 1 a 2 anos - fêmeas",
-          quantity: 1640,
-          allocation: {
-            "f2-potreiro-1": 289,
-            "f2-potreiro-2": 434,
-            "f2-potreiro-3": 174,
-            "f2-potreiro-4": 367,
-            "f2-potreiro-5": 241,
-            __unallocated__: 135
-          }
-        },
-        {
-          id: "bois-abate",
-          name: "Bois de abate",
-          quantity: 1500,
-          allocation: {
-            "f2-potreiro-1": 265,
-            "f2-potreiro-2": 397,
-            "f2-potreiro-3": 159,
-            "f2-potreiro-4": 335,
-            "f2-potreiro-5": 221,
-            __unallocated__: 123
-          }
-        },
-        {
-          id: "novilhas-entouradas",
-          name: "Novilhas entouradas",
-          quantity: 1450,
-          allocation: {
-            "f2-potreiro-1": 256,
-            "f2-potreiro-2": 384,
-            "f2-potreiro-3": 154,
-            "f2-potreiro-4": 324,
-            "f2-potreiro-5": 213,
-            __unallocated__: 119
-          }
-        },
-        {
-          id: "touros",
-          name: "Touros",
-          quantity: 1600,
-          allocation: {
-            "f2-potreiro-1": 282,
-            "f2-potreiro-2": 424,
-            "f2-potreiro-3": 169,
-            "f2-potreiro-4": 358,
-            "f2-potreiro-5": 235,
-            __unallocated__: 132
-          }
-        },
-        {
-          id: "vacas-invernar",
-          name: "Vacas de invernar",
-          quantity: 1800,
-          allocation: {
-            "f2-potreiro-1": 318,
-            "f2-potreiro-2": 476,
-            "f2-potreiro-3": 191,
-            "f2-potreiro-4": 402,
-            "f2-potreiro-5": 265,
-            __unallocated__: 148
-          }
-        },
-        {
-          id: "vacas-entouradas",
-          name: "Vacas entouradas",
-          quantity: 1680,
-          allocation: {
-            "f2-potreiro-1": 296,
-            "f2-potreiro-2": 445,
-            "f2-potreiro-3": 178,
-            "f2-potreiro-4": 376,
-            "f2-potreiro-5": 247,
-            __unallocated__: 138
-          }
-        }
-      ],
-      movements: [
-        {
-          id: "seed-mov-f2-01",
-          code: "F200001",
-          type: "morte",
-          date: "2026-01-30",
-          categoryId: "novilhas-entouradas",
-          categoryName: "Novilhas entouradas",
-          quantity: 4,
-          delta: -4,
-          value: 0,
-          saleDetails: null,
-          notes: "Indícios de ataque de predador próximo à mata ciliar",
-          potreiro: "f2-potreiro-3",
-          sourceId: "",
-          cause: "predador",
-          customCause: "",
-          photos: []
-        },
-        {
-          id: "seed-mov-f2-02",
-          code: "F200002",
-          type: "consumo",
-          date: "2026-02-25",
-          categoryId: "bois-abate",
-          categoryName: "Bois de abate",
-          quantity: 12,
-          delta: -12,
-          value: 0,
-          saleDetails: null,
-          notes: "Abate programado para consumo interno",
-          potreiro: "f2-potreiro-1",
-          sourceId: "",
-          photos: []
-        },
-        {
-          id: "seed-mov-f2-03",
-          code: "F200003",
-          type: "consumo",
-          date: "2026-05-08",
-          categoryId: "vacas-entouradas",
-          categoryName: "Vacas entouradas",
-          quantity: 5,
-          delta: -5,
-          value: 0,
-          saleDetails: null,
-          notes: "Consumo em evento com colaboradores",
-          potreiro: "f2-potreiro-4",
-          sourceId: "",
-          photos: []
-        }
-      ],
+      sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
+      potreiros: [],
+      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      movements: [],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
       reproductionCodeSequence: 0,
-      ovinos: [
-        {
-          id: "ovino-0031",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 150
-        },
-        {
-          id: "ovino-0032",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 120
-        },
-        {
-          id: "ovino-0033",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 100
-        },
-        {
-          id: "ovino-0034",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Texel",
-          breedOther: "",
-          quantity: 80
-        },
-        {
-          id: "ovino-0035",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 80
-        },
-        {
-          id: "ovino-0036",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 70
-        },
-        {
-          id: "ovino-0037",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 50
-        },
-        {
-          id: "ovino-0038",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 80
-        },
-        {
-          id: "ovino-0039",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 60
-        },
-        {
-          id: "ovino-0040",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Texel",
-          breedOther: "",
-          quantity: 40
-        },
-        {
-          id: "ovino-0041",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 20
-        },
-        {
-          id: "ovino-0042",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 35
-        },
-        {
-          id: "ovino-0043",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 25
-        },
-        {
-          id: "ovino-0044",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 20
-        },
-        {
-          id: "ovino-0045",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Texel",
-          breedOther: "",
-          quantity: 20
-        }
-      ],
-      pastureAreas: [
-        {
-          id: "pasture-0046",
-          name: "Potreiro 2",
-          potreiroId: "f2-potreiro-2",
-          sizeHa: 45,
-          culture: "sorgo",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-03-01",
-          status: "manejo",
-          procedures: [
-            {
-              id: "proc-0047",
-              date: "2026-03-01",
-              type: "preparo-solo",
-              customType: "",
-              description: "Preparo de solo para sorgo forrageiro",
-              responsible: "Equipe própria",
-              areaHa: 45,
-              quantity: 45,
-              unit: "hectare",
-              unitValue: 270,
-              totalValue: 12150,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0048",
-              date: "2026-03-08",
-              type: "semeadura",
-              customType: "",
-              description: "Semeadura de sorgo",
-              responsible: "Carlos Silva",
-              areaHa: 45,
-              quantity: 45,
-              unit: "hectare",
-              unitValue: 210,
-              totalValue: 9450,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0049",
-              date: "2026-03-25",
-              type: "irrigacao",
-              customType: "",
-              description: "Irrigação de apoio",
-              responsible: "Equipe própria",
-              areaHa: 45,
-              quantity: 20,
-              unit: "hora-maquina",
-              unitValue: 350,
-              totalValue: 7000,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0050",
-              date: "2026-04-10",
-              type: "aplicacao-ureia",
-              customType: "",
-              description: "Aplicação de ureia em cobertura",
-              responsible: "Equipe própria",
-              areaHa: 45,
-              quantity: 9,
-              unit: "saco",
-              unitValue: 380,
-              totalValue: 3420,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0051",
-          name: "Potreiro 4",
-          potreiroId: "f2-potreiro-4",
-          sizeHa: 38,
-          culture: "aveia",
-          customCulture: "",
-          season: "2024/2025",
-          startDate: "2026-01-05",
-          status: "finalizada",
-          procedures: [
-            {
-              id: "proc-0052",
-              date: "2026-01-05",
-              type: "nivelamento",
-              customType: "",
-              description: "Nivelamento com grade niveladora",
-              responsible: "Terraplanagem Bravo",
-              areaHa: 38,
-              quantity: 38,
-              unit: "hectare",
-              unitValue: 175,
-              totalValue: 6650,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0053",
-              date: "2026-01-13",
-              type: "semeadura",
-              customType: "",
-              description: "Semeadura de aveia",
-              responsible: "Carlos Silva",
-              areaHa: 38,
-              quantity: 38,
-              unit: "hectare",
-              unitValue: 195,
-              totalValue: 7410,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0054",
-              date: "2026-01-25",
-              type: "pulverizacao",
-              customType: "",
-              description: "Pulverização preventiva",
-              responsible: "AgroDrone",
-              areaHa: 38,
-              quantity: 38,
-              unit: "hectare",
-              unitValue: 85,
-              totalValue: 3230,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0055",
-              date: "2026-02-10",
-              type: "terceirizacao",
-              customType: "",
-              description: "Colheita terceirizada",
-              responsible: "Agro Serviços RS",
-              areaHa: 38,
-              quantity: 1,
-              unit: "unidade",
-              unitValue: 4200,
-              totalValue: 4200,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0056",
-          name: "Potreiro 1",
-          potreiroId: "f2-potreiro-1",
-          sizeHa: 30,
-          culture: "tifton",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-04-12",
-          status: "implantacao",
-          procedures: [
-            {
-              id: "proc-0057",
-              date: "2026-04-12",
-              type: "implementacao-maquinario",
-              customType: "",
-              description: "Implantação mecanizada de tifton",
-              responsible: "Equipe própria",
-              areaHa: 30,
-              quantity: 30,
-              unit: "hectare",
-              unitValue: 320,
-              totalValue: 9600,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0058",
-              date: "2026-04-20",
-              type: "plantio-aviao",
-              customType: "",
-              description: "Plantio aéreo complementar",
-              responsible: "Aviação Sul",
-              areaHa: 30,
-              quantity: 30,
-              unit: "hectare",
-              unitValue: 230,
-              totalValue: 6900,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0059",
-              date: "2026-05-15",
-              type: "replantio",
-              customType: "",
-              description: "Replantio de falhas",
-              responsible: "Equipe própria",
-              areaHa: 5,
-              quantity: 5,
-              unit: "hectare",
-              unitValue: 230,
-              totalValue: 1150,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0060",
-              date: "2026-05-20",
-              type: "mao-obra",
-              customType: "",
-              description: "Mão de obra geral",
-              responsible: "Equipe própria",
-              areaHa: 30,
-              quantity: 6,
-              unit: "diaria",
-              unitValue: 175,
-              totalValue: 1050,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0061",
-          name: "Potreiro 5",
-          potreiroId: "f2-potreiro-5",
-          sizeHa: 25,
-          culture: "milho",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-07-15",
-          status: "planejada",
-          procedures: []
-        }
-      ]
+      ovinos: [],
+      pastureAreas: []
     },
-    "fazenda-03": {
-      id: "fazenda-03",
-      name: "Fazenda 03",
-      declaredTotal: 12760,
-      note: "Estrutura pronta para receber o inventario inicial e futuras mudancas de manejo.",
+    "fazenda-sarandi": {
+      id: "fazenda-sarandi",
+      name: "Fazenda Sarandi",
+      declaredTotal: 0,
+      note: "",
       importedBaselineVersion: 0,
-      sanitaryProducts: [
-        "Vacina aftosa",
-        "Vermífugo",
-        "Ivermectina"
-      ],
-      potreiros: [
-        {
-          id: "f3-potreiro-1",
-          name: "Potreiro 1",
-          quantity: 0
-        },
-        {
-          id: "f3-potreiro-2",
-          name: "Potreiro 2",
-          quantity: 0
-        },
-        {
-          id: "f3-potreiro-3",
-          name: "Potreiro 3",
-          quantity: 0
-        },
-        {
-          id: "f3-potreiro-4",
-          name: "Potreiro 4",
-          quantity: 0
-        },
-        {
-          id: "f3-potreiro-5",
-          name: "Potreiro 5",
-          quantity: 0
-        }
-      ],
-      categories: [
-        {
-          id: "vacas-cria",
-          name: "Vacas de cria",
-          quantity: 1530,
-          allocation: {
-            "f3-potreiro-1": 364,
-            "f3-potreiro-2": 301,
-            "f3-potreiro-3": 137,
-            "f3-potreiro-4": 437,
-            "f3-potreiro-5": 182,
-            __unallocated__: 109
-          }
-        },
-        {
-          id: "terneiros-machos",
-          name: "Terneiros 1 a 2 anos - machos",
-          quantity: 1550,
-          allocation: {
-            "f3-potreiro-1": 369,
-            "f3-potreiro-2": 304,
-            "f3-potreiro-3": 138,
-            "f3-potreiro-4": 443,
-            "f3-potreiro-5": 185,
-            __unallocated__: 111
-          }
-        },
-        {
-          id: "terneiros-femeas",
-          name: "Terneiros 1 a 2 anos - fêmeas",
-          quantity: 1680,
-          allocation: {
-            "f3-potreiro-1": 400,
-            "f3-potreiro-2": 330,
-            "f3-potreiro-3": 150,
-            "f3-potreiro-4": 480,
-            "f3-potreiro-5": 200,
-            __unallocated__: 120
-          }
-        },
-        {
-          id: "bois-abate",
-          name: "Bois de abate",
-          quantity: 1300,
-          allocation: {
-            "f3-potreiro-1": 310,
-            "f3-potreiro-2": 255,
-            "f3-potreiro-3": 116,
-            "f3-potreiro-4": 371,
-            "f3-potreiro-5": 155,
-            __unallocated__: 93
-          }
-        },
-        {
-          id: "novilhas-entouradas",
-          name: "Novilhas entouradas",
-          quantity: 1650,
-          allocation: {
-            "f3-potreiro-1": 393,
-            "f3-potreiro-2": 324,
-            "f3-potreiro-3": 147,
-            "f3-potreiro-4": 472,
-            "f3-potreiro-5": 196,
-            __unallocated__: 118
-          }
-        },
-        {
-          id: "touros",
-          name: "Touros",
-          quantity: 1650,
-          allocation: {
-            "f3-potreiro-1": 393,
-            "f3-potreiro-2": 324,
-            "f3-potreiro-3": 147,
-            "f3-potreiro-4": 472,
-            "f3-potreiro-5": 196,
-            __unallocated__: 118
-          }
-        },
-        {
-          id: "vacas-invernar",
-          name: "Vacas de invernar",
-          quantity: 1700,
-          allocation: {
-            "f3-potreiro-1": 405,
-            "f3-potreiro-2": 334,
-            "f3-potreiro-3": 152,
-            "f3-potreiro-4": 486,
-            "f3-potreiro-5": 202,
-            __unallocated__: 121
-          }
-        },
-        {
-          id: "vacas-entouradas",
-          name: "Vacas entouradas",
-          quantity: 1700,
-          allocation: {
-            "f3-potreiro-1": 405,
-            "f3-potreiro-2": 334,
-            "f3-potreiro-3": 152,
-            "f3-potreiro-4": 486,
-            "f3-potreiro-5": 202,
-            __unallocated__: 121
-          }
-        }
-      ],
-      movements: [
-        {
-          id: "seed-mov-f3-01",
-          code: "F300001",
-          type: "consumo",
-          date: "2026-01-20",
-          categoryId: "bois-abate",
-          categoryName: "Bois de abate",
-          quantity: 9,
-          delta: -9,
-          value: 0,
-          saleDetails: null,
-          notes: "Abate para consumo interno da equipe",
-          potreiro: "f3-potreiro-2",
-          sourceId: "",
-          photos: []
-        },
-        {
-          id: "seed-mov-f3-02",
-          code: "F300002",
-          type: "morte",
-          date: "2026-04-05",
-          categoryId: "vacas-cria",
-          categoryName: "Vacas de cria",
-          quantity: 2,
-          delta: -2,
-          value: 0,
-          saleDetails: null,
-          notes: "Animal encontrado após forte tempestade com queda de granizo",
-          potreiro: "f3-potreiro-5",
-          sourceId: "",
-          cause: "clima",
-          customCause: "",
-          photos: []
-        },
-        {
-          id: "seed-mov-f3-03",
-          code: "F300003",
-          type: "consumo",
-          date: "2026-05-15",
-          categoryId: "touros",
-          categoryName: "Touros",
-          quantity: 4,
-          delta: -4,
-          value: 0,
-          saleDetails: null,
-          notes: "Consumo em evento institucional",
-          potreiro: "f3-potreiro-4",
-          sourceId: "",
-          photos: []
-        }
-      ],
+      sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
+      potreiros: [],
+      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      movements: [],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
       reproductionCodeSequence: 0,
-      ovinos: [
-        {
-          id: "ovino-0062",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 100
-        },
-        {
-          id: "ovino-0063",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 90
-        },
-        {
-          id: "ovino-0064",
-          categoryId: "ovelha",
-          categoryName: "Ovelha",
-          breedType: "Merino",
-          breedOther: "",
-          quantity: 60
-        },
-        {
-          id: "ovino-0065",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 70
-        },
-        {
-          id: "ovino-0066",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 60
-        },
-        {
-          id: "ovino-0067",
-          categoryId: "cordeiro",
-          categoryName: "Cordeiro",
-          breedType: "Outra",
-          breedOther: "Romney Marsh",
-          quantity: 70
-        },
-        {
-          id: "ovino-0068",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 70
-        },
-        {
-          id: "ovino-0069",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 50
-        },
-        {
-          id: "ovino-0070",
-          categoryId: "borrego",
-          categoryName: "Borrego",
-          breedType: "Outra",
-          breedOther: "Suffolk",
-          quantity: 80
-        },
-        {
-          id: "ovino-0071",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Corriedale",
-          breedOther: "",
-          quantity: 30
-        },
-        {
-          id: "ovino-0072",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Ideal",
-          breedOther: "",
-          quantity: 30
-        },
-        {
-          id: "ovino-0073",
-          categoryId: "carneiro",
-          categoryName: "Carneiro",
-          breedType: "Outra",
-          breedOther: "Dorper",
-          quantity: 40
-        }
-      ],
-      pastureAreas: [
-        {
-          id: "pasture-0074",
-          name: "Potreiro 1",
-          potreiroId: "f3-potreiro-1",
-          sizeHa: 40,
-          culture: "braquiaria",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-03-20",
-          status: "manejo",
-          procedures: [
-            {
-              id: "proc-0075",
-              date: "2026-03-20",
-              type: "preparo-solo",
-              customType: "",
-              description: "Preparo de solo para braquiária",
-              responsible: "Equipe própria",
-              areaHa: 40,
-              quantity: 40,
-              unit: "hectare",
-              unitValue: 260,
-              totalValue: 10400,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0076",
-              date: "2026-03-28",
-              type: "semeadura",
-              customType: "",
-              description: "Semeadura de braquiária",
-              responsible: "Carlos Silva",
-              areaHa: 40,
-              quantity: 40,
-              unit: "hectare",
-              unitValue: 190,
-              totalValue: 7600,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0077",
-              date: "2026-04-15",
-              type: "aplicacao-adubo-calcario",
-              customType: "",
-              description: "Calagem e adubação",
-              responsible: "Equipe própria",
-              areaHa: 40,
-              quantity: 10,
-              unit: "saco",
-              unitValue: 410,
-              totalValue: 4100,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0078",
-              date: "2026-04-18",
-              type: "combustivel",
-              customType: "",
-              description: "Combustível para tratores",
-              responsible: "Equipe própria",
-              areaHa: 40,
-              quantity: 200,
-              unit: "litro",
-              unitValue: 6.1,
-              totalValue: 1220,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0079",
-          name: "Potreiro 4",
-          potreiroId: "f3-potreiro-4",
-          sizeHa: 48,
-          culture: "campo-nativo-melhorado",
-          customCulture: "",
-          season: "2024/2025",
-          startDate: "2026-01-08",
-          status: "finalizada",
-          procedures: [
-            {
-              id: "proc-0080",
-              date: "2026-01-08",
-              type: "nivelamento",
-              customType: "",
-              description: "Nivelamento de área degradada",
-              responsible: "Terraplanagem Bravo",
-              areaHa: 48,
-              quantity: 48,
-              unit: "hectare",
-              unitValue: 165,
-              totalValue: 7920,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0081",
-              date: "2026-01-20",
-              type: "mao-obra",
-              customType: "",
-              description: "Mão de obra para limpeza e manejo",
-              responsible: "Equipe própria",
-              areaHa: 48,
-              quantity: 12,
-              unit: "diaria",
-              unitValue: 170,
-              totalValue: 2040,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0082",
-              date: "2026-02-02",
-              type: "outros",
-              customType: "",
-              description: "Custos operacionais diversos",
-              responsible: "Equipe própria",
-              areaHa: 48,
-              quantity: 1,
-              unit: "unidade",
-              unitValue: 1500,
-              totalValue: 1500,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0083",
-          name: "Potreiro 2",
-          potreiroId: "f3-potreiro-2",
-          sizeHa: 33,
-          culture: "milho",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-05-05",
-          status: "implantacao",
-          procedures: [
-            {
-              id: "proc-0084",
-              date: "2026-05-05",
-              type: "preparo-solo",
-              customType: "",
-              description: "Preparo de solo para milho",
-              responsible: "Equipe própria",
-              areaHa: 33,
-              quantity: 33,
-              unit: "hectare",
-              unitValue: 290,
-              totalValue: 9570,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0085",
-              date: "2026-05-12",
-              type: "plantio-aviao",
-              customType: "",
-              description: "Plantio aéreo de milho",
-              responsible: "Aviação Sul",
-              areaHa: 33,
-              quantity: 33,
-              unit: "hectare",
-              unitValue: 240,
-              totalValue: 7920,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0086",
-              date: "2026-05-25",
-              type: "pulverizacao",
-              customType: "",
-              description: "Pulverização de herbicida",
-              responsible: "AgroDrone",
-              areaHa: 33,
-              quantity: 33,
-              unit: "hectare",
-              unitValue: 95,
-              totalValue: 3135,
-              notes: "",
-              attachment: null
-            },
-            {
-              id: "proc-0087",
-              date: "2026-06-05",
-              type: "aplicacao-ureia",
-              customType: "",
-              description: "Adubação nitrogenada",
-              responsible: "Equipe própria",
-              areaHa: 33,
-              quantity: 7,
-              unit: "saco",
-              unitValue: 390,
-              totalValue: 2730,
-              notes: "",
-              attachment: null
-            }
-          ]
-        },
-        {
-          id: "pasture-0088",
-          name: "Potreiro 5",
-          potreiroId: "f3-potreiro-5",
-          sizeHa: 20,
-          culture: "tifton",
-          customCulture: "",
-          season: "2025/2026",
-          startDate: "2026-08-01",
-          status: "planejada",
-          procedures: []
-        }
-      ]
+      ovinos: [],
+      pastureAreas: []
+    },
+    "fazenda-branquilho": {
+      id: "fazenda-branquilho",
+      name: "Fazenda do Branquilho",
+      declaredTotal: 0,
+      note: "",
+      importedBaselineVersion: 0,
+      sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
+      potreiros: [],
+      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      movements: [],
+      sanitaryRecords: [],
+      monthlyRecords: [],
+      reproductionRecords: [],
+      reproductionCodeSequence: 0,
+      ovinos: [],
+      pastureAreas: []
+    },
+    "fazenda-varzea": {
+      id: "fazenda-varzea",
+      name: "Fazenda da Várzea",
+      declaredTotal: 0,
+      note: "",
+      importedBaselineVersion: 0,
+      sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
+      potreiros: [],
+      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      movements: [],
+      sanitaryRecords: [],
+      monthlyRecords: [],
+      reproductionRecords: [],
+      reproductionCodeSequence: 0,
+      ovinos: [],
+      pastureAreas: []
     }
   }
 };
@@ -3186,13 +1653,11 @@ async function exportAuditTrailPdf() {
   doc.setFontSize(16);
   doc.setTextColor(45, 35, 25);
   doc.text("Trilha de Auditoria", margin + 21, 13);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(87, 69, 52);
-  doc.text(
-    `Responsável Técnica: ${TECHNICAL_MANAGER_NAME}   |   Gerado em: ${generatedAt}`,
-    margin + 21, 21
-  );
+  drawPdfTextSegments(doc, margin + 21, 21, [
+    { text: "Responsável Técnica: ", color: [87, 69, 52] },
+    { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] },
+    { text: `   |   Gerado em: ${generatedAt}`, color: [87, 69, 52] }
+  ], 9.5);
   doc.setDrawColor(140, 80, 45);
   doc.setLineWidth(0.6);
   doc.line(margin, 26, pageW - margin, 26);
@@ -3229,6 +1694,12 @@ async function exportAuditTrailPdf() {
     bodyStyles: { fontSize: 8.5 },
     columnStyles: { 0: { fontStyle: "bold", cellWidth: 68 } },
     margin: { left: margin, right: margin },
+    didParseCell: (data) => {
+      if (data.row.raw && data.row.raw[0] === "Responsável Técnica") {
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.textColor = [160, 122, 45];
+      }
+    },
   });
 
   // ── Tabela principal de eventos ────────────────────────────────────────
@@ -5907,9 +4378,13 @@ function renderHomeView() {
   el.innerHTML = `
     <div class="home-hero">
       <div class="home-hero-copy">
-        <p class="eyebrow">Wolf Agricultura e Pecuária</p>
+        <p class="eyebrow home-hero-brand">Wolf Agricultura e Pecuária</p>
         <h2 class="home-hero-title">Painel Pecuário</h2>
         <p class="home-hero-farm">${escapeHtml(farmContext)}</p>
+        <div class="tech-credential tech-credential-compact">
+          <span class="tech-credential-label">Responsável Técnica</span>
+          <strong class="tech-credential-name">${TECHNICAL_MANAGER_NAME}</strong>
+        </div>
       </div>
       <div class="home-hero-badge">
         <span class="home-hero-total">${formatInteger(totalAnimals)}</span>
@@ -6649,7 +5124,7 @@ function renderHero(farm) {
   if (elements.dashboardFarmLabel) {
     elements.dashboardFarmLabel.textContent = isTotalView
       ?"Painel de Controle de Todas as Fazendas"
-      : `Painel de Controle — Fazenda ${farm.name}`;
+      : `Painel de Controle — ${farm.name}`;
   }
 }
 
@@ -11956,8 +10431,13 @@ async function addPdfHeader(doc, farm, periodLabel, monthly) {
   doc.text(`Relatório Pecuário - ${farm.name}`, 42, 26);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
+  doc.setTextColor(45, 35, 25);
   doc.text(`Período analisado: ${periodLabel}`, 42, 33);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(160, 122, 45);
   doc.text(`Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, 42, 39);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(45, 35, 25);
   doc.text(`Movimentações no período: ${formatInteger(monthly.totalMovements)}`, 14, 50);
   doc.text(`Saldo do período: ${monthly.netChange > 0 ?"+" : ""}${formatInteger(monthly.netChange)}`, 92, 50);
   return 56;
@@ -12030,11 +10510,23 @@ async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Rel
   doc.setFontSize(9);
   doc.setTextColor(197, 167, 74);
   doc.text("Wolf Agricultura e Pecuária", left, 101);
+
+  doc.setDrawColor(197, 167, 74);
+  doc.setLineWidth(0.6);
+  doc.line(left, 122, left + 50, 122);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(197, 167, 74);
+  doc.text("RESPONSÁVEL TÉCNICA", left, 131);
+  doc.setFontSize(17);
+  doc.setTextColor(255, 255, 255);
+  doc.text(TECHNICAL_MANAGER_NAME, left, 143);
+
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(170, 170, 170);
-  doc.text(`Fazenda: ${scopeLabel}`, left, height - 29);
-  doc.text(`Período: ${periodLabel}`, left, height - 21);
-  doc.text(`Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, left, height - 13);
+  doc.text(`Fazenda: ${scopeLabel}`, left, height - 21);
+  doc.text(`Período: ${periodLabel}`, left, height - 13);
   doc.setDrawColor(197, 167, 74);
   doc.setLineWidth(0.5);
   doc.line(left, height - 7, left + 74, height - 7);
@@ -12175,15 +10667,54 @@ function addPdfFooters(doc, options = {}) {
     doc.setFontSize(9);
     doc.setTextColor(112, 94, 76);
     if (height < 260) {
-      doc.text(`Wolf Agricultura e Pecuária | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, height - 6);
+      drawFooterBrandLine(doc, margin, height - 6);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(112, 94, 76);
       doc.text(`Pagina ${coverPage ?page - 1 : page} de ${visiblePageCount}`, width - margin, height - 6, { align: "right" });
       doc.setTextColor(45, 35, 25);
       continue;
     }
-    doc.text(`Wolf Agricultura e Pecuária | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, 14, 291);
+    drawFooterBrandLine(doc, 14, 291);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(112, 94, 76);
     doc.text(`Página ${coverPage ?page - 1 : page} de ${visiblePageCount}`, 196, 291, { align: "right" });
     doc.setTextColor(45, 35, 25);
   }
+}
+
+// jsPDF's text()/getTextWidth() both collapse a lone leading/trailing space
+// when a string is split across two adjacent text() calls, so the visible
+// gap has to be re-inserted manually as a fixed advance instead.
+function pdfSpaceWidth(fontSize) {
+  return fontSize * 0.098;
+}
+
+function drawPdfTextSegments(doc, x, y, segments, fontSize) {
+  let cursorX = x;
+  segments.forEach((seg) => {
+    const trailingSpaces = (seg.text.match(/\s+$/) || [""])[0].length;
+    const trimmedText = trailingSpaces ? seg.text.slice(0, -trailingSpaces) : seg.text;
+    doc.setFont("helvetica", seg.bold ? "bold" : "normal");
+    if (fontSize) doc.setFontSize(fontSize);
+    doc.setTextColor(...(seg.color || [45, 35, 25]));
+    doc.text(trimmedText, cursorX, y);
+    cursorX += doc.getTextWidth(trimmedText) + trailingSpaces * pdfSpaceWidth(fontSize || doc.getFontSize());
+  });
+}
+
+function drawFooterBrandLine(doc, x, y) {
+  const prefix = "Wolf Agricultura e Pecuária | Responsável Técnica:";
+  const fontSize = 9;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(fontSize);
+  doc.setTextColor(112, 94, 76);
+  doc.text(prefix, x, y);
+  const prefixWidth = doc.getTextWidth(prefix) + pdfSpaceWidth(fontSize);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(160, 122, 45);
+  doc.text(TECHNICAL_MANAGER_NAME, x + prefixWidth, y);
 }
 
 function appendExecutivePdfTable(doc, farm, monthly, discrepancy, topY) {
@@ -12209,7 +10740,13 @@ function appendExecutivePdfTable(doc, farm, monthly, discrepancy, topY) {
       ["Responsável Técnica", TECHNICAL_MANAGER_NAME]
     ],
     theme: "striped",
-    headStyles: { fillColor: [43, 132, 184] }
+    headStyles: { fillColor: [43, 132, 184] },
+    didParseCell: (data) => {
+      if (data.row.raw && data.row.raw[0] === "Responsável Técnica") {
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.textColor = [160, 122, 45];
+      }
+    }
   });
 }
 
@@ -12938,10 +11475,10 @@ async function exportReproducaoPdf() {
     doc.setFontSize(16);
     doc.setTextColor(45, 35, 25);
     doc.text("Relatório de Reprodução", margin + 22, 14);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(87, 69, 52);
-    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
+    drawPdfTextSegments(doc, margin + 22, 22, [
+      { text: `Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: `, color: [87, 69, 52] },
+      { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] }
+    ], 10.5);
 
     doc.setDrawColor(140, 80, 45);
     doc.setLineWidth(0.6);
@@ -13060,10 +11597,10 @@ function appendReproductionConsolidatedPdfIntro(doc, farms, periodLabel, year, m
   doc.setFontSize(17);
   doc.setTextColor(45, 35, 25);
   doc.text("Relatório de Reprodução - Todas as Fazendas", margin, 16);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(87, 69, 52);
-  doc.text(`Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, 24);
+  drawPdfTextSegments(doc, margin, 24, [
+    { text: `Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável Técnica: `, color: [87, 69, 52] },
+    { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] }
+  ], 10);
   doc.setDrawColor(140, 80, 45);
   doc.line(margin, 30, pageW - margin, 30);
 
@@ -13185,10 +11722,10 @@ function appendSanitaryConsolidatedPdfIntro(doc, farms) {
   doc.setFontSize(17);
   doc.setTextColor(45, 35, 25);
   doc.text("Relatório Sanitário - Todas as Fazendas", margin, 16);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(87, 69, 52);
-  doc.text(`Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin, 24);
+  drawPdfTextSegments(doc, margin, 24, [
+    { text: `Período: ${periodLabel} | Fazendas: ${formatInteger(farms.length)} | Responsável Técnica: `, color: [87, 69, 52] },
+    { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] }
+  ], 10);
   doc.setDrawColor(55, 91, 67);
   doc.line(margin, 30, pageW - margin, 30);
 
@@ -13226,7 +11763,11 @@ async function appendSanitaryPdfReport(doc, farm) {
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}`, margin + 22, 20);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(160, 122, 45);
   doc.text(`Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 26);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
 
   // Divider
   doc.setDrawColor(55, 91, 67);
@@ -13427,6 +11968,9 @@ function ensureDataShape(data, options = {}) {
         role: user.role || "admin"
       };
     }
+    if (user.id === "admin-bruna" && user.login === "admin") {
+      return { ...user, login: "Bruna Castro" };
+    }
 
     return user;
   });
@@ -13439,6 +11983,12 @@ function ensureDataShape(data, options = {}) {
   if (!data.auth.users.some((user) => user.id === data.auth.sessionUserId)) {
     data.auth.sessionUserId = "";
   }
+
+  // One-time cleanup: the app used to ship with placeholder demo farms
+  // (fazenda-01/02/03). Drop them so the real farm list below takes over.
+  ["fazenda-01", "fazenda-02", "fazenda-03"].forEach((legacyId) => {
+    delete data.farms[legacyId];
+  });
 
   Object.entries(seedData.farms).forEach(([farmId, farmTemplate]) => {
     if (!data.farms[farmId]) {
@@ -16384,10 +14934,10 @@ async function exportComprasPdfReport() {
     doc.setFontSize(16);
     doc.setTextColor(45, 35, 25);
     doc.text("Relatório de Compras", margin + 22, 14);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(87, 69, 52);
-    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
+    drawPdfTextSegments(doc, margin + 22, 22, [
+      { text: `Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: `, color: [87, 69, 52] },
+      { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] }
+    ], 10.5);
     doc.setDrawColor(140, 80, 45);
     doc.setLineWidth(0.6);
     doc.line(margin, 27, pageW - margin, 27);
@@ -17042,8 +15592,10 @@ async function exportVendasPdfReport() {
     try { const logoData = await loadLogoForPdf("#ffffff"); doc.addImage(logoData, "JPEG", margin, 8, 18, 18); } catch (e) { /* ignore */ }
     doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(45, 35, 25);
     doc.text("Relatório de Vendas", margin + 22, 14);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(87, 69, 52);
-    doc.text(`Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: ${TECHNICAL_MANAGER_NAME}`, margin + 22, 22);
+    drawPdfTextSegments(doc, margin + 22, 22, [
+      { text: `Fazenda: ${farm.name}   Período: ${periodLabel}   Responsável Técnica: `, color: [87, 69, 52] },
+      { text: TECHNICAL_MANAGER_NAME, bold: true, color: [160, 122, 45] }
+    ], 10.5);
     doc.setDrawColor(140, 80, 45); doc.setLineWidth(0.6); doc.line(margin, 27, pageW - margin, 27);
 
     let xBox = margin;

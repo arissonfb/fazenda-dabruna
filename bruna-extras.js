@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
-   Wolf Agricultura e Pecuária — extras da demonstração
+   Wolf Agricultura e Pecuária — extras do painel
    Carregado depois de app.js / __commercial_new.js.
    Reaproveita as globais já existentes: state, runtime, elements,
    saveData, render, formatInteger, formatCurrency, escapeHtml,
@@ -7,69 +7,17 @@
    initializeAppShell, startAuditSession, logAuditEvent.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── Credenciais locais da demonstração ──────────────────────────── */
+/* ── Credenciais locais (sem backend) ──────────────────────────── */
 const BRUNA_CREDENTIALS = {
-  admin: { password: "bruna2026", role: "admin", userId: "admin-bruna" },
+  "bruna castro": { password: "BC@2026", role: "admin", userId: "admin-bruna" },
   demo: { password: "fazenda2026", role: "usuario", userId: "user-bruna" }
 };
-
-/* ── Validade da demonstração ─────────────────────────────────────── */
-const DEMO_EXPIRES_AT = new Date("2026-07-30T23:59:59-03:00").getTime();
-const DEMO_CONTACT_WHATSAPP = "https://wa.me/5551997111561";
-
-function isDemoExpired() {
-  return Date.now() > DEMO_EXPIRES_AT;
-}
-
-function getDemoDaysLeft() {
-  return Math.max(0, Math.ceil((DEMO_EXPIRES_AT - Date.now()) / 86400000));
-}
-
-function showDemoExpiredScreen() {
-  if (document.getElementById("demoExpiredShell")) return;
-  if (elements.splashShell) elements.splashShell.hidden = true;
-  if (elements.authShell) elements.authShell.hidden = true;
-  if (elements.pageShell) elements.pageShell.hidden = true;
-  document.body.insertAdjacentHTML("beforeend", `
-    <div class="demo-expired-shell" id="demoExpiredShell">
-      <div class="demo-expired-card">
-        <img src="./assets/wolf-seal.jpg" alt="Wolf Agricultura e Pecuária" />
-        <h1>Período de demonstração encerrado</h1>
-        <p>O acesso de demonstração ao Painel Pecuário Wolf expirou.</p>
-        <p>Entre em contato para liberar o acesso completo ou agendar uma nova apresentação.</p>
-        <a class="whatsapp-cta" href="${DEMO_CONTACT_WHATSAPP}" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
-      </div>
-    </div>
-  `);
-}
-
-function renderDemoTrialBanner() {
-  if (isDemoExpired()) return;
-  const daysLeft = getDemoDaysLeft();
-  const expiresLabel = new Date(DEMO_EXPIRES_AT).toLocaleDateString("pt-BR");
-  let banner = document.getElementById("demoTrialBanner");
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "demoTrialBanner";
-    banner.className = "demo-trial-banner";
-    const pageShell = document.querySelector(".page-shell");
-    (pageShell || document.body).insertAdjacentElement("afterbegin", banner);
-  }
-  banner.classList.toggle("demo-trial-warn", daysLeft <= 1);
-  const dayWord = daysLeft === 1 ? "dia" : "dias";
-  banner.innerHTML = `Versão de demonstração — válida até <strong>${expiresLabel}</strong> (${daysLeft} ${dayWord} restantes)`;
-}
 
 /* ── Login local (sem backend) ───────────────────────────────────── */
 document.addEventListener("submit", function (event) {
   if (event.target !== elements.loginForm) return;
   event.preventDefault();
   event.stopImmediatePropagation();
-
-  if (isDemoExpired()) {
-    showDemoExpiredScreen();
-    return;
-  }
 
   const login = elements.loginUsername.value.trim().toLowerCase();
   const password = elements.loginPassword.value;
@@ -95,7 +43,7 @@ document.addEventListener("submit", function (event) {
   const user = state.data.auth.users.find((u) => u.id === credential.userId);
   if (!user) {
     elements.loginFeedback.hidden = false;
-    elements.loginFeedback.textContent = "Usuário não encontrado nesta demonstração.";
+    elements.loginFeedback.textContent = "Usuário não encontrado.";
     return;
   }
 
@@ -105,20 +53,12 @@ document.addEventListener("submit", function (event) {
   state.data.auth.sessionUserId = user.id;
   elements.loginForm.reset();
   startAuditSession();
-  logAuditEvent("Login", "auth", "Entrada no sistema (demonstração)");
+  logAuditEvent("Login", "auth", "Entrada no sistema");
   saveData({ skipCloud: true });
   renderAuthState();
   initializeAppShell();
   render();
-  renderDemoTrialBanner();
 }, true);
-
-/* Verificação no carregamento da página */
-if (isDemoExpired()) {
-  showDemoExpiredScreen();
-} else if (isAuthenticated()) {
-  renderDemoTrialBanner();
-}
 
 /* ── Renomear fazenda ─────────────────────────────────────────────── */
 const BRUNA_PENCIL_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`;
