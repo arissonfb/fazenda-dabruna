@@ -470,12 +470,6 @@ body::before {
   margin: 0 0 6px;
 }
 
-.home-hero-brand {
-  font-size: 0.86rem;
-  letter-spacing: 0.16em;
-  color: var(--sand-deep);
-}
-
 .tech-credential-compact {
   margin-top: 10px;
   padding: 6px 14px;
@@ -1576,31 +1570,6 @@ body::before {
 .hero h1 {
   font-size: clamp(2.7rem, 4vw, 4.6rem);
   max-width: 11ch;
-}
-
-.brand-wordmark {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.brand-wordmark .wm-main {
-  font-family: "Yrsa", serif;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  background: linear-gradient(135deg, #96692a 0%, #e8c874 42%, #96692a 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.brand-wordmark .wm-sub {
-  font-family: "Manrope", sans-serif;
-  font-weight: 800;
-  font-size: 0.94rem;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: var(--sand-deep);
 }
 
 .tech-credential {

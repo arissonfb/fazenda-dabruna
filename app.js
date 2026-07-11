@@ -4378,7 +4378,6 @@ function renderHomeView() {
   el.innerHTML = `
     <div class="home-hero">
       <div class="home-hero-copy">
-        <p class="eyebrow home-hero-brand">Wolf Agricultura e Pecuária</p>
         <h2 class="home-hero-title">Painel Pecuário</h2>
         <p class="home-hero-farm">${escapeHtml(farmContext)}</p>
         <div class="tech-credential tech-credential-compact">
@@ -10472,6 +10471,51 @@ function drawPdfPastureBackground(doc) {
   doc.line(0, height * 0.63, width, height * 0.63);
 }
 
+// Fits an image inside a box without stretching it (like CSS object-fit:
+// contain), aligning it against one edge on whichever axis has leftover
+// space instead of centering it there.
+function fitImageContain(doc, imageDataUrl, box, hAlign = "center") {
+  const { width: srcW, height: srcH } = doc.getImageProperties(imageDataUrl);
+  const srcAspect = srcW / srcH;
+  const boxAspect = box.w / box.h;
+  let drawW;
+  let drawH;
+  if (srcAspect > boxAspect) {
+    drawW = box.w;
+    drawH = box.w / srcAspect;
+  } else {
+    drawH = box.h;
+    drawW = box.h * srcAspect;
+  }
+  const drawY = box.y + (box.h - drawH) / 2;
+  let drawX = box.x + (box.w - drawW) / 2;
+  if (hAlign === "right") drawX = box.x + (box.w - drawW);
+  if (hAlign === "left") drawX = box.x;
+  return { drawX, drawY, drawW, drawH };
+}
+
+// Renders linear-gradient(to right, #000 0%, rgba(0,0,0,.75) 15%, transparent 45%)
+// as an offscreen canvas and drops it in as a PNG overlay, so the left edge
+// of the cover photo blends into the black panel instead of showing a hard
+// seam. A canvas gradient is used (rather than stacking translucent jsPDF
+// rects) because adjacent semi-transparent rects visibly band/seam in PDF
+// viewers — a real gradient raster doesn't.
+function drawLeftEdgeFade(doc, x, y, w, h) {
+  const fadeWidth = w * 0.45;
+  const scale = 3;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(2, Math.round(fadeWidth * scale));
+  canvas.height = Math.max(2, Math.round(h * scale));
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, "rgba(6, 6, 6, 1)");
+  gradient.addColorStop(0.15 / 0.45, "rgba(6, 6, 6, 0.75)");
+  gradient.addColorStop(1, "rgba(6, 6, 6, 0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  doc.addImage(canvas.toDataURL("image/png"), "PNG", x, y, fadeWidth, h);
+}
+
 async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Relatório Pecuário") {
   const { width, height } = getPdfPageSize(doc);
   const scopeLabel = farms.length === 1
@@ -10486,7 +10530,14 @@ async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Rel
   const imageW = width - imageX;
   try {
     const coverImage = await loadAssetAsDataUrl(PDF_COVER_IMAGE_PATH);
-    doc.addImage(coverImage, "JPEG", imageX, 0, imageW, height);
+    const { drawX, drawY, drawW, drawH } = fitImageContain(
+      doc,
+      coverImage,
+      { x: imageX, y: 0, w: imageW, h: height },
+      "right"
+    );
+    doc.addImage(coverImage, "JPEG", drawX, drawY, drawW, drawH);
+    drawLeftEdgeFade(doc, drawX, drawY, drawW, drawH);
   } catch (error) {
     console.warn("Não foi possível carregar a imagem da capa do PDF.", error);
   }
@@ -10507,9 +10558,6 @@ async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Rel
   doc.setFontSize(13);
   doc.setTextColor(215, 215, 215);
   doc.text(reportSubtitle, left, 91);
-  doc.setFontSize(9);
-  doc.setTextColor(197, 167, 74);
-  doc.text("Wolf Agricultura e Pecuária", left, 101);
 
   doc.setDrawColor(197, 167, 74);
   doc.setLineWidth(0.6);
@@ -11989,6 +12037,17 @@ function ensureDataShape(data, options = {}) {
   ["fazenda-01", "fazenda-02", "fazenda-03"].forEach((legacyId) => {
     delete data.farms[legacyId];
   });
+
+  // One-time cleanup: Alambrado used to auto-seed 30 fake service records
+  // on first load. Wipe any that slipped in before that seeding was removed.
+  if (!data.alambradoDemoRecordsCleared) {
+    Object.values(data.farms).forEach((farm) => {
+      if (Array.isArray(farm.alambradoRecords)) {
+        farm.alambradoRecords = [];
+      }
+    });
+    data.alambradoDemoRecordsCleared = true;
+  }
 
   Object.entries(seedData.farms).forEach(([farmId, farmTemplate]) => {
     if (!data.farms[farmId]) {
