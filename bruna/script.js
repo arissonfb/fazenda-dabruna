@@ -148,36 +148,8 @@ function initForm() {
   });
 }
 
-function initLightbox() {
-  const lightbox = document.getElementById("lightbox");
-  const img = lightbox.querySelector("img");
-  const close = document.getElementById("closeLightbox");
-  document.querySelectorAll(".gallery button").forEach((button) => {
-    button.addEventListener("click", () => {
-      img.src = button.dataset.src;
-      img.alt = button.querySelector("img").alt;
-      lightbox.classList.add("is-open");
-      lightbox.setAttribute("aria-hidden", "false");
-      close.focus();
-    });
-  });
-  function closeLightbox() {
-    lightbox.classList.remove("is-open");
-    lightbox.setAttribute("aria-hidden", "true");
-    img.src = "";
-  }
-  close.addEventListener("click", closeLightbox);
-  lightbox.addEventListener("click", (event) => {
-    if (event.target === lightbox) closeLightbox();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeLightbox();
-  });
-}
-
 document.getElementById("year").textContent = new Date().getFullYear();
 renderCompetencies();
 initHeader();
 initReveal();
 initForm();
-initLightbox();
