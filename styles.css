@@ -8566,3 +8566,102 @@ body[data-active-view="sanitary"] .hero {
     font-size: 0.86rem;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   SPLASH E LOGIN — versão mobile dedicada
+   As artes originais (.splash-wrap-bg/.splash-wrap-bull e
+   .auth-angus-image) usam uma imagem larga esticada a 200% e
+   deslocada com translateX para simular um banner contínuo — um
+   truque que só funciona numa tela larga (paisagem). Em retrato
+   (celular) o object-fit:cover amplia demais essa imagem panorâmica,
+   corta o nome "WOLF" e deixa o boi irreconhecível. Em vez de tentar
+   consertar o mesmo recorte, o celular passa a usar elementos
+   próprios (selo + boi isolado) que nunca são cortados.
+   ════════════════════════════════════════════════════════════════ */
+
+.splash-mobile-brand { display: none; }
+.auth-mobile-logo { display: none; }
+
+@media (max-width: 767px) {
+  /* ─ Splash ─ */
+  .splash-wrap-bg,
+  .splash-wrap-bull {
+    display: none;
+  }
+
+  .splash-mobile-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    position: absolute;
+    inset: 0;
+    padding: calc(32px + env(safe-area-inset-top)) 24px calc(96px + env(safe-area-inset-bottom));
+    gap: 20px;
+  }
+
+  .splash-mobile-seal {
+    flex-shrink: 0;
+    width: min(36vw, 150px);
+    height: min(36vw, 150px);
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(201, 168, 76, 0.4);
+    animation: splashFadeIn 1s ease-out both;
+  }
+
+  .splash-mobile-bull {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 420px;
+    object-fit: contain;
+    object-position: center bottom;
+    animation: splashFadeIn 1.2s 0.15s ease-out both;
+  }
+
+  .splash-cta {
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    max-width: calc(100% - 48px);
+    text-align: center;
+  }
+
+  /* ─ Login ─ */
+  .auth-shell {
+    padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .auth-corner-logo {
+    display: none;
+  }
+
+  .auth-form-header-block {
+    align-items: center;
+    text-align: center;
+  }
+
+  .auth-mobile-logo {
+    display: block;
+    width: clamp(64px, 20vw, 92px);
+    height: clamp(64px, 20vw, 92px);
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 2px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  }
+
+  .auth-card h1 {
+    text-align: center;
+  }
+
+  /* A faixa decorativa abaixo do formulário (order:2) fica pequena
+     e larga; sem o pan de 200%, o corte simples fica centralizado
+     e nunca amplia o suficiente para sumir com o boi. */
+  .auth-angus-image {
+    width: 100%;
+    max-width: none;
+    transform: none;
+    animation: none;
+  }
+}

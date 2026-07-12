@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Yrsa:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260711b">
+  <link rel="stylesheet" href="./styles.css?v=20260711c">
   <link rel="stylesheet" href="./bruna.css">
 </head>
 <body class="login-mode">
@@ -17,6 +17,13 @@
     </div>
     <div class="splash-wrap-bull">
       <img src="./assets/wolf-banner-hero.png" alt="" aria-hidden="true">
+    </div>
+    <!-- Versão mobile: a arte acima usa um recorte de 200% pensado para telas
+         largas; em retrato ela amplia demais e corta o nome "WOLF". Aqui a
+         marca e o boi ficam separados em elementos próprios. -->
+    <div class="splash-mobile-brand" role="img" aria-label="Wolf Agricultura e Pecuária — 30 anos">
+      <img class="splash-mobile-seal" src="./assets/wolf-seal.jpg" alt="" aria-hidden="true">
+      <img class="splash-mobile-bull" src="./assets/wolf-bull-only.png" alt="" aria-hidden="true">
     </div>
     <p class="splash-cta">Clique ou toque na tela para continuar</p>
   </section>
@@ -35,6 +42,7 @@
       <!-- Painel do formulário direito -->
       <div class="auth-copy-panel">
         <div class="auth-form-header-block">
+          <img src="./assets/wolf-seal.jpg" alt="Wolf Agricultura e Pecuária" class="auth-mobile-logo">
           <h1>Entrar no sistema</h1>
         </div>
 
