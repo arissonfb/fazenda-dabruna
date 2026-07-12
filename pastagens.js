@@ -257,9 +257,8 @@ function populatePastureAreaPotreiroSelect(farm) {
   const select = document.getElementById("pastureAreaPotreiro");
   if (!select) return;
   const potreiros = farm?.potreiros || [];
-  select.innerHTML = potreiros.length
-    ? potreiros.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("")
-    : `<option value="">Nenhum potreiro cadastrado nesta fazenda</option>`;
+  const registeredOptions = potreiros.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("");
+  select.innerHTML = `${registeredOptions}<option value="__outro__">Outro</option>`;
 }
 
 function normalizePastureAreaRecords() {
@@ -938,10 +937,10 @@ function injectPastureDialogs() {
           <label>Potreiro
             <select id="pastureAreaPotreiro" required></select>
           </label>
-          <label>Área total do potreiro (ha)
-            <input type="number" id="pastureAreaPotreiroTotalHa" min="0" step="0.1" readonly />
+          <label id="pastureAreaCustomPotreiroField" hidden>Qual potreiro?
+            <input type="text" id="pastureAreaCustomPotreiro" maxlength="80" />
           </label>
-          <label>Área destinada à pastagem (ha)
+          <label>Área total da cultura (ha)
             <input type="number" id="pastureAreaSizeHa" min="0" step="0.1" required />
           </label>
           <label>Cultura
@@ -1269,15 +1268,15 @@ function injectPastureDialogs() {
 
   const farmSelect = document.getElementById("pastureAreaFarm");
   const potreiroSelect = document.getElementById("pastureAreaPotreiro");
-  const potreiroTotalHaInput = document.getElementById("pastureAreaPotreiroTotalHa");
-  potreiroSelect.addEventListener("change", () => {
-    const f = state.data.farms[farmSelect.value] || getFarm();
-    const potreiro = (f?.potreiros || []).find((p) => p.id === potreiroSelect.value);
-    potreiroTotalHaInput.value = potreiro?.areaHa ?? "";
-  });
+  const customPotreiroField = document.getElementById("pastureAreaCustomPotreiroField");
+  const syncCustomPotreiroField = () => {
+    customPotreiroField.hidden = potreiroSelect.value !== "__outro__";
+    document.getElementById("pastureAreaCustomPotreiro").required = potreiroSelect.value === "__outro__";
+  };
+  potreiroSelect.addEventListener("change", syncCustomPotreiroField);
   farmSelect.addEventListener("change", () => {
     populatePastureAreaPotreiroSelect(state.data.farms[farmSelect.value]);
-    potreiroSelect.dispatchEvent(new Event("change"));
+    syncCustomPotreiroField();
   });
 
   const procTypeSelect = document.getElementById("pastureProcType");
@@ -1431,8 +1430,11 @@ function openPastureAreaDialog(area, farm) {
   populatePastureAreaPotreiroSelect(resolvedFarm);
   const potreiroSelect = document.getElementById("pastureAreaPotreiro");
   const potreiro = area ? (resolvedFarm?.potreiros || []).find((p) => p.id === area.potreiroId) : null;
-  potreiroSelect.value = potreiro?.id || "";
-  document.getElementById("pastureAreaPotreiroTotalHa").value = area?.potreiroTotalHa ?? potreiro?.areaHa ?? "";
+  const isCustomPotreiro = !!area && !potreiro;
+  potreiroSelect.value = isCustomPotreiro ? "__outro__" : (potreiro?.id || (potreiroSelect.options[0]?.value || "__outro__"));
+  document.getElementById("pastureAreaCustomPotreiro").value = isCustomPotreiro ? (area.customPotreiroName || area.name || "") : "";
+  document.getElementById("pastureAreaCustomPotreiroField").hidden = potreiroSelect.value !== "__outro__";
+  document.getElementById("pastureAreaCustomPotreiro").required = potreiroSelect.value === "__outro__";
 
   const cultureSelect = document.getElementById("pastureAreaCulture");
   const customCultureField = document.getElementById("pastureAreaCustomCultureField");
@@ -1456,18 +1458,18 @@ function handlePastureAreaSubmit(event) {
   if (!farm) return;
 
   const potreiroId = document.getElementById("pastureAreaPotreiro").value;
-  const potreiro = (farm.potreiros || []).find((p) => p.id === potreiroId);
-  if (!potreiro) {
-    alert("Selecione um potreiro cadastrado nesta fazenda.");
+  const isCustomPotreiro = potreiroId === "__outro__";
+  const customPotreiroName = document.getElementById("pastureAreaCustomPotreiro").value.trim();
+  const potreiro = isCustomPotreiro ? null : (farm.potreiros || []).find((p) => p.id === potreiroId);
+  if (!isCustomPotreiro && !potreiro) {
+    alert("Selecione um potreiro ou escolha Outro.");
     return;
   }
-
-  const potreiroTotalHa = Number(document.getElementById("pastureAreaPotreiroTotalHa").value) || 0;
+  if (isCustomPotreiro && !customPotreiroName) {
+    alert("Informe o nome do potreiro.");
+    return;
+  }
   const sizeHa = Number(document.getElementById("pastureAreaSizeHa").value) || 0;
-  if (potreiroTotalHa > 0 && sizeHa > potreiroTotalHa) {
-    alert("A área destinada à pastagem não pode ser superior à área total cadastrada para o potreiro.");
-    return;
-  }
   if (!document.getElementById("pastureAreaStartDate").value) {
     alert("Informe a data de início da pastagem.");
     return;
@@ -1475,9 +1477,10 @@ function handlePastureAreaSubmit(event) {
 
   const culture = document.getElementById("pastureAreaCulture").value;
   const payload = {
-    potreiroId,
-    name: potreiro.name,
-    potreiroTotalHa,
+    potreiroId: isCustomPotreiro ? `custom-${slugify(customPotreiroName) || Date.now()}` : potreiroId,
+    customPotreiroName: isCustomPotreiro ? customPotreiroName : "",
+    name: isCustomPotreiro ? customPotreiroName : potreiro.name,
+    potreiroTotalHa: 0,
     sizeHa,
     status: document.getElementById("pastureAreaStatus").value,
     culture,
@@ -1652,8 +1655,7 @@ function renderPastureFichaIdentificacao(farm, area) {
       <div><span class="field-note">Código da pastagem</span><strong>${escapeHtml(getPastureDisplayCode(area))}</strong></div>
       <div><span class="field-note">Fazenda</span><strong>${escapeHtml(farm.name)}</strong></div>
       <div><span class="field-note">Potreiro</span><strong>${escapeHtml(area.name)}</strong></div>
-      <div><span class="field-note">Área total do potreiro</span><strong>${formatHa(area.potreiroTotalHa || 0)}</strong></div>
-      <div><span class="field-note">Área destinada à pastagem</span><strong>${formatHa(area.sizeHa)}</strong></div>
+      <div><span class="field-note">Área total da cultura</span><strong>${formatHa(area.sizeHa)}</strong></div>
       <div><span class="field-note">Cultura</span><strong>${escapeHtml(getPastureCultureLabel(area))}</strong></div>
       <div><span class="field-note">Data de início</span><strong>${formatDate(area.startDate)}</strong></div>
       <div><span class="field-note">Status</span><strong><span class="pasture-status ${escapeHtml(area.status)}">${escapeHtml(getPastureStatusLabel(area.status))}</span></strong></div>
@@ -2333,7 +2335,7 @@ async function exportPastureIndividualPdf(farm, area) {
       ["Fazenda", farm.name],
       ["Potreiro", area.name],
       ["Cultura", getPastureCultureLabel(area)],
-      ["Área destinada", formatHa(area.sizeHa)],
+      ["Área total da cultura", formatHa(area.sizeHa)],
       ["Área usada no cálculo", formatHa(getAreaImplantedHa(area))],
       ["Data de início", formatDate(area.startDate)],
       ["Status", getPastureStatusLabel(area.status)],
