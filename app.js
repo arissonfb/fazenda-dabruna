@@ -1639,10 +1639,36 @@ function applyPastureCategoryFix2026Jul() {
   return changed;
 }
 
+// Migração pontual (2/2): a correção acima gravou "declarado" no momento em
+// que rodou; qualquer lançamento feito depois (compra, ajuste etc.) mudou o
+// "calculado" sem atualizar o "declarado", gerando o aviso "X declarado vs.
+// calculado". Resincroniza uma única vez por fazenda (marcador
+// declaredTotalResyncedJul2026) — depois disso a conferência normal do
+// sistema volta a funcionar sem interferência desta migração.
+function resyncDeclaredTotal2026Jul() {
+  const TARGET_FARMS = ["fazenda-remanso", "fazenda-cerro-velho", "fazenda-sarandi", "fazenda-branquilho"];
+  let changed = 0;
+  TARGET_FARMS.forEach((farmId) => {
+    const farm = state.data.farms[farmId];
+    if (!farm || farm.declaredTotalResyncedJul2026) return;
+    const calculated = getFarmTotal(farm);
+    if (Number(farm.declaredTotal || 0) !== calculated) {
+      farm.declaredTotal = calculated;
+      changed++;
+    }
+    farm.declaredTotalResyncedJul2026 = true;
+  });
+  if (changed > 0) {
+    console.log(`[migração] "declarado" resincronizado com o calculado em ${changed} fazenda(s).`);
+  }
+  return changed;
+}
+
 function boot() {
   try {
     if (fixSanitaryDates2026Dec() > 0) saveData({ skipCloud: false });
     if (applyPastureCategoryFix2026Jul() > 0) saveData({ skipCloud: false });
+    if (resyncDeclaredTotal2026Jul() > 0) saveData({ skipCloud: false });
     bindEvents();
     setAuthLoginMode(runtime.authLoginMode);
     renderAuthState();
@@ -2328,6 +2354,7 @@ async function cloudPull() {
       state.data = merged;
       fixSanitaryDates2026Dec();
       applyPastureCategoryFix2026Jul();
+      resyncDeclaredTotal2026Jul();
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
       // Garante que registros importados (IMPORTED_SANITARY_RECORDS etc.)
       // sejam persistidos no Render após serem adicionados localmente
