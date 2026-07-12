@@ -1664,11 +1664,44 @@ function resyncDeclaredTotal2026Jul() {
   return changed;
 }
 
+// Migração pontual (3/3): as categorias antigas (padrão antes da planilha)
+// nunca foram removidas — a normalização só ADICIONA categoria que falta,
+// nunca apaga a que sobra — então continuavam na lista (por isso "20
+// categorias" em vez de 12) e qualquer quantidade que já tivessem entrava
+// na soma calculada, mesmo fora da planilha. Remove essas 8 categorias
+// antigas das 5 fazendas que usam o padrão novo e resincroniza "declarado"
+// com o total já sem elas. Roda uma única vez por fazenda (marcador
+// legacyCategoriesRemovedJul2026).
+function removeLegacyCategories2026Jul() {
+  const LEGACY_CATEGORY_IDS = [
+    "vacas-cria", "terneiros-machos", "terneiros-femeas", "bois-abate",
+    "novilhas-entouradas", "touros", "vacas-invernar", "vacas-entouradas"
+  ];
+  const TARGET_FARMS = ["fazenda-remanso", "fazenda-cerro-velho", "fazenda-sarandi", "fazenda-branquilho", "fazenda-varzea"];
+  let changed = 0;
+  TARGET_FARMS.forEach((farmId) => {
+    const farm = state.data.farms[farmId];
+    if (!farm || farm.legacyCategoriesRemovedJul2026) return;
+    const before = farm.categories.length;
+    farm.categories = farm.categories.filter((category) => !LEGACY_CATEGORY_IDS.includes(category.id));
+    if (farm.categories.length !== before) {
+      changed += before - farm.categories.length;
+      farm.declaredTotal = getFarmTotal(farm);
+    }
+    farm.legacyCategoriesRemovedJul2026 = true;
+  });
+  if (changed > 0) {
+    console.log(`[migração] ${changed} categoria(s) antiga(s) removida(s) e "declarado" resincronizado.`);
+  }
+  return changed;
+}
+
 function boot() {
   try {
     if (fixSanitaryDates2026Dec() > 0) saveData({ skipCloud: false });
     if (applyPastureCategoryFix2026Jul() > 0) saveData({ skipCloud: false });
     if (resyncDeclaredTotal2026Jul() > 0) saveData({ skipCloud: false });
+    if (removeLegacyCategories2026Jul() > 0) saveData({ skipCloud: false });
     bindEvents();
     setAuthLoginMode(runtime.authLoginMode);
     renderAuthState();
@@ -2355,6 +2388,7 @@ async function cloudPull() {
       fixSanitaryDates2026Dec();
       applyPastureCategoryFix2026Jul();
       resyncDeclaredTotal2026Jul();
+      removeLegacyCategories2026Jul();
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
       // Garante que registros importados (IMPORTED_SANITARY_RECORDS etc.)
       // sejam persistidos no Render após serem adicionados localmente
