@@ -141,6 +141,7 @@ body::before {
   top: 0;
   left: 0;
   width: 200%;
+  max-width: none;
   height: 100%;
   object-fit: cover;
   object-position: center center;
@@ -1213,6 +1214,7 @@ body::before {
   top: 0;
   left: 0;
   width: 200%;
+  max-width: none;
   height: 100%;
   min-height: auto;
   object-fit: cover;
