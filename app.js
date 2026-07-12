@@ -130,22 +130,30 @@ const CATEGORY_VISUALS = {
 };
 
 const STANDARD_FARM_CATEGORIES = [
-  { id: "vacas-cria", name: "Vacas de cria" },
-  { id: "terneiros-machos", name: "Terneiros 1 a 2 anos - machos" },
-  { id: "terneiros-femeas", name: "Terneiros 1 a 2 anos - fêmeas" },
-  { id: "bois-abate", name: "Bois de abate" },
-  { id: "novilhas-entouradas", name: "Novilhas entouradas" },
-  { id: "touros", name: "Touros" },
-  { id: "vacas-invernar", name: "Vacas de invernar" },
-  { id: "vacas-entouradas", name: "Vacas entouradas" }
+  { id: "vaca-p-cria", name: "Vaca P+/Cria" },
+  { id: "vaca-vazias", name: "Vaca Vazias" },
+  { id: "vaca-descarte", name: "Vaca Descarte" },
+  { id: "vaquilhonas-13-24m", name: "Vaquilhonas (13-24m)" },
+  { id: "vaquilhonas-cria", name: "Vaquilhonas Cria" },
+  { id: "novilhos-13-24m", name: "Novilhos (13-24m)" },
+  { id: "novilhos-25-36m", name: "Novilhos (25-36m)" },
+  { id: "touros-25-36m", name: "Touros (25-36m)" },
+  { id: "touros-mais-36m", name: "Touros (mais de 36m)" },
+  { id: "terneiros-0-4m", name: "Terneiros/as (0-4 meses)" },
+  { id: "terneiros-4-12m", name: "Terneiros (4-12 meses)" },
+  { id: "terneiras-4-12m", name: "Terneiras (4-12 meses)" }
 ];
 
 const STANDARD_OVINO_CATEGORIES = [
-  { id: "cordeiro", name: "Cordeiro" },
-  { id: "borrego", name: "Borrego" },
-  { id: "ovelha", name: "Ovelha" },
+  { id: "borregas", name: "Borregas" },
+  { id: "borregos", name: "Borregos" },
+  { id: "capao", name: "Capão" },
   { id: "carneiro", name: "Carneiro" },
-  { id: "outros-ovinos", name: "Outros" }
+  { id: "carneiro-descarte", name: "Carneiro Descarte" },
+  { id: "cordeira", name: "Cordeira" },
+  { id: "cordeiro", name: "Cordeiro" },
+  { id: "ovelha-cria", name: "Ovelha Cria" },
+  { id: "ovelha-descarte", name: "Ovelha Descarte" }
 ];
 
 const MONTHLY_REPORT_CATEGORIES = [
@@ -157,6 +165,23 @@ const MONTHLY_REPORT_CATEGORIES = [
 ];
 
 const DEFAULT_SANITARY_PRODUCTS = ["Vacina aftosa", "Vermífugo", "Ivermectina"];
+
+// Um manejo sanitário pode aplicar produtos de mais de uma via ao mesmo tempo
+// (ex.: vermífugo oral + antiparasitário injetável no mesmo lote). Cada via vira
+// um grupo de checkboxes no formulário; o mesmo produto pode existir em mais de
+// uma via (ex.: "Parasules 40" tem versão oral e injetável).
+const SANITARY_APPLICATION_METHODS = [
+  { id: "oral", label: "Oral" },
+  { id: "injetavel", label: "Injetável" },
+  { id: "pour-on", label: "Pour on" }
+];
+
+const SANITARY_PRODUCTS_BY_METHOD = {
+  oral: ["Ripercol Oral", "Panacur", "Parasules 40", "Rafomic Oral", "Rumivac", "Bifetacol 10%", "Ovivac", "Micronaph", "Micronaph plus", "Valbazen", "Bonlam", "Moximic Plus", "Moximic T", "Rafoxen"],
+  injetavel: ["Biopersol", "Treo", "Doramectina 1,10%", "Doramectina 1%", "Ivermectina 1%", "Ivermectina 3,15%", "Abamectina", "Parasules 40", "Onyx", "Cydectin", "Valcor", "Evol", "Nitroxinil", "Contratack", "Dectomax", "Epmox", "Tick Gard"],
+  "pour-on": ["Colosso", "Máximo", "Exzolt", "Nexlaner", "Fiproline", "Topline", "Fluatac", "Superhion", "Insemax", "Fluron Gold", "Furius"]
+};
+
 const DEFAULT_POTREIROS = [];
 const LEGACY_POTREIRO_PLACEHOLDERS = ["Potreiro 1", "Potreiro 2", "Potreiro Norte"];
 const PREMIUM_SALE_FARMS = new Set(["arapey", "chiquita"]);
@@ -164,6 +189,7 @@ const PREMIUM_SALE_FARMS = new Set(["arapey", "chiquita"]);
 const FARM_CURRENCY_MAP = {};
 const TOTAL_FARM_ID = "total";
 const UNALLOCATED_POTREIRO_KEY = "__unallocated__";
+const OTHER_FARM_VALUE = "__outra__";
 const ARAPEY_PRIMARY_GEO_KEYS = new Set([
   "2",
   "3",
@@ -781,63 +807,168 @@ const seedData = {
     "fazenda-remanso": {
       id: "fazenda-remanso",
       name: "Fazenda Remanso",
-      declaredTotal: 0,
+      declaredTotal: 1822,
       note: "",
       importedBaselineVersion: 0,
       sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
-      potreiros: [],
-      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      potreiros: [
+        { id: "pot-barragem", name: "Barragem", quantity: 0 },
+        { id: "pot-xirca", name: "Xirca", quantity: 0 },
+        { id: "pot-5-chapadao", name: "5 + chapadão", quantity: 0 },
+        { id: "pot-7", name: "7", quantity: 0 },
+        { id: "pot-tapera", name: "Tapera", quantity: 0 },
+        { id: "pot-frente", name: "Frente", quantity: 0 }
+      ],
+      categories: [
+        { id: "vaca-p-cria", name: "Vaca P+/Cria", quantity: 962 },
+        { id: "vaca-vazias", name: "Vaca Vazias", quantity: 0 },
+        { id: "vaca-descarte", name: "Vaca Descarte", quantity: 0 },
+        { id: "vaquilhonas-13-24m", name: "Vaquilhonas (13-24m)", quantity: 0 },
+        { id: "vaquilhonas-cria", name: "Vaquilhonas Cria", quantity: 0 },
+        { id: "novilhos-13-24m", name: "Novilhos (13-24m)", quantity: 0 },
+        { id: "novilhos-25-36m", name: "Novilhos (25-36m)", quantity: 0 },
+        { id: "touros-25-36m", name: "Touros (25-36m)", quantity: 0 },
+        { id: "touros-mais-36m", name: "Touros (mais de 36m)", quantity: 0 },
+        { id: "terneiros-0-4m", name: "Terneiros/as (0-4 meses)", quantity: 0 },
+        { id: "terneiros-4-12m", name: "Terneiros (4-12 meses)", quantity: 0 },
+        { id: "terneiras-4-12m", name: "Terneiras (4-12 meses)", quantity: 0 }
+      ],
       movements: [],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
       reproductionCodeSequence: 0,
-      ovinos: [],
+      ovinos: [
+        { id: "ovino-fazenda-remanso-borregas", categoryId: "borregas", categoryName: "Borregas", breedType: "", breedOther: "", quantity: 140 },
+        { id: "ovino-fazenda-remanso-borregos", categoryId: "borregos", categoryName: "Borregos", breedType: "", breedOther: "", quantity: 148 },
+        { id: "ovino-fazenda-remanso-capao", categoryId: "capao", categoryName: "Capão", breedType: "", breedOther: "", quantity: 44 },
+        { id: "ovino-fazenda-remanso-carneiro", categoryId: "carneiro", categoryName: "Carneiro", breedType: "", breedOther: "", quantity: 19 },
+        { id: "ovino-fazenda-remanso-ovelha-cria", categoryId: "ovelha-cria", categoryName: "Ovelha Cria", breedType: "", breedOther: "", quantity: 471 },
+        { id: "ovino-fazenda-remanso-ovelha-descarte", categoryId: "ovelha-descarte", categoryName: "Ovelha Descarte", breedType: "", breedOther: "", quantity: 38 }
+      ],
       pastureAreas: []
     },
     "fazenda-cerro-velho": {
       id: "fazenda-cerro-velho",
       name: "Fazenda Cerro Velho",
-      declaredTotal: 0,
+      declaredTotal: 2556,
       note: "",
       importedBaselineVersion: 0,
       sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
-      potreiros: [],
-      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      potreiros: [
+        { id: "pot-1", name: "POT 1", quantity: 0 },
+        { id: "pot-2", name: "POT 2", quantity: 0 },
+        { id: "pot-3", name: "POT 3", quantity: 0 },
+        { id: "pot-4", name: "POT 4", quantity: 0 },
+        { id: "pot-5", name: "POT 5", quantity: 0 },
+        { id: "pot-6", name: "POT 6", quantity: 0 },
+        { id: "pot-7", name: "POT 7", quantity: 0 },
+        { id: "pot-8", name: "POT 8", quantity: 0 },
+        { id: "pot-9", name: "POT 9", quantity: 0 },
+        { id: "pot-10", name: "POT 10", quantity: 0 },
+        { id: "pot-11", name: "POT 11", quantity: 0 },
+        { id: "pot-12", name: "POT 12", quantity: 0 },
+        { id: "pot-12-nativo", name: "POT 12 nativo", quantity: 0 }
+      ],
+      categories: [
+        { id: "vaca-p-cria", name: "Vaca P+/Cria", quantity: 293 },
+        { id: "vaca-vazias", name: "Vaca Vazias", quantity: 0 },
+        { id: "vaca-descarte", name: "Vaca Descarte", quantity: 370 },
+        { id: "vaquilhonas-13-24m", name: "Vaquilhonas (13-24m)", quantity: 1 },
+        { id: "vaquilhonas-cria", name: "Vaquilhonas Cria", quantity: 0 },
+        { id: "novilhos-13-24m", name: "Novilhos (13-24m)", quantity: 0 },
+        { id: "novilhos-25-36m", name: "Novilhos (25-36m)", quantity: 5 },
+        { id: "touros-25-36m", name: "Touros (25-36m)", quantity: 14 },
+        { id: "touros-mais-36m", name: "Touros (mais de 36m)", quantity: 38 },
+        { id: "terneiros-0-4m", name: "Terneiros/as (0-4 meses)", quantity: 0 },
+        { id: "terneiros-4-12m", name: "Terneiros (4-12 meses)", quantity: 197 },
+        { id: "terneiras-4-12m", name: "Terneiras (4-12 meses)", quantity: 673 }
+      ],
       movements: [],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
       reproductionCodeSequence: 0,
-      ovinos: [],
+      ovinos: [
+        { id: "ovino-fazenda-cerro-velho-borregas", categoryId: "borregas", categoryName: "Borregas", breedType: "", breedOther: "", quantity: 126 },
+        { id: "ovino-fazenda-cerro-velho-borregos", categoryId: "borregos", categoryName: "Borregos", breedType: "", breedOther: "", quantity: 136 },
+        { id: "ovino-fazenda-cerro-velho-capao", categoryId: "capao", categoryName: "Capão", breedType: "", breedOther: "", quantity: 82 },
+        { id: "ovino-fazenda-cerro-velho-carneiro", categoryId: "carneiro", categoryName: "Carneiro", breedType: "", breedOther: "", quantity: 22 },
+        { id: "ovino-fazenda-cerro-velho-ovelha-cria", categoryId: "ovelha-cria", categoryName: "Ovelha Cria", breedType: "", breedOther: "", quantity: 508 },
+        { id: "ovino-fazenda-cerro-velho-ovelha-descarte", categoryId: "ovelha-descarte", categoryName: "Ovelha Descarte", breedType: "", breedOther: "", quantity: 91 }
+      ],
       pastureAreas: []
     },
     "fazenda-sarandi": {
       id: "fazenda-sarandi",
       name: "Fazenda Sarandi",
-      declaredTotal: 0,
+      declaredTotal: 1166,
       note: "",
       importedBaselineVersion: 0,
       sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
-      potreiros: [],
-      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      potreiros: [
+        { id: "pot-chico-rodeio", name: "Chico Rodeio", quantity: 0 },
+        { id: "pot-campo-aberto", name: "Campo Aberto", quantity: 0 },
+        { id: "pot-ze-roberto", name: "Zé Roberto", quantity: 0 },
+        { id: "pot-esquina", name: "Esquina", quantity: 0 },
+        { id: "pot-elibio-trevo", name: "Elibio - Trevo", quantity: 0 },
+        { id: "pot-elibio", name: "Elibio", quantity: 0 },
+        { id: "pot-pista", name: "Pista", quantity: 0 },
+        { id: "pot-joao-bosco", name: "João Bosco", quantity: 0 },
+        { id: "pot-preparo-ramon", name: "Preparo - Ramon", quantity: 0 },
+        { id: "pot-soca-ramon", name: "Soca - Ramon", quantity: 0 },
+        { id: "pot-barragem", name: "Barragem", quantity: 0 }
+      ],
+      categories: [
+        { id: "vaca-p-cria", name: "Vaca P+/Cria", quantity: 0 },
+        { id: "vaca-vazias", name: "Vaca Vazias", quantity: 0 },
+        { id: "vaca-descarte", name: "Vaca Descarte", quantity: 256 },
+        { id: "vaquilhonas-13-24m", name: "Vaquilhonas (13-24m)", quantity: 439 },
+        { id: "vaquilhonas-cria", name: "Vaquilhonas Cria", quantity: 0 },
+        { id: "novilhos-13-24m", name: "Novilhos (13-24m)", quantity: 0 },
+        { id: "novilhos-25-36m", name: "Novilhos (25-36m)", quantity: 0 },
+        { id: "touros-25-36m", name: "Touros (25-36m)", quantity: 0 },
+        { id: "touros-mais-36m", name: "Touros (mais de 36m)", quantity: 0 },
+        { id: "terneiros-0-4m", name: "Terneiros/as (0-4 meses)", quantity: 0 },
+        { id: "terneiros-4-12m", name: "Terneiros (4-12 meses)", quantity: 457 },
+        { id: "terneiras-4-12m", name: "Terneiras (4-12 meses)", quantity: 0 }
+      ],
       movements: [],
       sanitaryRecords: [],
       monthlyRecords: [],
       reproductionRecords: [],
       reproductionCodeSequence: 0,
-      ovinos: [],
+      ovinos: [
+        { id: "ovino-fazenda-sarandi-borregas", categoryId: "borregas", categoryName: "Borregas", breedType: "", breedOther: "", quantity: 1 },
+        { id: "ovino-fazenda-sarandi-capao", categoryId: "capao", categoryName: "Capão", breedType: "", breedOther: "", quantity: 13 }
+      ],
       pastureAreas: []
     },
     "fazenda-branquilho": {
       id: "fazenda-branquilho",
       name: "Fazenda do Branquilho",
-      declaredTotal: 0,
+      declaredTotal: 250,
       note: "",
       importedBaselineVersion: 0,
       sanitaryProducts: [...DEFAULT_SANITARY_PRODUCTS],
-      potreiros: [],
-      categories: STANDARD_FARM_CATEGORIES.map((category) => ({ ...category, quantity: 0 })),
+      potreiros: [
+        { id: "pot-macaco", name: "Macaco", quantity: 0 },
+        { id: "pot-pedreira", name: "Pedreira", quantity: 0 }
+      ],
+      categories: [
+        { id: "vaca-p-cria", name: "Vaca P+/Cria", quantity: 0 },
+        { id: "vaca-vazias", name: "Vaca Vazias", quantity: 0 },
+        { id: "vaca-descarte", name: "Vaca Descarte", quantity: 0 },
+        { id: "vaquilhonas-13-24m", name: "Vaquilhonas (13-24m)", quantity: 250 },
+        { id: "vaquilhonas-cria", name: "Vaquilhonas Cria", quantity: 0 },
+        { id: "novilhos-13-24m", name: "Novilhos (13-24m)", quantity: 0 },
+        { id: "novilhos-25-36m", name: "Novilhos (25-36m)", quantity: 0 },
+        { id: "touros-25-36m", name: "Touros (25-36m)", quantity: 0 },
+        { id: "touros-mais-36m", name: "Touros (mais de 36m)", quantity: 0 },
+        { id: "terneiros-0-4m", name: "Terneiros/as (0-4 meses)", quantity: 0 },
+        { id: "terneiros-4-12m", name: "Terneiros (4-12 meses)", quantity: 0 },
+        { id: "terneiras-4-12m", name: "Terneiras (4-12 meses)", quantity: 0 }
+      ],
       movements: [],
       sanitaryRecords: [],
       monthlyRecords: [],
@@ -1007,10 +1138,16 @@ const elements = {
   movementPotreiroWrap: document.getElementById("movementPotreiroWrap"),
   movementPotreiroLabel: document.getElementById("movementPotreiroLabel"),
   movementPotreiro: document.getElementById("movementPotreiro"),
+  movementDestFarmWrap: document.getElementById("movementDestFarmWrap"),
+  movementDestFarm: document.getElementById("movementDestFarm"),
+  movementDestFarmOtherWrap: document.getElementById("movementDestFarmOtherWrap"),
+  movementDestFarmOther: document.getElementById("movementDestFarmOther"),
   movementPotreirowDestWrap: document.getElementById("movementPotreirowDestWrap"),
   movementPotreiroDest: document.getElementById("movementPotreiroDest"),
   movementOvinoDestFarmWrap: document.getElementById("movementOvinoDestFarmWrap"),
   movementOvinoDestFarm: document.getElementById("movementOvinoDestFarm"),
+  movementOvinoDestFarmOtherWrap: document.getElementById("movementOvinoDestFarmOtherWrap"),
+  movementOvinoDestFarmOther: document.getElementById("movementOvinoDestFarmOther"),
   adjustDirectionWrap: document.getElementById("adjustDirectionWrap"),
   adjustDirection: document.getElementById("adjustDirection"),
   movementSaleModeWrap: document.getElementById("movementSaleModeWrap"),
@@ -1064,8 +1201,11 @@ const elements = {
   sanitaryQuantity: document.getElementById("sanitaryQuantity"),
   sanitaryCategory: document.getElementById("sanitaryCategory"),
   sanitaryProduct: document.getElementById("sanitaryProduct"),
+  sanitaryProductSingleWrap: document.getElementById("sanitaryProductSingleWrap"),
   newProductWrap: document.getElementById("newProductWrap"),
   newProductName: document.getElementById("newProductName"),
+  sanitaryProductsMultiWrap: document.getElementById("sanitaryProductsMultiWrap"),
+  sanitaryProductsMultiGroups: document.getElementById("sanitaryProductsMultiGroups"),
   sanitaryNotes: document.getElementById("sanitaryNotes"),
   sanitaryPotrero: document.getElementById("sanitaryPotrero"),
   newPotreroWrap: document.getElementById("newPotreroWrap"),
@@ -3511,6 +3651,14 @@ function bindEvents() {
     syncMovementPotreirosOptions();
     updateSaleFieldVisibility();
     updateMovementCategoryTotal();
+    if (elements.movementType?.value === "transferencia") {
+      const farm = getMovementDialogFarm();
+      if ((elements.movementSpecies?.value || "bovino") === "ovino") {
+        syncMovementOvinoDestFarmOptions(farm);
+      } else {
+        syncMovementDestFarmOptions(farm);
+      }
+    }
   });
   elements.movementCategory.addEventListener("change", () => {
     syncMovementPotreirosOptions();
@@ -3525,6 +3673,8 @@ function bindEvents() {
   elements.movementType.addEventListener("change", () => {
     updateMovementFormForType(elements.movementType.value);
   });
+  elements.movementDestFarm?.addEventListener("change", syncMovementDestFarmMode);
+  elements.movementOvinoDestFarm?.addEventListener("change", syncMovementOvinoDestFarmMode);
   elements.movementPhotos.addEventListener("change", handleMovementPhotosChange);
   elements.movementPhotoPreview.addEventListener("click", handleMovementPhotoPreviewClick);
 
@@ -5671,14 +5821,15 @@ function revertMovementEffect(farm, movement) {
   }
   if (!category) return;
 
-  if (movement.type === "transferencia") {
-    // Reverse allocation only
+  if (movement.type === "transferencia" && movement.potreiroDest) {
+    // Transferência entre potreiros da mesma fazenda — reverte só a alocação, sem mexer no estoque
     ensureCategoryAllocation(category);
     const originId = movement.potreiro || UNALLOCATED_POTREIRO_KEY;
-    const destId = movement.potreiroDest || UNALLOCATED_POTREIRO_KEY;
+    const destId = movement.potreiroDest;
     category.allocation[originId] = (Number(category.allocation[originId] || 0)) + movement.quantity;
     category.allocation[destId] = Math.max(0, (Number(category.allocation[destId] || 0)) - movement.quantity);
   } else if (movement.delta !== 0) {
+    // Transferência entre fazendas (sem potreiroDest) usa delta, igual às demais movimentações
     // Reverse stock delta
     category.quantity -= movement.delta;
     ensureCategoryAllocation(category);
@@ -8928,6 +9079,7 @@ function resetSanitaryForm() {
   syncSanitaryFormOptions();
   updateSanitaryProductMode();
   updateSanitaryPotreroMode();
+  setSanitaryProductPickerMode(false);
 }
 
 function openSanitaryDialog() {
@@ -9014,6 +9166,7 @@ function openSanitaryEditor(recordId) {
   elements.sanitarySubmitButton.textContent = "Atualizar registro sanitário";
   updateSanitaryProductMode();
   updateSanitaryPotreroMode();
+  setSanitaryProductPickerMode(true);
   elements.sanitaryDialog?.showModal();
 }
 
@@ -9038,13 +9191,20 @@ function updateMovementFormForType(type) {
       elements.movementPotreiroLabel.textContent = (isExit || isTransfer) ?"Potreiro de origem" : "Potreiro de destino";
     }
   }
-  if (elements.movementPotreirowDestWrap) {
-    elements.movementPotreirowDestWrap.hidden = isOvino || !isTransfer;
+  if (elements.movementDestFarmWrap) {
+    elements.movementDestFarmWrap.hidden = isOvino || !isTransfer;
+    if (!isOvino && isTransfer) {
+      syncMovementDestFarmOptions(farm);
+    } else {
+      syncMovementDestFarmMode();
+    }
   }
   if (elements.movementOvinoDestFarmWrap) {
     elements.movementOvinoDestFarmWrap.hidden = !(isOvino && isTransfer);
     if (isOvino && isTransfer) {
       syncMovementOvinoDestFarmOptions(farm);
+    } else {
+      syncMovementOvinoDestFarmMode();
     }
   }
   // hide quantity/value for transfer (keep notes)
@@ -9362,12 +9522,51 @@ function syncCategoryOptions() {
   syncMovementCategoryOptionsForFarm(getMovementDialogFarm());
 }
 
+// Fazenda de destino: fazendas cadastradas (exceto a atual) + opção "Outra" com campo livre
+function populateFarmDestOptions(selectEl, currentFarm, { includeSameFarm } = {}) {
+  if (!selectEl || !currentFarm) return;
+  const others = getAllFarms().filter((item) => item.id !== currentFarm.id);
+  const opts = [];
+  if (includeSameFarm) {
+    opts.push(`<option value="${escapeHtml(currentFarm.id)}">Mesma fazenda (${escapeHtml(currentFarm.name)})</option>`);
+  }
+  opts.push(...others.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`));
+  opts.push(`<option value="${OTHER_FARM_VALUE}">Outra (não cadastrada)…</option>`);
+  selectEl.innerHTML = opts.join("");
+}
+
+function syncMovementDestFarmOptions(farm) {
+  if (!elements.movementDestFarm || !farm) return;
+  populateFarmDestOptions(elements.movementDestFarm, farm, { includeSameFarm: true });
+  syncMovementDestFarmMode();
+}
+
+function syncMovementDestFarmMode() {
+  const farm = getMovementDialogFarm() || getFarm();
+  const type = elements.movementType?.value;
+  const species = elements.movementSpecies?.value || "bovino";
+  const isTransfer = type === "transferencia";
+  const isOvino = species === "ovino";
+  const value = elements.movementDestFarm?.value || "";
+  const isOther = value === OTHER_FARM_VALUE;
+  const isSameFarm = !isOther && (!value || value === farm?.id);
+  if (elements.movementDestFarmOtherWrap) elements.movementDestFarmOtherWrap.hidden = !isOther;
+  if (!isOther && elements.movementDestFarmOther) elements.movementDestFarmOther.value = "";
+  if (elements.movementPotreirowDestWrap) {
+    elements.movementPotreirowDestWrap.hidden = isOvino || !isTransfer || !isSameFarm;
+  }
+}
+
 function syncMovementOvinoDestFarmOptions(farm) {
-  if (!elements.movementOvinoDestFarm) return;
-  const farms = getAllFarms().filter((item) => item.id !== farm?.id);
-  elements.movementOvinoDestFarm.innerHTML = farms.map((item) => `
-    <option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>
-  `).join("");
+  if (!elements.movementOvinoDestFarm || !farm) return;
+  populateFarmDestOptions(elements.movementOvinoDestFarm, farm, { includeSameFarm: false });
+  syncMovementOvinoDestFarmMode();
+}
+
+function syncMovementOvinoDestFarmMode() {
+  const isOther = elements.movementOvinoDestFarm?.value === OTHER_FARM_VALUE;
+  if (elements.movementOvinoDestFarmOtherWrap) elements.movementOvinoDestFarmOtherWrap.hidden = !isOther;
+  if (!isOther && elements.movementOvinoDestFarmOther) elements.movementOvinoDestFarmOther.value = "";
 }
 
 function syncMovementPotreirosOptions() {
@@ -9489,6 +9688,7 @@ function syncSanitaryFormOptions() {
   if (!elements.sanitaryProduct.value && farm.sanitaryProducts.length) {
     elements.sanitaryProduct.value = farm.sanitaryProducts[0];
   }
+  syncSanitaryProductGroups(farm);
 
   const potreroOptions = [
     '<option value="Sem potreiro">Sem potreiro</option>',
@@ -9507,6 +9707,71 @@ function syncSanitaryFormOptions() {
   }
   updateSanitaryProductMode();
   updateSanitaryPotreroMode();
+}
+
+// Checkbox de produto: id carrega o método pra não colidir quando o mesmo produto
+// existe em mais de uma via (ex.: "Parasules 40" é oral e injetável).
+function sanitaryProductCheckboxId(method, product, index) {
+  return `sanprod-${method}-${index}`;
+}
+
+function syncSanitaryProductGroups(farm) {
+  if (!elements.sanitaryProductsMultiGroups || !farm) return;
+
+  const classifiedNames = new Set();
+  Object.values(SANITARY_PRODUCTS_BY_METHOD).forEach((list) => {
+    list.forEach((name) => classifiedNames.add(normalizeText(name)));
+  });
+  const customProducts = (farm.sanitaryProducts || []).filter(
+    (name) => !classifiedNames.has(normalizeText(name))
+  );
+
+  const groups = [
+    ...SANITARY_APPLICATION_METHODS.map((method) => ({
+      id: method.id,
+      label: method.label,
+      products: SANITARY_PRODUCTS_BY_METHOD[method.id] || []
+    })),
+    { id: "outro", label: "Outros produtos desta fazenda", products: customProducts }
+  ];
+
+  elements.sanitaryProductsMultiGroups.innerHTML = groups.map((group) => `
+    <div class="sanitary-product-group" data-method="${group.id}">
+      <span class="sanitary-product-group-title">${escapeHtml(group.label)}</span>
+      ${group.products.map((product, index) => `
+        <label class="sanitary-product-checkbox">
+          <input type="checkbox" id="${sanitaryProductCheckboxId(group.id, product, index)}" data-method="${group.id}" value="${escapeHtml(product)}">
+          ${escapeHtml(product)}
+        </label>
+      `).join("")}
+      <input type="text" class="sanitary-product-group-new" data-new-product-method="${group.id}" maxlength="80" placeholder="+ outro produto ${group.id === "outro" ?"" : group.label.toLowerCase()}">
+    </div>
+  `).join("");
+}
+
+function setSanitaryProductPickerMode(isEditing) {
+  if (elements.sanitaryProductSingleWrap) elements.sanitaryProductSingleWrap.hidden = !isEditing;
+  if (elements.sanitaryProductsMultiWrap) elements.sanitaryProductsMultiWrap.hidden = isEditing;
+  if (!isEditing && elements.newProductWrap) {
+    // O seletor único fica oculto no modo de criação — a via "outro produto"
+    // agora é por grupo (campos de texto dentro de cada coluna).
+    elements.newProductWrap.hidden = true;
+  }
+}
+
+function getCheckedSanitaryProductSelections() {
+  if (!elements.sanitaryProductsMultiGroups) return [];
+  const selections = [];
+  elements.sanitaryProductsMultiGroups.querySelectorAll('input[type="checkbox"]:checked').forEach((checkbox) => {
+    selections.push({ method: checkbox.dataset.method, product: checkbox.value });
+  });
+  elements.sanitaryProductsMultiGroups.querySelectorAll('input[data-new-product-method]').forEach((input) => {
+    const name = input.value.trim();
+    if (name) {
+      selections.push({ method: input.dataset.newProductMethod, product: name, isNew: true });
+    }
+  });
+  return selections;
 }
 
 function getSanitaryCategoryOptions(farm, species = "bovino") {
@@ -9639,7 +9904,7 @@ async function handleMovementSubmit(event) {
     return;
   }
 
-  // Handle transfer between potreiros (no stock change, only reallocation)
+  // Handle transfer — same-farm reallocation (potreiro a potreiro) ou entre fazendas
   if (type === "transferencia") {
     if (!category || !date || !quantity || quantity < 1) {
       rollbackEditing();
@@ -9647,12 +9912,10 @@ async function handleMovementSubmit(event) {
       return;
     }
     const originId = elements.movementPotreiro?.value || UNALLOCATED_POTREIRO_KEY;
-    const destId = elements.movementPotreiroDest?.value || UNALLOCATED_POTREIRO_KEY;
-    if (originId === destId) {
-      rollbackEditing();
-      alert("Selecione potreiros de origem e destino diferentes para a transferência.");
-      return;
-    }
+    const destFarmSel = elements.movementDestFarm?.value || farm.id;
+    const isOtherFarm = destFarmSel === OTHER_FARM_VALUE;
+    const isSameFarm = !isOtherFarm && destFarmSel === farm.id;
+
     ensureCategoryAllocation(category);
     const originQty = Number(category.allocation[originId] || 0);
     if (originQty < quantity) {
@@ -9661,26 +9924,71 @@ async function handleMovementSubmit(event) {
       alert(`Apenas ${formatInteger(originQty)} animais estão alocados em "${originName}" para essa categoria.`);
       return;
     }
-    category.allocation[originId] = originQty - quantity;
-    category.allocation[destId] = (Number(category.allocation[destId] || 0)) + quantity;
-    updatePotreroQuantitiesFromAllocation(farm);
-    farm.movements.push({
-      id: createMovementId(),
-      code: generateMovementCode(farm),
-      type: "transferencia",
-      date,
-      categoryId,
-      categoryName: category.name,
-      quantity,
-      delta: 0,
-      value: 0,
-      saleDetails: null,
-      notes,
-      especie: "bovino",
-      potreiro: originId,
-      potreiroDest: destId,
-      photos: []
-    });
+
+    if (isSameFarm) {
+      const destId = elements.movementPotreiroDest?.value || UNALLOCATED_POTREIRO_KEY;
+      if (originId === destId) {
+        rollbackEditing();
+        alert("Selecione potreiros de origem e destino diferentes para a transferência.");
+        return;
+      }
+      category.allocation[originId] = originQty - quantity;
+      category.allocation[destId] = (Number(category.allocation[destId] || 0)) + quantity;
+      updatePotreroQuantitiesFromAllocation(farm);
+      farm.movements.push({
+        id: createMovementId(), code: generateMovementCode(farm), type: "transferencia", date,
+        categoryId, categoryName: category.name, quantity, delta: 0, value: 0, saleDetails: null, notes,
+        especie: "bovino", potreiro: originId, potreiroDest: destId, photos: []
+      });
+    } else if (isOtherFarm) {
+      const destName = elements.movementDestFarmOther?.value.trim();
+      if (!destName) {
+        rollbackEditing();
+        alert("Informe o nome da fazenda de destino.");
+        return;
+      }
+      category.quantity -= quantity;
+      category.allocation[originId] = originQty - quantity;
+      updatePotreroQuantitiesFromAllocation(farm);
+      farm.movements.push({
+        id: createMovementId(), code: generateMovementCode(farm), type: "transferencia", date,
+        categoryId, categoryName: category.name, quantity, delta: -quantity, value: 0, saleDetails: null,
+        notes: notes || `Transferência para ${destName}`, especie: "bovino", potreiro: originId, transferTo: destName, photos: []
+      });
+    } else {
+      const destFarm = state.data.farms[destFarmSel];
+      if (!destFarm) {
+        rollbackEditing();
+        alert("Selecione uma fazenda de destino válida.");
+        return;
+      }
+      const transferNote = notes || `Transferência de ${farm.name} para ${destFarm.name}`;
+
+      category.quantity -= quantity;
+      category.allocation[originId] = originQty - quantity;
+      updatePotreroQuantitiesFromAllocation(farm);
+      farm.movements.push({
+        id: createMovementId(), code: generateMovementCode(farm), type: "transferencia", date,
+        categoryId, categoryName: category.name, quantity, delta: -quantity, value: 0, saleDetails: null,
+        notes: transferNote, especie: "bovino", potreiro: originId, transferTo: destFarm.name, photos: []
+      });
+
+      let destCategory = destFarm.categories.find((c) => c.id === categoryId);
+      if (!destCategory) {
+        destCategory = { id: categoryId, name: category.name, quantity: 0 };
+        destFarm.categories.push(destCategory);
+      }
+      ensureCategoryAllocation(destCategory);
+      destCategory.quantity += quantity;
+      destCategory.allocation[UNALLOCATED_POTREIRO_KEY] = (Number(destCategory.allocation[UNALLOCATED_POTREIRO_KEY] || 0)) + quantity;
+      updatePotreroQuantitiesFromAllocation(destFarm);
+      destFarm.movements.push({
+        id: createMovementId(), code: generateMovementCode(destFarm), type: "transferencia", date,
+        categoryId, categoryName: category.name, quantity, delta: quantity, value: 0, saleDetails: null,
+        notes: transferNote, especie: "bovino", potreiro: UNALLOCATED_POTREIRO_KEY, transferFrom: farm.name, photos: []
+      });
+    }
+
     saveData();
     populateYearFilter();
     resetMovementPhotoDrafts();
@@ -9813,8 +10121,56 @@ function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date
     : null;
 
   if (type === "transferencia") {
-    const destFarmId = elements.movementOvinoDestFarm?.value || "";
-    const destFarm = destFarmId ? state.data.farms[destFarmId] : null;
+    const destFarmSel = elements.movementOvinoDestFarm?.value || "";
+    const isOtherFarm = destFarmSel === OTHER_FARM_VALUE;
+    const destFarm = !isOtherFarm && destFarmSel ? state.data.farms[destFarmSel] : null;
+
+    if (isOtherFarm) {
+      const destName = elements.movementOvinoDestFarmOther?.value.trim();
+      if (!destName) {
+        alert("Informe o nome da fazenda de destino.");
+        return;
+      }
+
+      const originEntry = findOrCreateOvinoEntry(farm, categoryMeta.id, categoryMeta.name);
+      const stockError = validateStockExit(quantity, originEntry.quantity);
+      if (stockError) {
+        alert(stockError);
+        return;
+      }
+      originEntry.quantity -= quantity;
+
+      farm.movements.push({
+        id: createMovementId(),
+        code: generateMovementCode(farm),
+        type: "transferencia",
+        date,
+        categoryId: categoryMeta.id,
+        categoryName: categoryMeta.name,
+        quantity,
+        delta: -quantity,
+        value: 0,
+        saleDetails: null,
+        purchaseDetails: null,
+        notes: notes || `Transferência para ${destName}`,
+        especie: "ovino",
+        transferTo: destName,
+        photos: []
+      });
+
+      logAuditEvent("Adição", "movimentação", `Transferência de ovinos: ${categoryMeta.name} de ${farm.name} para ${destName}`, {
+        farmId: farm.id,
+        farmName: farm.name,
+        recordCode: farm.movements[farm.movements.length - 1].code
+      });
+      saveData();
+      populateYearFilter();
+      resetMovementPhotoDrafts();
+      elements.movementDialog.close();
+      render();
+      return;
+    }
+
     if (!destFarm || destFarm.id === farm.id) {
       alert("Selecione uma fazenda de destino diferente para a transferência.");
       return;
@@ -10078,23 +10434,16 @@ function handleSanitarySubmit(event) {
   const quantity = Number(elements.sanitaryQuantity.value);
   const categoryId = elements.sanitaryCategory.value;
   const categoryLabel = elements.sanitaryCategory.selectedOptions[0]?.textContent || "Categoria";
-  const selectedProduct = elements.sanitaryProduct.value;
-  const newProductName = elements.newProductName.value.trim();
-  const product = selectedProduct === "__new__" ?newProductName : selectedProduct;
   const selectedPotrero = elements.sanitaryPotrero.value;
   const newPotreroName = elements.newPotreroName.value.trim();
   const potreiro = selectedPotrero === "__new__" ?newPotreroName : selectedPotrero;
   const notes = elements.sanitaryNotes.value.trim();
-  const isEditingSanitary = Boolean(editingId);
 
-  if (!date || !categoryId || !Number.isFinite(quantity) || quantity < 1 || !product || !potreiro) {
-    alert("Preencha data, categoria, quantidade (mínimo 1), produto e potreiro para registrar o manejo sanitário.");
+  if (!date || !categoryId || !Number.isFinite(quantity) || quantity < 1 || !potreiro) {
+    alert("Preencha data, categoria, quantidade (mínimo 1) e potreiro para registrar o manejo sanitário.");
     return;
   }
 
-  if (selectedProduct === "__new__" && !farm.sanitaryProducts.includes(product)) {
-    farm.sanitaryProducts.push(product);
-  }
   if (selectedPotrero === "__new__" && !getPotreroEntries(farm).some((item) => normalizeText(item.name) === normalizeText(potreiro))) {
     farm.potreiros.push({
       id: createPotreroId(potreiro),
@@ -10103,19 +10452,23 @@ function handleSanitarySubmit(event) {
     });
   }
 
-  const recordPayload = {
-    date,
-    farmId: farm.id,
-    especie: species,
-    quantity,
-    categoryId,
-    categoryName: categoryLabel,
-    product,
-    potreiro,
-    notes
-  };
+  const sharedFields = { date, farmId: farm.id, especie: species, quantity, categoryId, categoryName: categoryLabel, potreiro, notes };
 
   if (editingId) {
+    // Edição continua sendo de um único produto por registro — o manejo com
+    // vários produtos de uma vez só se aplica à criação de um novo manejo.
+    const selectedProduct = elements.sanitaryProduct.value;
+    const newProductName = elements.newProductName.value.trim();
+    const product = selectedProduct === "__new__" ?newProductName : selectedProduct;
+    if (!product) {
+      alert("Selecione ou descreva o produto utilizado.");
+      return;
+    }
+    if (selectedProduct === "__new__" && !farm.sanitaryProducts.includes(product)) {
+      farm.sanitaryProducts.push(product);
+    }
+
+    const recordPayload = { ...sharedFields, product };
     const ownerFarm = getAllFarms().find((item) => item.sanitaryRecords.some((record) => record.id === editingId || record.sourceId === editingId));
     const existingRecord = ownerFarm?.sanitaryRecords.find((item) => item.id === editingId || item.sourceId === editingId);
     if (existingRecord && ownerFarm?.id === farm.id) {
@@ -10127,24 +10480,57 @@ function handleSanitarySubmit(event) {
         ...recordPayload
       });
     }
-  } else {
-    farm.sanitaryRecords.push({
-      id: createMovementId(),
-      code: generateSanitaryCode(farm),
+
+    const savedSanitaryRecord = farm.sanitaryRecords.find((item) => item.id === editingId || item.sourceId === editingId);
+    state.data.selectedFarmId = farm.id;
+    logAuditEvent("Edição", "sanitário", `${product} em ${potreiro}`, {
       farmId: farm.id,
-      ...recordPayload
+      farmName: farm.name,
+      recordCode: savedSanitaryRecord?.code || ""
+    });
+  } else {
+    // Um manejo pode aplicar vários produtos (e vias) de uma vez — cada produto
+    // marcado vira seu próprio registro sanitário, todos com os mesmos dados
+    // de data/categoria/quantidade/potreiro.
+    const selections = getCheckedSanitaryProductSelections();
+    if (!selections.length) {
+      alert("Marque ao menos um produto aplicado neste manejo.");
+      return;
+    }
+
+    const seen = new Set();
+    const uniqueSelections = selections.filter((selection) => {
+      const key = `${selection.method}::${normalizeText(selection.product)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    const createdRecords = uniqueSelections.map(({ product, method, isNew }) => {
+      if (isNew && !farm.sanitaryProducts.includes(product)) {
+        farm.sanitaryProducts.push(product);
+      }
+      const record = {
+        id: createMovementId(),
+        code: generateSanitaryCode(farm),
+        farmId: farm.id,
+        ...sharedFields,
+        product,
+        metodoAplicacao: method === "outro" ?"" : method
+      };
+      farm.sanitaryRecords.push(record);
+      return record;
+    });
+
+    state.data.selectedFarmId = farm.id;
+    const productSummary = uniqueSelections.map((selection) => selection.product).join(", ");
+    logAuditEvent("Adição", "sanitário", `${productSummary} em ${potreiro}`, {
+      farmId: farm.id,
+      farmName: farm.name,
+      recordCode: createdRecords.map((record) => record.code).join(", ")
     });
   }
 
-  const savedSanitaryRecord = editingId
-    ?farm.sanitaryRecords.find((item) => item.id === editingId || item.sourceId === editingId)
-    : farm.sanitaryRecords[farm.sanitaryRecords.length - 1];
-  state.data.selectedFarmId = farm.id;
-  logAuditEvent(isEditingSanitary ?"Edição" : "Adição", "sanitário", `${product} em ${potreiro}`, {
-    farmId: farm.id,
-    farmName: farm.name,
-    recordCode: savedSanitaryRecord?.code || ""
-  });
   saveData();
   populateYearFilter();
   closeSanitaryDialog();

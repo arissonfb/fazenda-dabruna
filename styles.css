@@ -2330,6 +2330,55 @@ input {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.sanitary-products-multi-label {
+  font-weight: 600;
+}
+
+.sanitary-products-multi-hint {
+  margin: 4px 0 12px;
+  font-size: 0.85rem;
+  color: var(--muted, #6b7280);
+}
+
+.sanitary-products-multi-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.sanitary-product-group {
+  border: 1px solid var(--border, #e2e2e2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.sanitary-product-group-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.form-grid .sanitary-product-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  padding: 3px 0;
+}
+
+.sanitary-product-checkbox input {
+  margin: 0;
+}
+
+.sanitary-product-group-new {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  padding: 5px 8px;
+}
+
 .form-span-2 {
   grid-column: span 2;
 }

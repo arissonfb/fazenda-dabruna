@@ -52,14 +52,47 @@ const PASTURE_UNITS = [
 
 const PASTURE_STATUSES = [
   { id: "planejada", name: "Planejada" },
+  { id: "preparo", name: "Em preparo" },
   { id: "implantacao", name: "Em implantação" },
-  { id: "manejo", name: "Em manejo" },
-  { id: "finalizada", name: "Finalizada" }
+  { id: "implantada", name: "Implantada" },
+  { id: "utilizacao", name: "Em utilização" },
+  { id: "descanso", name: "Em descanso" },
+  { id: "encerrada", name: "Encerrada" }
+];
+
+const PASTURE_PREPARO_TYPES = [
+  { id: "gradagem", name: "Gradagem" },
+  { id: "rolo-faca", name: "Rolo-faca" },
+  { id: "outro", name: "Outro" }
+];
+
+const PASTURE_DESSECACAO_METHODS = [
+  { id: "terrestre", name: "Pulverizador terrestre" },
+  { id: "aviao", name: "Avião" }
+];
+
+const PASTURE_IMPLANTACAO_METHODS = [
+  { id: "plantio-direto", name: "Plantio direto" },
+  { id: "lanco", name: "Semeadura a lanço" },
+  { id: "aviao", name: "Avião" }
 ];
 
 const PASTURE_CHART_PALETTE = [
   "#8a6d1f", "#375b43", "#0e4f6b", "#7c1d4f", "#7a4f00",
   "#1e3a5f", "#134e27", "#c98c4f", "#5b3a1e", "#6b4226", "#9c6b30", "#3f6212"
+];
+
+/* ── Ficha da pastagem: abas e mini-formulários ──────────────────────
+   Cada área ganha 4 baldes de custo estruturados (preparoOperations,
+   desiccationApplications, implantationRecords, grazingPeriods) além do
+   `procedures` genérico já existente, que agora representa "Outros
+   insumos". Ver plano em C:\Users\Home\.claude\plans\deep-bubbling-crayon.md */
+const PASTURE_FICHA_TABS = [
+  { id: "identificacao", label: "Identificação" },
+  { id: "preparo", label: "Preparo da área" },
+  { id: "implantacao", label: "Implantação" },
+  { id: "resumo", label: "Resumo financeiro" },
+  { id: "utilizacao", label: "Utilização" }
 ];
 
 /* ── Helpers de dados ─────────────────────────────────────────────── */
@@ -97,13 +130,70 @@ function getPastureStatusLabel(statusId) {
   return found ? found.name : (statusId || "—");
 }
 
-function getAreaTotalCost(area) {
+function labelFromOptions(options, id, customLabel) {
+  if (id === "outro" && customLabel?.trim()) return customLabel.trim();
+  const found = options.find((o) => o.id === id);
+  return found ? found.name : (id || "—");
+}
+
+function getPreparoTypeLabel(op) {
+  return labelFromOptions(PASTURE_PREPARO_TYPES, op.tipo, op.customTipo);
+}
+
+function getDessecacaoMethodLabel(app) {
+  return labelFromOptions(PASTURE_DESSECACAO_METHODS, app.metodo);
+}
+
+function getImplantacaoMethodLabel(rec) {
+  return labelFromOptions(PASTURE_IMPLANTACAO_METHODS, rec.metodo);
+}
+
+/* ── Cálculo de custos (4 baldes por área) ────────────────────────────
+   preparoOperations/desiccationApplications/implantationRecords/procedures
+   já trazem seu próprio `custoTotal`/`totalValue` calculado no momento do
+   lançamento (ver handlers *Submit abaixo) — aqui só somamos. */
+function getAreaPreparoCost(area) {
+  return (area.preparoOperations || []).reduce((sum, op) => sum + (Number(op.custoTotal) || 0), 0);
+}
+
+function getAreaDessecacaoCost(area) {
+  return (area.desiccationApplications || []).reduce((sum, app) => sum + (Number(app.custoTotal) || 0), 0);
+}
+
+function getAreaImplantacaoCost(area) {
+  return (area.implantationRecords || []).reduce((sum, rec) => sum + (Number(rec.custoTotal) || 0), 0);
+}
+
+function getAreaOutrosCost(area) {
   return (area.procedures || []).reduce((sum, p) => sum + (Number(p.totalValue) || 0), 0);
+}
+
+function getAreaTotalCost(area) {
+  return getAreaPreparoCost(area) + getAreaDessecacaoCost(area) + getAreaImplantacaoCost(area) + getAreaOutrosCost(area);
 }
 
 function getAreaCostPerHa(area) {
   const ha = Number(area.sizeHa) || 0;
   return ha > 0 ? getAreaTotalCost(area) / ha : 0;
+}
+
+/* Lista unificada de lançamentos de custo da área (todas as 4 fontes),
+   usada pelos gráficos/PDF/Excel/exec-cards que antes só liam `procedures`. */
+function getAreaCostEntries(area) {
+  const entries = [];
+  (area.preparoOperations || []).forEach((op) => entries.push({
+    date: op.data, typeLabel: `Preparo — ${getPreparoTypeLabel(op)}`, value: Number(op.custoTotal) || 0, responsible: ""
+  }));
+  (area.desiccationApplications || []).forEach((app) => entries.push({
+    date: app.data, typeLabel: `Dessecação — ${app.produto?.trim() || getDessecacaoMethodLabel(app)}`, value: Number(app.custoTotal) || 0, responsible: ""
+  }));
+  (area.implantationRecords || []).forEach((rec) => entries.push({
+    date: rec.data, typeLabel: `Implantação — ${rec.tipoSemente?.trim() || getImplantacaoMethodLabel(rec)}`, value: Number(rec.custoTotal) || 0, responsible: ""
+  }));
+  (area.procedures || []).forEach((p) => entries.push({
+    date: p.date, typeLabel: getPastureProcedureTypeLabel(p), value: Number(p.totalValue) || 0, responsible: p.responsible || ""
+  }));
+  return entries;
 }
 
 function formatHa(value) {
@@ -112,6 +202,15 @@ function formatHa(value) {
 
 function createPastureId(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function populatePastureAreaPotreiroSelect(farm) {
+  const select = document.getElementById("pastureAreaPotreiro");
+  if (!select) return;
+  const potreiros = farm?.potreiros || [];
+  select.innerHTML = potreiros.length
+    ? potreiros.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("")
+    : `<option value="">Nenhum potreiro cadastrado nesta fazenda</option>`;
 }
 
 /* ── Filtros ──────────────────────────────────────────────────────── */
@@ -201,12 +300,10 @@ function computePastureMetrics(rows) {
     const groupLabel = isTotalView ? farm.name : area.name;
     groupCost.set(groupLabel, (groupCost.get(groupLabel) || 0) + areaCost);
 
-    (area.procedures || []).forEach((p) => {
-      const value = Number(p.totalValue) || 0;
-      const typeLabel = getPastureProcedureTypeLabel(p);
-      procedureCost.set(typeLabel, (procedureCost.get(typeLabel) || 0) + value);
-      if (!lastEntry || String(p.date || "") > String(lastEntry.date || "")) {
-        lastEntry = { ...p, areaName: area.name, farmName: farm.name };
+    getAreaCostEntries(area).forEach((entry) => {
+      procedureCost.set(entry.typeLabel, (procedureCost.get(entry.typeLabel) || 0) + entry.value);
+      if (!lastEntry || String(entry.date || "") > String(lastEntry.date || "")) {
+        lastEntry = { ...entry, areaName: area.name, farmName: farm.name };
       }
     });
   });
@@ -286,9 +383,8 @@ function renderPastureGroupChart(rows) {
 function renderPastureProcedureChart(rows) {
   const map = new Map();
   rows.forEach(({ area }) => {
-    (area.procedures || []).forEach((p) => {
-      const label = getPastureProcedureTypeLabel(p);
-      map.set(label, (map.get(label) || 0) + (Number(p.totalValue) || 0));
+    getAreaCostEntries(area).forEach((entry) => {
+      map.set(entry.typeLabel, (map.get(entry.typeLabel) || 0) + entry.value);
     });
   });
   const entries = [...map.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
@@ -315,10 +411,10 @@ function renderPastureProcedureChart(rows) {
 function renderPastureMonthlyChart(rows) {
   const map = new Map();
   rows.forEach(({ area }) => {
-    (area.procedures || []).forEach((p) => {
-      const period = String(p.date || "").slice(0, 7);
+    getAreaCostEntries(area).forEach((entry) => {
+      const period = String(entry.date || "").slice(0, 7);
       if (!/^\d{4}-\d{2}$/.test(period)) return;
-      map.set(period, (map.get(period) || 0) + (Number(p.totalValue) || 0));
+      map.set(period, (map.get(period) || 0) + entry.value);
     });
   });
   const periods = [...map.keys()].sort();
@@ -436,7 +532,7 @@ function renderPastureExecCards(metrics) {
       title: "Último lançamento",
       value: metrics.lastEntry ? formatDate(metrics.lastEntry.date) : "—",
       detail: metrics.lastEntry
-        ? `${escapeHtml(getPastureProcedureTypeLabel(metrics.lastEntry))} · ${escapeHtml(metrics.lastEntry.areaName)}`
+        ? `${escapeHtml(metrics.lastEntry.typeLabel)} · ${escapeHtml(metrics.lastEntry.areaName)}`
         : "nenhum procedimento registrado"
     }
   ];
@@ -562,7 +658,7 @@ function renderPastureAreaRows(rows, isTotalView) {
               <th>Hectares</th>
               <th>Custo total</th>
               <th>Custo / ha</th>
-              <th>Procedimentos</th>
+              <th>Lançamentos</th>
               <th></th>
             </tr>
           </thead>
@@ -570,31 +666,9 @@ function renderPastureAreaRows(rows, isTotalView) {
             ${rows.map(({ farm, area }) => {
               const totalCost = getAreaTotalCost(area);
               const costHa = getAreaCostPerHa(area);
-              const procedures = area.procedures || [];
+              const entryCount = getAreaCostEntries(area).length;
               const status = area.status || "planejada";
               const subtitle = `${escapeHtml(getPastureCultureLabel(area))} · Safra ${escapeHtml(area.season || "—")}`;
-              const colSpan = isTotalView ? 10 : 9;
-
-              const procedureRows = procedures.map((p) => `
-                <tr>
-                  <td data-label="Data">${formatDate(p.date)}</td>
-                  <td data-label="Tipo">${escapeHtml(getPastureProcedureTypeLabel(p))}</td>
-                  <td data-label="Descrição">${escapeHtml(p.description || "—")}</td>
-                  <td data-label="Responsável">${escapeHtml(p.responsible || "—")}</td>
-                  <td data-label="Área (ha)">${formatWeight(p.areaHa || 0)}</td>
-                  <td data-label="Qtd.">${formatWeight(p.quantity || 0)}</td>
-                  <td data-label="Unid.">${escapeHtml(getPastureUnitLabel(p.unit))}</td>
-                  <td data-label="Vlr. unit.">${formatCurrency(p.unitValue)}</td>
-                  <td data-label="Total">${formatCurrency(p.totalValue)}</td>
-                  <td data-label="Ações">
-                    <div class="pasture-row-actions">
-                      <button type="button" data-pasture-action="edit-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Editar</button>
-                      <button type="button" data-pasture-action="duplicate-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Duplicar</button>
-                      <button type="button" class="danger" data-pasture-action="delete-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Excluir</button>
-                    </div>
-                  </td>
-                </tr>
-              `).join("");
 
               return `
                 <tr class="pasture-area-row">
@@ -609,31 +683,13 @@ function renderPastureAreaRows(rows, isTotalView) {
                   <td data-label="Hectares">${formatHa(area.sizeHa)}</td>
                   <td data-label="Custo total">${formatCurrency(totalCost)}</td>
                   <td data-label="Custo / ha">${formatCurrency(costHa)}</td>
-                  <td data-label="Procedimentos">${formatInteger(procedures.length)}</td>
+                  <td data-label="Lançamentos">${formatInteger(entryCount)}</td>
                   <td data-label="Ações">
                     <div class="pasture-row-actions">
-                      <button type="button" data-pasture-action="new-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">+ Procedimento</button>
-                      <button type="button" data-pasture-action="edit-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Editar</button>
+                      <button type="button" data-pasture-action="open-ficha" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Abrir ficha</button>
                       <button type="button" data-pasture-action="duplicate-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Duplicar</button>
                       <button type="button" class="danger" data-pasture-action="delete-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Excluir</button>
                     </div>
-                  </td>
-                </tr>
-                <tr class="pasture-area-details-row">
-                  <td colspan="${colSpan}">
-                    <details class="pasture-procedures">
-                      <summary>Procedimentos (${formatInteger(procedures.length)})</summary>
-                      ${procedures.length ? `
-                        <div class="table-wrap">
-                          <table>
-                            <thead>
-                              <tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Responsável</th><th>Área (ha)</th><th>Qtd.</th><th>Unid.</th><th>Vlr. unit.</th><th>Total</th><th></th></tr>
-                            </thead>
-                            <tbody>${procedureRows}</tbody>
-                          </table>
-                        </div>
-                      ` : `<p class="field-note" style="padding:12px 0 0">Nenhum procedimento registrado.</p>`}
-                    </details>
                   </td>
                 </tr>
               `;
@@ -705,7 +761,6 @@ function handlePastagensViewClick(event) {
   const action = target.dataset.pastureAction;
   const farmId = target.dataset.farmId;
   const areaId = target.dataset.areaId;
-  const procedureId = target.dataset.procedureId;
   const farm = farmId ? state.data.farms[farmId] : null;
   const area = farm ? getPastureAreas(farm).find((a) => a.id === areaId) : null;
 
@@ -718,28 +773,14 @@ function handlePastagensViewClick(event) {
       openPastureAreaDialog(null, defaultFarm);
       break;
     }
-    case "edit-area":
-      if (area) openPastureAreaDialog(area, farm);
+    case "open-ficha":
+      if (area) openPastureFichaDialog(farm, area);
       break;
     case "duplicate-area":
       if (area && confirm(`Duplicar a área "${area.name}"?`)) duplicatePastureArea(farm, area);
       break;
     case "delete-area":
-      if (area && confirm(`Excluir a área "${area.name}" e todos os seus procedimentos?`)) deletePastureArea(farm, area);
-      break;
-    case "new-procedure":
-      if (area) openPastureProcedureDialog(farm, area, null);
-      break;
-    case "edit-procedure": {
-      const procedure = (area?.procedures || []).find((p) => p.id === procedureId);
-      if (procedure) openPastureProcedureDialog(farm, area, procedure);
-      break;
-    }
-    case "duplicate-procedure":
-      if (area && confirm("Duplicar este procedimento?")) duplicatePastureProcedure(farm, area, procedureId);
-      break;
-    case "delete-procedure":
-      if (area && confirm("Excluir este procedimento?")) deletePastureProcedure(farm, area, procedureId);
+      if (area && confirm(`Excluir a área "${area.name}" e todos os seus lançamentos?`)) deletePastureArea(farm, area);
       break;
     case "clear-filters":
       runtime.pastureFilters = createDefaultPastureFilters();
@@ -783,17 +824,14 @@ function injectPastureDialogs() {
           <label class="span-2" id="pastureAreaFarmField" hidden>Fazenda
             <select id="pastureAreaFarm"></select>
           </label>
-          <label class="span-2">Nome da área / potreiro
-            <input type="text" id="pastureAreaName" maxlength="60" required list="pastureAreaPotreiroOptions" />
-            <datalist id="pastureAreaPotreiroOptions"></datalist>
+          <label>Potreiro
+            <select id="pastureAreaPotreiro" required></select>
           </label>
-          <label>Hectares
+          <label>Área total do potreiro (ha)
+            <input type="number" id="pastureAreaPotreiroTotalHa" min="0" step="0.1" />
+          </label>
+          <label>Área destinada à pastagem (ha)
             <input type="number" id="pastureAreaSizeHa" min="0" step="0.1" required />
-          </label>
-          <label>Status
-            <select id="pastureAreaStatus">
-              ${PASTURE_STATUSES.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")}
-            </select>
           </label>
           <label>Cultura
             <select id="pastureAreaCulture">
@@ -806,8 +844,16 @@ function injectPastureDialogs() {
           <label>Safra
             <input type="text" id="pastureAreaSeason" maxlength="20" placeholder="Ex: 2025/2026" required />
           </label>
-          <label>Data de início
+          <label>Data prevista de início
             <input type="date" id="pastureAreaStartDate" />
+          </label>
+          <label>Status
+            <select id="pastureAreaStatus">
+              ${PASTURE_STATUSES.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label class="span-2">Observações
+            <textarea id="pastureAreaNotes" rows="2" maxlength="240"></textarea>
           </label>
           <div class="form-actions">
             <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureAreaDialog">Cancelar</button>
@@ -875,6 +921,220 @@ function injectPastureDialogs() {
         </div>
       </form>
     </dialog>
+
+    <dialog id="pastureGradagemDialog" class="modal">
+      <form class="modal-card" id="pastureGradagemForm">
+        <div class="modal-header">
+          <div>
+            <p class="panel-kicker" id="pastureGradagemAreaLabel">Área</p>
+            <h2 id="pastureGradagemDialogTitle">Gradagem / rolo-faca</h2>
+          </div>
+          <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureGradagemDialog">Fechar</button>
+        </div>
+        <div class="form-grid">
+          <label>Tipo da operação
+            <select id="pastureGradagemTipo">
+              ${PASTURE_PREPARO_TYPES.map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label id="pastureGradagemCustomTipoField" hidden>Qual operação?
+            <input type="text" id="pastureGradagemCustomTipo" maxlength="60" />
+          </label>
+          <label>Data
+            <input type="date" id="pastureGradagemData" required />
+          </label>
+          <label>Quantidade de passadas
+            <input type="number" id="pastureGradagemPassadas" min="0" step="1" />
+          </label>
+          <label>Custo por hectare (R$)
+            <input type="number" id="pastureGradagemCustoPorHa" min="0" step="0.01" required />
+          </label>
+          <label>Área trabalhada (ha)
+            <input type="number" id="pastureGradagemAreaTrabalhada" min="0" step="0.1" required />
+          </label>
+          <label>Custo total (R$)
+            <input type="text" id="pastureGradagemCustoTotal" readonly />
+          </label>
+          <div class="form-actions">
+            <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureGradagemDialog">Cancelar</button>
+            <button type="submit" class="action-btn purchase">Salvar</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="pastureDessecacaoDialog" class="modal">
+      <form class="modal-card" id="pastureDessecacaoForm">
+        <div class="modal-header">
+          <div>
+            <p class="panel-kicker" id="pastureDessecacaoAreaLabel">Área</p>
+            <h2 id="pastureDessecacaoDialogTitle">Dessecação</h2>
+          </div>
+          <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureDessecacaoDialog">Fechar</button>
+        </div>
+        <div class="form-grid">
+          <label>Data
+            <input type="date" id="pastureDessecacaoData" required />
+          </label>
+          <label>Produto utilizado
+            <input type="text" id="pastureDessecacaoProduto" maxlength="60" required />
+          </label>
+          <label>Método
+            <select id="pastureDessecacaoMetodo">
+              ${PASTURE_DESSECACAO_METHODS.map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Vazão (L/ha)
+            <input type="number" id="pastureDessecacaoVazao" min="0" step="0.01" required />
+          </label>
+          <label>Hectares
+            <input type="number" id="pastureDessecacaoHectares" min="0" step="0.1" required />
+          </label>
+          <label>Quantidade total (L)
+            <input type="text" id="pastureDessecacaoQuantidadeTotal" readonly />
+          </label>
+          <label>Preço por litro (R$)
+            <input type="number" id="pastureDessecacaoPrecoLitro" min="0" step="0.01" required />
+          </label>
+          <label>Custo do produto (R$)
+            <input type="text" id="pastureDessecacaoCustoProduto" readonly />
+          </label>
+          <label>Custo de aplicação por hectare (R$)
+            <input type="number" id="pastureDessecacaoCustoAplicacaoHa" min="0" step="0.01" />
+          </label>
+          <label>Custo de aplicação total (R$)
+            <input type="text" id="pastureDessecacaoCustoAplicacaoTotal" readonly />
+          </label>
+          <label>Custo total da dessecação (R$)
+            <input type="text" id="pastureDessecacaoCustoTotal" readonly />
+          </label>
+          <div class="form-actions">
+            <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureDessecacaoDialog">Cancelar</button>
+            <button type="submit" class="action-btn purchase">Salvar</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="pastureImplantacaoDialog" class="modal">
+      <form class="modal-card" id="pastureImplantacaoForm">
+        <div class="modal-header">
+          <div>
+            <p class="panel-kicker" id="pastureImplantacaoAreaLabel">Área</p>
+            <h2 id="pastureImplantacaoDialogTitle">Implantação</h2>
+          </div>
+          <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureImplantacaoDialog">Fechar</button>
+        </div>
+        <div class="form-grid">
+          <label>Método
+            <select id="pastureImplantacaoMetodo">
+              ${PASTURE_IMPLANTACAO_METHODS.map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Data da implantação
+            <input type="date" id="pastureImplantacaoData" required />
+          </label>
+          <label>Tipo / variedade da semente
+            <input type="text" id="pastureImplantacaoTipoSemente" maxlength="60" required />
+          </label>
+          <label>Quantidade de semente (kg/ha)
+            <input type="number" id="pastureImplantacaoKgHa" min="0" step="0.01" required />
+          </label>
+          <label>Hectares
+            <input type="number" id="pastureImplantacaoHectares" min="0" step="0.1" required />
+          </label>
+          <label>Quantidade total de sementes (kg)
+            <input type="text" id="pastureImplantacaoQuantidadeTotal" readonly />
+          </label>
+          <label>Custo por kg (R$)
+            <input type="number" id="pastureImplantacaoCustoPorKg" min="0" step="0.01" required />
+          </label>
+          <label>Custo total das sementes (R$)
+            <input type="text" id="pastureImplantacaoCustoSementes" readonly />
+          </label>
+          <label>Custo da semeadura por hectare (R$)
+            <input type="number" id="pastureImplantacaoCustoSemeaduraHa" min="0" step="0.01" />
+          </label>
+          <label>Custo total da operação (R$)
+            <input type="text" id="pastureImplantacaoCustoOperacao" readonly />
+          </label>
+          <label>Total da implantação (R$)
+            <input type="text" id="pastureImplantacaoCustoTotal" readonly />
+          </label>
+          <div class="form-actions">
+            <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureImplantacaoDialog">Cancelar</button>
+            <button type="submit" class="action-btn purchase">Salvar</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="pastureUtilizacaoDialog" class="modal">
+      <form class="modal-card" id="pastureUtilizacaoForm">
+        <div class="modal-header">
+          <div>
+            <p class="panel-kicker" id="pastureUtilizacaoAreaLabel">Área</p>
+            <h2 id="pastureUtilizacaoDialogTitle">Utilização da pastagem</h2>
+          </div>
+          <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureUtilizacaoDialog">Fechar</button>
+        </div>
+        <div class="form-grid">
+          <label>Data de entrada
+            <input type="date" id="pastureUtilizacaoEntrada" required />
+          </label>
+          <label>Data de saída
+            <input type="date" id="pastureUtilizacaoSaida" />
+          </label>
+          <label>Categoria animal
+            <input type="text" id="pastureUtilizacaoCategoria" maxlength="60" placeholder="Ex.: Vacas, Novilhas, Terneiros, Bois, Ovinos" required />
+          </label>
+          <label>Quantidade de animais
+            <input type="number" id="pastureUtilizacaoQuantidade" min="0" step="1" required />
+          </label>
+          <label>Peso médio de entrada (kg)
+            <input type="number" id="pastureUtilizacaoPesoEntrada" min="0" step="0.1" />
+          </label>
+          <label>Peso médio de saída (kg)
+            <input type="number" id="pastureUtilizacaoPesoSaida" min="0" step="0.1" />
+          </label>
+          <label>Dias de utilização
+            <input type="text" id="pastureUtilizacaoDias" readonly />
+          </label>
+          <label>Lotação (cab./ha)
+            <input type="text" id="pastureUtilizacaoLotacao" readonly />
+          </label>
+          <label class="span-2">Observações
+            <textarea id="pastureUtilizacaoNotes" rows="2" maxlength="240"></textarea>
+          </label>
+          <div class="form-actions">
+            <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureUtilizacaoDialog">Cancelar</button>
+            <button type="submit" class="action-btn purchase">Salvar</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="pastureFichaDialog" class="modal">
+      <div class="modal-card modal-card-wide pasture-ficha-card">
+        <div class="modal-header">
+          <div>
+            <p class="panel-kicker" id="pastureFichaKicker">Fazenda · Potreiro</p>
+            <h2 id="pastureFichaTitle">Ficha da pastagem</h2>
+          </div>
+          <button type="button" class="ghost-btn" data-pasture-dialog-close="pastureFichaDialog">Fechar</button>
+        </div>
+
+        <div class="pasture-ficha-tabs" id="pastureFichaTabs">
+          ${PASTURE_FICHA_TABS.map((t) => `<button type="button" class="view-tab" data-ficha-tab="${t.id}">${escapeHtml(t.label)}</button>`).join("")}
+        </div>
+
+        <div class="pasture-ficha-panel" data-ficha-panel="identificacao"></div>
+        <div class="pasture-ficha-panel" data-ficha-panel="preparo" hidden></div>
+        <div class="pasture-ficha-panel" data-ficha-panel="implantacao" hidden></div>
+        <div class="pasture-ficha-panel" data-ficha-panel="resumo" hidden></div>
+        <div class="pasture-ficha-panel" data-ficha-panel="utilizacao" hidden></div>
+      </div>
+    </dialog>
   `);
 
   document.querySelectorAll("[data-pasture-dialog-close]").forEach((btn) => {
@@ -888,10 +1148,16 @@ function injectPastureDialogs() {
   });
 
   const farmSelect = document.getElementById("pastureAreaFarm");
-  const potreiroOptions = document.getElementById("pastureAreaPotreiroOptions");
+  const potreiroSelect = document.getElementById("pastureAreaPotreiro");
+  const potreiroTotalHaInput = document.getElementById("pastureAreaPotreiroTotalHa");
+  potreiroSelect.addEventListener("change", () => {
+    const f = state.data.farms[farmSelect.value] || getFarm();
+    const potreiro = (f?.potreiros || []).find((p) => p.id === potreiroSelect.value);
+    potreiroTotalHaInput.value = potreiro?.areaHa ?? "";
+  });
   farmSelect.addEventListener("change", () => {
-    const f = state.data.farms[farmSelect.value];
-    potreiroOptions.innerHTML = (f?.potreiros || []).map((p) => `<option value="${escapeHtml(p.name)}"></option>`).join("");
+    populatePastureAreaPotreiroSelect(state.data.farms[farmSelect.value]);
+    potreiroSelect.dispatchEvent(new Event("change"));
   });
 
   const procTypeSelect = document.getElementById("pastureProcType");
@@ -922,8 +1188,75 @@ function injectPastureDialogs() {
     reader.readAsDataURL(file);
   });
 
+  const gradagemTipoSelect = document.getElementById("pastureGradagemTipo");
+  const gradagemCustomTipoField = document.getElementById("pastureGradagemCustomTipoField");
+  gradagemTipoSelect.addEventListener("change", () => {
+    gradagemCustomTipoField.hidden = gradagemTipoSelect.value !== "outro";
+  });
+  function recalcGradagemTotal() {
+    const custoPorHa = Number(document.getElementById("pastureGradagemCustoPorHa").value) || 0;
+    const areaTrabalhada = Number(document.getElementById("pastureGradagemAreaTrabalhada").value) || 0;
+    document.getElementById("pastureGradagemCustoTotal").value = formatCurrency(custoPorHa * areaTrabalhada);
+  }
+  document.getElementById("pastureGradagemCustoPorHa").addEventListener("input", recalcGradagemTotal);
+  document.getElementById("pastureGradagemAreaTrabalhada").addEventListener("input", recalcGradagemTotal);
+
+  function recalcDessecacaoTotal() {
+    const vazao = Number(document.getElementById("pastureDessecacaoVazao").value) || 0;
+    const hectares = Number(document.getElementById("pastureDessecacaoHectares").value) || 0;
+    const precoLitro = Number(document.getElementById("pastureDessecacaoPrecoLitro").value) || 0;
+    const custoAplicacaoHa = Number(document.getElementById("pastureDessecacaoCustoAplicacaoHa").value) || 0;
+    const quantidadeTotal = vazao * hectares;
+    const custoProduto = quantidadeTotal * precoLitro;
+    const custoAplicacaoTotal = custoAplicacaoHa * hectares;
+    document.getElementById("pastureDessecacaoQuantidadeTotal").value = `${formatWeight(quantidadeTotal)} L`;
+    document.getElementById("pastureDessecacaoCustoProduto").value = formatCurrency(custoProduto);
+    document.getElementById("pastureDessecacaoCustoAplicacaoTotal").value = formatCurrency(custoAplicacaoTotal);
+    document.getElementById("pastureDessecacaoCustoTotal").value = formatCurrency(custoProduto + custoAplicacaoTotal);
+  }
+  ["pastureDessecacaoVazao", "pastureDessecacaoHectares", "pastureDessecacaoPrecoLitro", "pastureDessecacaoCustoAplicacaoHa"]
+    .forEach((id) => document.getElementById(id).addEventListener("input", recalcDessecacaoTotal));
+
+  function recalcImplantacaoTotal() {
+    const kgHa = Number(document.getElementById("pastureImplantacaoKgHa").value) || 0;
+    const hectares = Number(document.getElementById("pastureImplantacaoHectares").value) || 0;
+    const custoPorKg = Number(document.getElementById("pastureImplantacaoCustoPorKg").value) || 0;
+    const custoSemeaduraHa = Number(document.getElementById("pastureImplantacaoCustoSemeaduraHa").value) || 0;
+    const quantidadeTotalSementes = kgHa * hectares;
+    const custoSementes = quantidadeTotalSementes * custoPorKg;
+    const custoOperacao = custoSemeaduraHa * hectares;
+    document.getElementById("pastureImplantacaoQuantidadeTotal").value = `${formatWeight(quantidadeTotalSementes)} kg`;
+    document.getElementById("pastureImplantacaoCustoSementes").value = formatCurrency(custoSementes);
+    document.getElementById("pastureImplantacaoCustoOperacao").value = formatCurrency(custoOperacao);
+    document.getElementById("pastureImplantacaoCustoTotal").value = formatCurrency(custoSementes + custoOperacao);
+  }
+  ["pastureImplantacaoKgHa", "pastureImplantacaoHectares", "pastureImplantacaoCustoPorKg", "pastureImplantacaoCustoSemeaduraHa"]
+    .forEach((id) => document.getElementById(id).addEventListener("input", recalcImplantacaoTotal));
+
+  function recalcUtilizacaoDerived() {
+    const entrada = document.getElementById("pastureUtilizacaoEntrada").value;
+    const saida = document.getElementById("pastureUtilizacaoSaida").value;
+    const quantidade = Number(document.getElementById("pastureUtilizacaoQuantidade").value) || 0;
+    const dias = entrada && saida ? Math.max(0, Math.round((new Date(saida) - new Date(entrada)) / 86400000)) : null;
+    document.getElementById("pastureUtilizacaoDias").value = dias === null ? "Em andamento" : `${formatInteger(dias)} dia(s)`;
+    const sizeHa = Number(state.data.farms[pastureFichaContext.farmId]?.pastureAreas?.find((a) => a.id === pastureFichaContext.areaId)?.sizeHa) || 0;
+    document.getElementById("pastureUtilizacaoLotacao").value = sizeHa > 0 ? formatWeight(quantidade / sizeHa) : "—";
+  }
+  ["pastureUtilizacaoEntrada", "pastureUtilizacaoSaida", "pastureUtilizacaoQuantidade"]
+    .forEach((id) => document.getElementById(id).addEventListener("input", recalcUtilizacaoDerived));
+
+  document.getElementById("pastureFichaTabs").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-ficha-tab]");
+    if (btn) switchPastureFichaTab(btn.dataset.fichaTab);
+  });
+
   document.getElementById("pastureAreaForm").addEventListener("submit", handlePastureAreaSubmit);
   document.getElementById("pastureProcedureForm").addEventListener("submit", handlePastureProcedureSubmit);
+  document.getElementById("pastureGradagemForm").addEventListener("submit", handlePastureGradagemSubmit);
+  document.getElementById("pastureDessecacaoForm").addEventListener("submit", handlePastureDessecacaoSubmit);
+  document.getElementById("pastureImplantacaoForm").addEventListener("submit", handlePastureImplantacaoSubmit);
+  document.getElementById("pastureUtilizacaoForm").addEventListener("submit", handlePastureUtilizacaoSubmit);
+  document.getElementById("pastureFichaDialog").addEventListener("click", handlePastureFichaClick);
 }
 
 function openPastureAreaDialog(area, farm) {
@@ -946,13 +1279,15 @@ function openPastureAreaDialog(area, farm) {
   }
 
   const resolvedFarm = isTotalView ? state.data.farms[farmSelect.value] : getFarm();
-  const potreiroOptions = document.getElementById("pastureAreaPotreiroOptions");
-  potreiroOptions.innerHTML = (resolvedFarm?.potreiros || []).map((p) => `<option value="${escapeHtml(p.name)}"></option>`).join("");
+  populatePastureAreaPotreiroSelect(resolvedFarm);
+  const potreiroSelect = document.getElementById("pastureAreaPotreiro");
+  const potreiro = area ? (resolvedFarm?.potreiros || []).find((p) => p.id === area.potreiroId) : null;
+  potreiroSelect.value = potreiro?.id || "";
+  document.getElementById("pastureAreaPotreiroTotalHa").value = area?.potreiroTotalHa ?? potreiro?.areaHa ?? "";
 
   const cultureSelect = document.getElementById("pastureAreaCulture");
   const customCultureField = document.getElementById("pastureAreaCustomCultureField");
 
-  document.getElementById("pastureAreaName").value = area?.name || "";
   document.getElementById("pastureAreaSizeHa").value = area?.sizeHa ?? "";
   document.getElementById("pastureAreaStatus").value = area?.status || "planejada";
   cultureSelect.value = area?.culture || PASTURE_CULTURES[0].id;
@@ -960,6 +1295,7 @@ function openPastureAreaDialog(area, farm) {
   customCultureField.hidden = cultureSelect.value !== "outra";
   document.getElementById("pastureAreaSeason").value = area?.season || "";
   document.getElementById("pastureAreaStartDate").value = area?.startDate || "";
+  document.getElementById("pastureAreaNotes").value = area?.notes || "";
 
   document.getElementById("pastureAreaDialog").showModal();
 }
@@ -971,31 +1307,55 @@ function handlePastureAreaSubmit(event) {
   const farm = state.data.farms[farmId];
   if (!farm) return;
 
+  const potreiroId = document.getElementById("pastureAreaPotreiro").value;
+  const potreiro = (farm.potreiros || []).find((p) => p.id === potreiroId);
+  if (!potreiro) {
+    alert("Selecione um potreiro cadastrado nesta fazenda.");
+    return;
+  }
+
+  const potreiroTotalHa = Number(document.getElementById("pastureAreaPotreiroTotalHa").value) || 0;
+  potreiro.areaHa = potreiroTotalHa; // mantém a área do potreiro sincronizada para as próximas pastagens
+
   const culture = document.getElementById("pastureAreaCulture").value;
   const payload = {
-    name: document.getElementById("pastureAreaName").value.trim(),
+    potreiroId,
+    name: potreiro.name,
+    potreiroTotalHa,
     sizeHa: Number(document.getElementById("pastureAreaSizeHa").value) || 0,
     status: document.getElementById("pastureAreaStatus").value,
     culture,
     customCulture: culture === "outra" ? document.getElementById("pastureAreaCustomCulture").value.trim() : "",
     season: document.getElementById("pastureAreaSeason").value.trim(),
-    startDate: document.getElementById("pastureAreaStartDate").value || ""
+    startDate: document.getElementById("pastureAreaStartDate").value || "",
+    notes: document.getElementById("pastureAreaNotes").value.trim()
   };
 
   if (!Array.isArray(farm.pastureAreas)) farm.pastureAreas = [];
 
+  let savedArea;
   if (pastureAreaDialogContext.areaId) {
-    const area = farm.pastureAreas.find((a) => a.id === pastureAreaDialogContext.areaId);
-    if (area) Object.assign(area, payload);
+    savedArea = farm.pastureAreas.find((a) => a.id === pastureAreaDialogContext.areaId);
+    if (savedArea) Object.assign(savedArea, payload);
     logAuditEvent("Editar área de pastagem", "pastagens", `${payload.name} (${farm.name})`);
   } else {
-    farm.pastureAreas.push({ id: createPastureId("area"), potreiroId: null, procedures: [], ...payload });
+    savedArea = {
+      id: createPastureId("area"),
+      preparoOperations: [],
+      desiccationApplications: [],
+      implantationRecords: [],
+      grazingPeriods: [],
+      procedures: [],
+      ...payload
+    };
+    farm.pastureAreas.push(savedArea);
     logAuditEvent("Nova área de pastagem", "pastagens", `${payload.name} (${farm.name})`);
   }
 
   saveData();
   document.getElementById("pastureAreaDialog").close();
   render();
+  if (savedArea) openPastureFichaDialog(farm, savedArea);
 }
 
 function openPastureProcedureDialog(farm, area, procedure) {
@@ -1070,6 +1430,591 @@ function handlePastureProcedureSubmit(event) {
   saveData();
   document.getElementById("pastureProcedureDialog").close();
   render();
+  refreshOpenPastureFicha();
+}
+
+/* ── Ficha da pastagem (abas) ─────────────────────────────────────── */
+let pastureFichaContext = { farmId: null, areaId: null, activeTab: "identificacao" };
+
+function getPastureFichaContext() {
+  const farm = state.data.farms[pastureFichaContext.farmId];
+  const area = farm ? getPastureAreas(farm).find((a) => a.id === pastureFichaContext.areaId) : null;
+  return { farm, area };
+}
+
+function refreshOpenPastureFicha() {
+  const dialog = document.getElementById("pastureFichaDialog");
+  if (!dialog?.open || !pastureFichaContext.areaId) return;
+  renderPastureFichaActivePanel();
+}
+
+function openPastureFichaDialog(farm, area) {
+  pastureFichaContext = { farmId: farm.id, areaId: area.id, activeTab: "identificacao" };
+  document.getElementById("pastureFichaKicker").textContent = `${farm.name} · ${area.name}`;
+  if (document.getElementById("pastureFichaDialog").open) document.getElementById("pastureFichaDialog").close();
+  document.getElementById("pastureFichaDialog").showModal();
+  switchPastureFichaTab("identificacao");
+}
+
+function switchPastureFichaTab(tabId) {
+  pastureFichaContext.activeTab = tabId;
+  document.querySelectorAll("#pastureFichaTabs [data-ficha-tab]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.fichaTab === tabId);
+  });
+  document.querySelectorAll(".pasture-ficha-panel").forEach((panel) => {
+    panel.hidden = panel.dataset.fichaPanel !== tabId;
+  });
+  renderPastureFichaActivePanel();
+}
+
+function renderPastureFichaActivePanel() {
+  const { farm, area } = getPastureFichaContext();
+  if (!farm || !area) {
+    document.getElementById("pastureFichaDialog").close();
+    return;
+  }
+  switch (pastureFichaContext.activeTab) {
+    case "identificacao": renderPastureFichaIdentificacao(farm, area); break;
+    case "preparo": renderPastureFichaPreparo(farm, area); break;
+    case "implantacao": renderPastureFichaImplantacao(farm, area); break;
+    case "resumo": renderPastureFichaResumo(farm, area); break;
+    case "utilizacao": renderPastureFichaUtilizacao(farm, area); break;
+  }
+}
+
+function renderPastureFichaIdentificacao(farm, area) {
+  const panel = document.querySelector('[data-ficha-panel="identificacao"]');
+  panel.innerHTML = `
+    <div class="pasture-ficha-id-grid">
+      <div><span class="field-note">Fazenda</span><strong>${escapeHtml(farm.name)}</strong></div>
+      <div><span class="field-note">Potreiro</span><strong>${escapeHtml(area.name)}</strong></div>
+      <div><span class="field-note">Área total do potreiro</span><strong>${formatHa(area.potreiroTotalHa || 0)}</strong></div>
+      <div><span class="field-note">Área destinada à pastagem</span><strong>${formatHa(area.sizeHa)}</strong></div>
+      <div><span class="field-note">Cultura</span><strong>${escapeHtml(getPastureCultureLabel(area))}</strong></div>
+      <div><span class="field-note">Safra</span><strong>${escapeHtml(area.season || "—")}</strong></div>
+      <div><span class="field-note">Data prevista de início</span><strong>${formatDate(area.startDate)}</strong></div>
+      <div><span class="field-note">Status</span><strong><span class="pasture-status ${escapeHtml(area.status)}">${escapeHtml(getPastureStatusLabel(area.status))}</span></strong></div>
+    </div>
+    ${area.notes ? `<p class="pasture-ficha-notes"><strong>Observações:</strong> ${escapeHtml(area.notes)}</p>` : ""}
+    <div class="form-actions">
+      <button type="button" class="ghost-btn" data-ficha-action="edit-basic">Editar dados básicos</button>
+    </div>
+  `;
+}
+
+function renderPastureFichaPreparo(farm, area) {
+  const panel = document.querySelector('[data-ficha-panel="preparo"]');
+
+  const gradagemRows = (area.preparoOperations || []).map((op) => `
+    <tr>
+      <td data-label="Data">${formatDate(op.data)}</td>
+      <td data-label="Tipo">${escapeHtml(getPreparoTypeLabel(op))}</td>
+      <td data-label="Passadas">${formatInteger(op.passadas || 0)}</td>
+      <td data-label="Custo/ha">${formatCurrency(op.custoPorHa)}</td>
+      <td data-label="Área (ha)">${formatHa(op.areaTrabalhada)}</td>
+      <td data-label="Total">${formatCurrency(op.custoTotal)}</td>
+      <td data-label="Ações">
+        <div class="pasture-row-actions">
+          <button type="button" data-ficha-action="edit-gradagem" data-entry-id="${escapeHtml(op.id)}">Editar</button>
+          <button type="button" class="danger" data-ficha-action="delete-gradagem" data-entry-id="${escapeHtml(op.id)}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  const dessecacaoRows = (area.desiccationApplications || []).map((app) => `
+    <tr>
+      <td data-label="Data">${formatDate(app.data)}</td>
+      <td data-label="Produto">${escapeHtml(app.produto || "—")}</td>
+      <td data-label="Método">${escapeHtml(getDessecacaoMethodLabel(app))}</td>
+      <td data-label="Vazão">${formatWeight(app.vazaoLHa || 0)} L/ha</td>
+      <td data-label="Hectares">${formatHa(app.hectares)}</td>
+      <td data-label="Total">${formatCurrency(app.custoTotal)}</td>
+      <td data-label="Ações">
+        <div class="pasture-row-actions">
+          <button type="button" data-ficha-action="edit-dessecacao" data-entry-id="${escapeHtml(app.id)}">Editar</button>
+          <button type="button" class="danger" data-ficha-action="delete-dessecacao" data-entry-id="${escapeHtml(app.id)}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  const outrosRows = (area.procedures || []).map((p) => `
+    <tr>
+      <td data-label="Data">${formatDate(p.date)}</td>
+      <td data-label="Tipo">${escapeHtml(getPastureProcedureTypeLabel(p))}</td>
+      <td data-label="Descrição">${escapeHtml(p.description || "—")}</td>
+      <td data-label="Qtd.">${formatWeight(p.quantity || 0)} ${escapeHtml(getPastureUnitLabel(p.unit))}</td>
+      <td data-label="Total">${formatCurrency(p.totalValue)}</td>
+      <td data-label="Ações">
+        <div class="pasture-row-actions">
+          <button type="button" data-ficha-action="edit-procedure" data-entry-id="${escapeHtml(p.id)}">Editar</button>
+          <button type="button" class="danger" data-ficha-action="delete-procedure" data-entry-id="${escapeHtml(p.id)}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  panel.innerHTML = `
+    <section class="pasture-ficha-subsection">
+      <div class="pasture-ficha-subsection-header">
+        <h3>Gradagem / rolo-faca</h3>
+        <button type="button" class="ghost-btn" data-ficha-action="new-gradagem">+ Nova operação</button>
+      </div>
+      ${gradagemRows ? `<div class="table-wrap"><table class="pasture-areas-table"><thead><tr><th>Data</th><th>Tipo</th><th>Passadas</th><th>Custo/ha</th><th>Área</th><th>Total</th><th></th></tr></thead><tbody>${gradagemRows}</tbody></table></div>` : `<p class="field-note">Nenhuma operação registrada.</p>`}
+    </section>
+
+    <section class="pasture-ficha-subsection">
+      <div class="pasture-ficha-subsection-header">
+        <h3>Dessecação</h3>
+        <button type="button" class="ghost-btn" data-ficha-action="new-dessecacao">+ Nova aplicação</button>
+      </div>
+      ${dessecacaoRows ? `<div class="table-wrap"><table class="pasture-areas-table"><thead><tr><th>Data</th><th>Produto</th><th>Método</th><th>Vazão</th><th>Hectares</th><th>Total</th><th></th></tr></thead><tbody>${dessecacaoRows}</tbody></table></div>` : `<p class="field-note">Nenhuma aplicação registrada.</p>`}
+    </section>
+
+    <section class="pasture-ficha-subsection">
+      <div class="pasture-ficha-subsection-header">
+        <h3>Outros insumos</h3>
+        <button type="button" class="ghost-btn" data-ficha-action="new-procedure">+ Novo insumo</button>
+      </div>
+      ${outrosRows ? `<div class="table-wrap"><table class="pasture-areas-table"><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Qtd.</th><th>Total</th><th></th></tr></thead><tbody>${outrosRows}</tbody></table></div>` : `<p class="field-note">Nenhum insumo registrado.</p>`}
+    </section>
+  `;
+}
+
+function renderPastureFichaImplantacao(farm, area) {
+  const panel = document.querySelector('[data-ficha-panel="implantacao"]');
+  const rows = (area.implantationRecords || []).map((rec) => `
+    <tr>
+      <td data-label="Data">${formatDate(rec.data)}</td>
+      <td data-label="Método">${escapeHtml(getImplantacaoMethodLabel(rec))}</td>
+      <td data-label="Semente">${escapeHtml(rec.tipoSemente || "—")}</td>
+      <td data-label="Kg/ha">${formatWeight(rec.kgHa || 0)}</td>
+      <td data-label="Hectares">${formatHa(rec.hectares)}</td>
+      <td data-label="Total">${formatCurrency(rec.custoTotal)}</td>
+      <td data-label="Ações">
+        <div class="pasture-row-actions">
+          <button type="button" data-ficha-action="edit-implantacao" data-entry-id="${escapeHtml(rec.id)}">Editar</button>
+          <button type="button" class="danger" data-ficha-action="delete-implantacao" data-entry-id="${escapeHtml(rec.id)}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  panel.innerHTML = `
+    <section class="pasture-ficha-subsection">
+      <div class="pasture-ficha-subsection-header">
+        <h3>Implantação (semeadura)</h3>
+        <button type="button" class="ghost-btn" data-ficha-action="new-implantacao">+ Nova implantação</button>
+      </div>
+      ${rows ? `<div class="table-wrap"><table class="pasture-areas-table"><thead><tr><th>Data</th><th>Método</th><th>Semente</th><th>Kg/ha</th><th>Hectares</th><th>Total</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="field-note">Nenhuma implantação registrada.</p>`}
+    </section>
+  `;
+}
+
+function renderPastureFichaResumo(farm, area) {
+  const panel = document.querySelector('[data-ficha-panel="resumo"]');
+  const preparo = getAreaPreparoCost(area);
+  const dessecacao = getAreaDessecacaoCost(area);
+  const implantacao = getAreaImplantacaoCost(area);
+  const outros = getAreaOutrosCost(area);
+  const total = preparo + dessecacao + implantacao + outros;
+  const costHa = getAreaCostPerHa(area);
+
+  panel.innerHTML = `
+    <div class="pasture-summary-grid">
+      <article class="pasture-summary-card"><p class="panel-kicker">Custo do preparo</p><strong>${formatCurrency(preparo)}</strong></article>
+      <article class="pasture-summary-card"><p class="panel-kicker">Custo da dessecação</p><strong>${formatCurrency(dessecacao)}</strong></article>
+      <article class="pasture-summary-card"><p class="panel-kicker">Custo da implantação</p><strong>${formatCurrency(implantacao)}</strong></article>
+      <article class="pasture-summary-card"><p class="panel-kicker">Outros insumos</p><strong>${formatCurrency(outros)}</strong></article>
+      <article class="pasture-summary-card"><p class="panel-kicker">Custo total da área</p><strong>${formatCurrency(total)}</strong></article>
+      <article class="pasture-summary-card"><p class="panel-kicker">Custo final por hectare</p><strong>${formatCurrency(costHa)}</strong><span class="pasture-summary-detail">${formatHa(area.sizeHa)} implantados</span></article>
+    </div>
+  `;
+}
+
+function renderPastureFichaUtilizacao(farm, area) {
+  const panel = document.querySelector('[data-ficha-panel="utilizacao"]');
+  const rows = (area.grazingPeriods || []).map((g) => `
+    <tr>
+      <td data-label="Entrada">${formatDate(g.dataEntrada)}</td>
+      <td data-label="Saída">${g.dataSaida ? formatDate(g.dataSaida) : "Em andamento"}</td>
+      <td data-label="Categoria">${escapeHtml(g.categoriaAnimal || "—")}</td>
+      <td data-label="Qtd.">${formatInteger(g.quantidade || 0)}</td>
+      <td data-label="Peso entrada">${g.pesoMedioEntrada ? `${formatWeight(g.pesoMedioEntrada)} kg` : "—"}</td>
+      <td data-label="Peso saída">${g.pesoMedioSaida ? `${formatWeight(g.pesoMedioSaida)} kg` : "—"}</td>
+      <td data-label="Dias">${g.diasUtilizacao != null ? formatInteger(g.diasUtilizacao) : "—"}</td>
+      <td data-label="Lotação/ha">${g.lotacaoPorHa ? formatWeight(g.lotacaoPorHa) : "—"}</td>
+      <td data-label="Ações">
+        <div class="pasture-row-actions">
+          <button type="button" data-ficha-action="edit-utilizacao" data-entry-id="${escapeHtml(g.id)}">Editar</button>
+          <button type="button" class="danger" data-ficha-action="delete-utilizacao" data-entry-id="${escapeHtml(g.id)}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  panel.innerHTML = `
+    <section class="pasture-ficha-subsection">
+      <div class="pasture-ficha-subsection-header">
+        <h3>Utilização da pastagem</h3>
+        <button type="button" class="ghost-btn" data-ficha-action="new-utilizacao">+ Novo período</button>
+      </div>
+      ${rows ? `<div class="table-wrap"><table class="pasture-areas-table"><thead><tr><th>Entrada</th><th>Saída</th><th>Categoria</th><th>Qtd.</th><th>Peso entrada</th><th>Peso saída</th><th>Dias</th><th>Lotação/ha</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="field-note">Nenhum período de utilização registrado.</p>`}
+    </section>
+  `;
+}
+
+function handlePastureFichaClick(event) {
+  const target = event.target.closest("[data-ficha-action]");
+  if (!target) return;
+  const { farm, area } = getPastureFichaContext();
+  if (!farm || !area) return;
+  const action = target.dataset.fichaAction;
+  const entryId = target.dataset.entryId;
+
+  switch (action) {
+    case "edit-basic":
+      document.getElementById("pastureFichaDialog").close();
+      openPastureAreaDialog(area, farm);
+      break;
+    case "new-gradagem":
+      openPastureGradagemDialog(farm, area, null);
+      break;
+    case "edit-gradagem":
+      openPastureGradagemDialog(farm, area, (area.preparoOperations || []).find((op) => op.id === entryId));
+      break;
+    case "delete-gradagem":
+      if (confirm("Excluir esta operação de preparo?")) deletePastureGradagem(farm, area, entryId);
+      break;
+    case "new-dessecacao":
+      openPastureDessecacaoDialog(farm, area, null);
+      break;
+    case "edit-dessecacao":
+      openPastureDessecacaoDialog(farm, area, (area.desiccationApplications || []).find((a) => a.id === entryId));
+      break;
+    case "delete-dessecacao":
+      if (confirm("Excluir esta aplicação de dessecação?")) deletePastureDessecacao(farm, area, entryId);
+      break;
+    case "new-procedure":
+      openPastureProcedureDialog(farm, area, null);
+      break;
+    case "edit-procedure":
+      openPastureProcedureDialog(farm, area, (area.procedures || []).find((p) => p.id === entryId));
+      break;
+    case "delete-procedure":
+      if (confirm("Excluir este insumo?")) deletePastureProcedure(farm, area, entryId);
+      break;
+    case "new-implantacao":
+      openPastureImplantacaoDialog(farm, area, null);
+      break;
+    case "edit-implantacao":
+      openPastureImplantacaoDialog(farm, area, (area.implantationRecords || []).find((r) => r.id === entryId));
+      break;
+    case "delete-implantacao":
+      if (confirm("Excluir este lançamento de implantação?")) deletePastureImplantacao(farm, area, entryId);
+      break;
+    case "new-utilizacao":
+      openPastureUtilizacaoDialog(farm, area, null);
+      break;
+    case "edit-utilizacao":
+      openPastureUtilizacaoDialog(farm, area, (area.grazingPeriods || []).find((g) => g.id === entryId));
+      break;
+    case "delete-utilizacao":
+      if (confirm("Excluir este período de utilização?")) deletePastureUtilizacao(farm, area, entryId);
+      break;
+  }
+}
+
+/* ── Gradagem / rolo-faca ─────────────────────────────────────────── */
+let pastureGradagemDialogContext = { farmId: null, areaId: null, entryId: null };
+
+function openPastureGradagemDialog(farm, area, entry) {
+  const isEdit = !!entry;
+  pastureGradagemDialogContext = { farmId: farm.id, areaId: area.id, entryId: entry ? entry.id : null };
+  document.getElementById("pastureGradagemDialogTitle").textContent = isEdit ? "Editar gradagem / rolo-faca" : "Gradagem / rolo-faca";
+  document.getElementById("pastureGradagemAreaLabel").textContent = `${area.name} · ${farm.name}`;
+
+  const tipoSelect = document.getElementById("pastureGradagemTipo");
+  const customField = document.getElementById("pastureGradagemCustomTipoField");
+  tipoSelect.value = entry?.tipo || PASTURE_PREPARO_TYPES[0].id;
+  document.getElementById("pastureGradagemCustomTipo").value = entry?.customTipo || "";
+  customField.hidden = tipoSelect.value !== "outro";
+  document.getElementById("pastureGradagemData").value = entry?.data || "";
+  document.getElementById("pastureGradagemPassadas").value = entry?.passadas ?? "";
+  document.getElementById("pastureGradagemCustoPorHa").value = entry?.custoPorHa ?? "";
+  document.getElementById("pastureGradagemAreaTrabalhada").value = entry?.areaTrabalhada ?? "";
+  document.getElementById("pastureGradagemCustoTotal").value = formatCurrency(entry?.custoTotal || 0);
+
+  document.getElementById("pastureGradagemDialog").showModal();
+}
+
+function handlePastureGradagemSubmit(event) {
+  event.preventDefault();
+  const farm = state.data.farms[pastureGradagemDialogContext.farmId];
+  const area = farm ? getPastureAreas(farm).find((a) => a.id === pastureGradagemDialogContext.areaId) : null;
+  if (!farm || !area) return;
+
+  const tipo = document.getElementById("pastureGradagemTipo").value;
+  const custoPorHa = Number(document.getElementById("pastureGradagemCustoPorHa").value) || 0;
+  const areaTrabalhada = Number(document.getElementById("pastureGradagemAreaTrabalhada").value) || 0;
+  const payload = {
+    tipo,
+    customTipo: tipo === "outro" ? document.getElementById("pastureGradagemCustomTipo").value.trim() : "",
+    data: document.getElementById("pastureGradagemData").value || "",
+    passadas: Number(document.getElementById("pastureGradagemPassadas").value) || 0,
+    custoPorHa,
+    areaTrabalhada,
+    custoTotal: custoPorHa * areaTrabalhada
+  };
+
+  if (!Array.isArray(area.preparoOperations)) area.preparoOperations = [];
+  if (pastureGradagemDialogContext.entryId) {
+    const entry = area.preparoOperations.find((op) => op.id === pastureGradagemDialogContext.entryId);
+    if (entry) Object.assign(entry, payload);
+    logAuditEvent("Editar preparo de área (pastagem)", "pastagens", `${getPreparoTypeLabel(payload)} · ${area.name}`);
+  } else {
+    area.preparoOperations.push({ id: createPastureId("prep"), ...payload });
+    logAuditEvent("Novo preparo de área (pastagem)", "pastagens", `${getPreparoTypeLabel(payload)} · ${area.name}`);
+  }
+
+  saveData();
+  document.getElementById("pastureGradagemDialog").close();
+  render();
+  refreshOpenPastureFicha();
+}
+
+function deletePastureGradagem(farm, area, entryId) {
+  area.preparoOperations = (area.preparoOperations || []).filter((op) => op.id !== entryId);
+  logAuditEvent("Excluir preparo de área (pastagem)", "pastagens", area.name);
+  saveData();
+  render();
+  refreshOpenPastureFicha();
+}
+
+/* ── Dessecação ───────────────────────────────────────────────────── */
+let pastureDessecacaoDialogContext = { farmId: null, areaId: null, entryId: null };
+
+function openPastureDessecacaoDialog(farm, area, entry) {
+  const isEdit = !!entry;
+  pastureDessecacaoDialogContext = { farmId: farm.id, areaId: area.id, entryId: entry ? entry.id : null };
+  document.getElementById("pastureDessecacaoDialogTitle").textContent = isEdit ? "Editar dessecação" : "Dessecação";
+  document.getElementById("pastureDessecacaoAreaLabel").textContent = `${area.name} · ${farm.name}`;
+
+  document.getElementById("pastureDessecacaoData").value = entry?.data || "";
+  document.getElementById("pastureDessecacaoProduto").value = entry?.produto || "";
+  document.getElementById("pastureDessecacaoMetodo").value = entry?.metodo || PASTURE_DESSECACAO_METHODS[0].id;
+  document.getElementById("pastureDessecacaoVazao").value = entry?.vazaoLHa ?? "";
+  document.getElementById("pastureDessecacaoHectares").value = entry?.hectares ?? "";
+  document.getElementById("pastureDessecacaoPrecoLitro").value = entry?.precoLitro ?? "";
+  document.getElementById("pastureDessecacaoCustoAplicacaoHa").value = entry?.custoAplicacaoHa ?? "";
+  document.getElementById("pastureDessecacaoQuantidadeTotal").value = entry ? `${formatWeight(entry.quantidadeTotal || 0)} L` : "";
+  document.getElementById("pastureDessecacaoCustoProduto").value = formatCurrency(entry?.custoProduto || 0);
+  document.getElementById("pastureDessecacaoCustoAplicacaoTotal").value = formatCurrency(entry?.custoAplicacaoTotal || 0);
+  document.getElementById("pastureDessecacaoCustoTotal").value = formatCurrency(entry?.custoTotal || 0);
+
+  document.getElementById("pastureDessecacaoDialog").showModal();
+}
+
+function handlePastureDessecacaoSubmit(event) {
+  event.preventDefault();
+  const farm = state.data.farms[pastureDessecacaoDialogContext.farmId];
+  const area = farm ? getPastureAreas(farm).find((a) => a.id === pastureDessecacaoDialogContext.areaId) : null;
+  if (!farm || !area) return;
+
+  const vazaoLHa = Number(document.getElementById("pastureDessecacaoVazao").value) || 0;
+  const hectares = Number(document.getElementById("pastureDessecacaoHectares").value) || 0;
+  const precoLitro = Number(document.getElementById("pastureDessecacaoPrecoLitro").value) || 0;
+  const custoAplicacaoHa = Number(document.getElementById("pastureDessecacaoCustoAplicacaoHa").value) || 0;
+  const quantidadeTotal = vazaoLHa * hectares;
+  const custoProduto = quantidadeTotal * precoLitro;
+  const custoAplicacaoTotal = custoAplicacaoHa * hectares;
+
+  const payload = {
+    data: document.getElementById("pastureDessecacaoData").value || "",
+    produto: document.getElementById("pastureDessecacaoProduto").value.trim(),
+    metodo: document.getElementById("pastureDessecacaoMetodo").value,
+    vazaoLHa,
+    hectares,
+    quantidadeTotal,
+    precoLitro,
+    custoProduto,
+    custoAplicacaoHa,
+    custoAplicacaoTotal,
+    custoTotal: custoProduto + custoAplicacaoTotal
+  };
+
+  if (!Array.isArray(area.desiccationApplications)) area.desiccationApplications = [];
+  if (pastureDessecacaoDialogContext.entryId) {
+    const entry = area.desiccationApplications.find((a) => a.id === pastureDessecacaoDialogContext.entryId);
+    if (entry) Object.assign(entry, payload);
+    logAuditEvent("Editar dessecação (pastagem)", "pastagens", `${payload.produto} · ${area.name}`);
+  } else {
+    area.desiccationApplications.push({ id: createPastureId("dess"), ...payload });
+    logAuditEvent("Nova dessecação (pastagem)", "pastagens", `${payload.produto} · ${area.name}`);
+  }
+
+  saveData();
+  document.getElementById("pastureDessecacaoDialog").close();
+  render();
+  refreshOpenPastureFicha();
+}
+
+function deletePastureDessecacao(farm, area, entryId) {
+  area.desiccationApplications = (area.desiccationApplications || []).filter((a) => a.id !== entryId);
+  logAuditEvent("Excluir dessecação (pastagem)", "pastagens", area.name);
+  saveData();
+  render();
+  refreshOpenPastureFicha();
+}
+
+/* ── Implantação ──────────────────────────────────────────────────── */
+let pastureImplantacaoDialogContext = { farmId: null, areaId: null, entryId: null };
+
+function openPastureImplantacaoDialog(farm, area, entry) {
+  const isEdit = !!entry;
+  pastureImplantacaoDialogContext = { farmId: farm.id, areaId: area.id, entryId: entry ? entry.id : null };
+  document.getElementById("pastureImplantacaoDialogTitle").textContent = isEdit ? "Editar implantação" : "Implantação";
+  document.getElementById("pastureImplantacaoAreaLabel").textContent = `${area.name} · ${farm.name}`;
+
+  document.getElementById("pastureImplantacaoMetodo").value = entry?.metodo || PASTURE_IMPLANTACAO_METHODS[0].id;
+  document.getElementById("pastureImplantacaoData").value = entry?.data || "";
+  document.getElementById("pastureImplantacaoTipoSemente").value = entry?.tipoSemente || "";
+  document.getElementById("pastureImplantacaoKgHa").value = entry?.kgHa ?? "";
+  document.getElementById("pastureImplantacaoHectares").value = entry?.hectares ?? "";
+  document.getElementById("pastureImplantacaoQuantidadeTotal").value = entry ? `${formatWeight(entry.quantidadeTotalSementes || 0)} kg` : "";
+  document.getElementById("pastureImplantacaoCustoPorKg").value = entry?.custoPorKg ?? "";
+  document.getElementById("pastureImplantacaoCustoSementes").value = formatCurrency(entry?.custoSementes || 0);
+  document.getElementById("pastureImplantacaoCustoSemeaduraHa").value = entry?.custoSemeaduraHa ?? "";
+  document.getElementById("pastureImplantacaoCustoOperacao").value = formatCurrency(entry?.custoOperacao || 0);
+  document.getElementById("pastureImplantacaoCustoTotal").value = formatCurrency(entry?.custoTotal || 0);
+
+  document.getElementById("pastureImplantacaoDialog").showModal();
+}
+
+function handlePastureImplantacaoSubmit(event) {
+  event.preventDefault();
+  const farm = state.data.farms[pastureImplantacaoDialogContext.farmId];
+  const area = farm ? getPastureAreas(farm).find((a) => a.id === pastureImplantacaoDialogContext.areaId) : null;
+  if (!farm || !area) return;
+
+  const kgHa = Number(document.getElementById("pastureImplantacaoKgHa").value) || 0;
+  const hectares = Number(document.getElementById("pastureImplantacaoHectares").value) || 0;
+  const custoPorKg = Number(document.getElementById("pastureImplantacaoCustoPorKg").value) || 0;
+  const custoSemeaduraHa = Number(document.getElementById("pastureImplantacaoCustoSemeaduraHa").value) || 0;
+  const quantidadeTotalSementes = kgHa * hectares;
+  const custoSementes = quantidadeTotalSementes * custoPorKg;
+  const custoOperacao = custoSemeaduraHa * hectares;
+
+  const payload = {
+    metodo: document.getElementById("pastureImplantacaoMetodo").value,
+    data: document.getElementById("pastureImplantacaoData").value || "",
+    tipoSemente: document.getElementById("pastureImplantacaoTipoSemente").value.trim(),
+    kgHa,
+    hectares,
+    quantidadeTotalSementes,
+    custoPorKg,
+    custoSementes,
+    custoSemeaduraHa,
+    custoOperacao,
+    custoTotal: custoSementes + custoOperacao
+  };
+
+  if (!Array.isArray(area.implantationRecords)) area.implantationRecords = [];
+  if (pastureImplantacaoDialogContext.entryId) {
+    const entry = area.implantationRecords.find((r) => r.id === pastureImplantacaoDialogContext.entryId);
+    if (entry) Object.assign(entry, payload);
+    logAuditEvent("Editar implantação (pastagem)", "pastagens", `${payload.tipoSemente} · ${area.name}`);
+  } else {
+    area.implantationRecords.push({ id: createPastureId("impl"), ...payload });
+    logAuditEvent("Nova implantação (pastagem)", "pastagens", `${payload.tipoSemente} · ${area.name}`);
+  }
+
+  saveData();
+  document.getElementById("pastureImplantacaoDialog").close();
+  render();
+  refreshOpenPastureFicha();
+}
+
+function deletePastureImplantacao(farm, area, entryId) {
+  area.implantationRecords = (area.implantationRecords || []).filter((r) => r.id !== entryId);
+  logAuditEvent("Excluir implantação (pastagem)", "pastagens", area.name);
+  saveData();
+  render();
+  refreshOpenPastureFicha();
+}
+
+/* ── Utilização da pastagem ───────────────────────────────────────── */
+let pastureUtilizacaoDialogContext = { farmId: null, areaId: null, entryId: null };
+
+function openPastureUtilizacaoDialog(farm, area, entry) {
+  const isEdit = !!entry;
+  pastureUtilizacaoDialogContext = { farmId: farm.id, areaId: area.id, entryId: entry ? entry.id : null };
+  document.getElementById("pastureUtilizacaoDialogTitle").textContent = isEdit ? "Editar utilização" : "Utilização da pastagem";
+  document.getElementById("pastureUtilizacaoAreaLabel").textContent = `${area.name} · ${farm.name}`;
+
+  document.getElementById("pastureUtilizacaoEntrada").value = entry?.dataEntrada || "";
+  document.getElementById("pastureUtilizacaoSaida").value = entry?.dataSaida || "";
+  document.getElementById("pastureUtilizacaoCategoria").value = entry?.categoriaAnimal || "";
+  document.getElementById("pastureUtilizacaoQuantidade").value = entry?.quantidade ?? "";
+  document.getElementById("pastureUtilizacaoPesoEntrada").value = entry?.pesoMedioEntrada ?? "";
+  document.getElementById("pastureUtilizacaoPesoSaida").value = entry?.pesoMedioSaida ?? "";
+  document.getElementById("pastureUtilizacaoNotes").value = entry?.notes || "";
+  document.getElementById("pastureUtilizacaoDias").value = entry?.diasUtilizacao != null ? `${formatInteger(entry.diasUtilizacao)} dia(s)` : "Em andamento";
+  document.getElementById("pastureUtilizacaoLotacao").value = entry?.lotacaoPorHa ? formatWeight(entry.lotacaoPorHa) : "—";
+
+  document.getElementById("pastureUtilizacaoDialog").showModal();
+}
+
+function handlePastureUtilizacaoSubmit(event) {
+  event.preventDefault();
+  const farm = state.data.farms[pastureUtilizacaoDialogContext.farmId];
+  const area = farm ? getPastureAreas(farm).find((a) => a.id === pastureUtilizacaoDialogContext.areaId) : null;
+  if (!farm || !area) return;
+
+  const dataEntrada = document.getElementById("pastureUtilizacaoEntrada").value || "";
+  const dataSaida = document.getElementById("pastureUtilizacaoSaida").value || "";
+  const quantidade = Number(document.getElementById("pastureUtilizacaoQuantidade").value) || 0;
+  const diasUtilizacao = dataEntrada && dataSaida
+    ? Math.max(0, Math.round((new Date(dataSaida) - new Date(dataEntrada)) / 86400000))
+    : null;
+  const sizeHa = Number(area.sizeHa) || 0;
+  const lotacaoPorHa = sizeHa > 0 ? quantidade / sizeHa : 0;
+
+  const payload = {
+    dataEntrada,
+    dataSaida,
+    categoriaAnimal: document.getElementById("pastureUtilizacaoCategoria").value.trim(),
+    quantidade,
+    pesoMedioEntrada: Number(document.getElementById("pastureUtilizacaoPesoEntrada").value) || 0,
+    pesoMedioSaida: Number(document.getElementById("pastureUtilizacaoPesoSaida").value) || 0,
+    diasUtilizacao,
+    lotacaoPorHa,
+    notes: document.getElementById("pastureUtilizacaoNotes").value.trim()
+  };
+
+  if (!Array.isArray(area.grazingPeriods)) area.grazingPeriods = [];
+  if (pastureUtilizacaoDialogContext.entryId) {
+    const entry = area.grazingPeriods.find((g) => g.id === pastureUtilizacaoDialogContext.entryId);
+    if (entry) Object.assign(entry, payload);
+    logAuditEvent("Editar utilização (pastagem)", "pastagens", `${payload.categoriaAnimal} · ${area.name}`);
+  } else {
+    area.grazingPeriods.push({ id: createPastureId("util"), ...payload });
+    logAuditEvent("Nova utilização (pastagem)", "pastagens", `${payload.categoriaAnimal} · ${area.name}`);
+  }
+
+  saveData();
+  document.getElementById("pastureUtilizacaoDialog").close();
+  render();
+  refreshOpenPastureFicha();
+}
+
+function deletePastureUtilizacao(farm, area, entryId) {
+  area.grazingPeriods = (area.grazingPeriods || []).filter((g) => g.id !== entryId);
+  logAuditEvent("Excluir utilização (pastagem)", "pastagens", area.name);
+  saveData();
+  render();
+  refreshOpenPastureFicha();
 }
 
 /* ── CRUD: excluir/duplicar ───────────────────────────────────────── */
@@ -1085,6 +2030,10 @@ function duplicatePastureArea(farm, area) {
   copy.id = createPastureId("area");
   copy.name = `${area.name} (cópia)`;
   copy.procedures = (copy.procedures || []).map((p) => ({ ...p, id: createPastureId("proc") }));
+  copy.preparoOperations = (copy.preparoOperations || []).map((op) => ({ ...op, id: createPastureId("prep") }));
+  copy.desiccationApplications = (copy.desiccationApplications || []).map((a) => ({ ...a, id: createPastureId("dess") }));
+  copy.implantationRecords = (copy.implantationRecords || []).map((r) => ({ ...r, id: createPastureId("impl") }));
+  copy.grazingPeriods = (copy.grazingPeriods || []).map((g) => ({ ...g, id: createPastureId("util") }));
   farm.pastureAreas.push(copy);
   logAuditEvent("Duplicar área de pastagem", "pastagens", `${area.name} (${farm.name})`);
   saveData();
@@ -1096,6 +2045,7 @@ function deletePastureProcedure(farm, area, procedureId) {
   logAuditEvent("Excluir procedimento de pastagem", "pastagens", `${area.name} (${farm.name})`);
   saveData();
   render();
+  refreshOpenPastureFicha();
 }
 
 function duplicatePastureProcedure(farm, area, procedureId) {
@@ -1107,6 +2057,7 @@ function duplicatePastureProcedure(farm, area, procedureId) {
   logAuditEvent("Duplicar procedimento de pastagem", "pastagens", `${area.name} (${farm.name})`);
   saveData();
   render();
+  refreshOpenPastureFicha();
 }
 
 /* ── Exportação PDF ───────────────────────────────────────────────── */
@@ -1199,17 +2150,14 @@ async function exportPasturePdf() {
 
   const procBody = [];
   rows.forEach(({ farm: rowFarm, area }) => {
-    (area.procedures || []).forEach((p) => {
+    getAreaCostEntries(area).forEach((entry) => {
       procBody.push([
         rowFarm.name,
         area.name,
-        formatDate(p.date),
-        getPastureProcedureTypeLabel(p),
-        p.responsible || "—",
-        formatWeight(p.quantity || 0),
-        getPastureUnitLabel(p.unit),
-        formatCurrency(p.unitValue),
-        formatCurrency(p.totalValue)
+        formatDate(entry.date),
+        entry.typeLabel,
+        entry.responsible || "—",
+        formatCurrency(entry.value)
       ]);
     });
   });
@@ -1217,8 +2165,8 @@ async function exportPasturePdf() {
   doc.autoTable({
     startY: y,
     theme: "striped",
-    head: [["Fazenda", "Área", "Data", "Procedimento", "Responsável", "Qtd.", "Unid.", "Vlr. unit.", "Total"]],
-    body: procBody.length ? procBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—"]],
+    head: [["Fazenda", "Área", "Data", "Lançamento", "Responsável", "Total"]],
+    body: procBody.length ? procBody : [["—", "—", "—", "—", "—", "—"]],
     headStyles: { fillColor: [43, 132, 184] },
     margin: { left: 14, right: 14 },
     styles: { fontSize: 8 }
@@ -1270,7 +2218,7 @@ async function exportPastureExcel() {
       <td>${escapeHtml(getPastureCultureLabel(area))}</td>
       <td>${escapeHtml(area.season || "—")}</td>
       <td>${escapeHtml(getPastureStatusLabel(area.status))}</td>
-      <td>${formatInteger((area.procedures || []).length)}</td>
+      <td>${formatInteger(getAreaCostEntries(area).length)}</td>
       <td>${Number(area.sizeHa) || 0}</td>
       <td>${getAreaTotalCost(area).toFixed(2)}</td>
       <td>${getAreaCostPerHa(area).toFixed(2)}</td>
@@ -1278,22 +2226,16 @@ async function exportPastureExcel() {
   });
   html += `</tbody></table><br/>`;
 
-  html += `<table border="1"><thead><tr><th>Fazenda</th><th>Área</th><th>Data</th><th>Procedimento</th><th>Descrição</th><th>Responsável</th><th>Área aplicada (ha)</th><th>Quantidade</th><th>Unidade</th><th>Valor unitário</th><th>Valor total</th><th>Observações</th></tr></thead><tbody>`;
+  html += `<table border="1"><thead><tr><th>Fazenda</th><th>Área</th><th>Data</th><th>Lançamento</th><th>Responsável</th><th>Valor total</th></tr></thead><tbody>`;
   rows.forEach(({ farm: rowFarm, area }) => {
-    (area.procedures || []).forEach((p) => {
+    getAreaCostEntries(area).forEach((entry) => {
       html += `<tr>
         <td>${escapeHtml(rowFarm.name)}</td>
         <td>${escapeHtml(area.name)}</td>
-        <td>${escapeHtml(formatDate(p.date))}</td>
-        <td>${escapeHtml(getPastureProcedureTypeLabel(p))}</td>
-        <td>${escapeHtml(p.description || "—")}</td>
-        <td>${escapeHtml(p.responsible || "—")}</td>
-        <td>${Number(p.areaHa) || 0}</td>
-        <td>${Number(p.quantity) || 0}</td>
-        <td>${escapeHtml(getPastureUnitLabel(p.unit))}</td>
-        <td>${(Number(p.unitValue) || 0).toFixed(2)}</td>
-        <td>${(Number(p.totalValue) || 0).toFixed(2)}</td>
-        <td>${escapeHtml(p.notes || "")}</td>
+        <td>${escapeHtml(formatDate(entry.date))}</td>
+        <td>${escapeHtml(entry.typeLabel)}</td>
+        <td>${escapeHtml(entry.responsible || "—")}</td>
+        <td>${entry.value.toFixed(2)}</td>
       </tr>`;
     });
   });
@@ -1386,6 +2328,7 @@ function renderPastureSummarySection() {
   const totalCost = rows.reduce((s, { area }) => s + getAreaTotalCost(area), 0);
   const totalHa = rows.reduce((s, { area }) => s + (Number(area.sizeHa) || 0), 0);
   const avgCostHa = totalHa > 0 ? totalCost / totalHa : 0;
+  const areasEmUtilizacao = rows.filter(({ area }) => area.status === "utilizacao").length;
 
   section.innerHTML = `
     <div class="panel-header">
@@ -1412,8 +2355,8 @@ function renderPastureSummarySection() {
         <span class="pasture-summary-detail">somatório das áreas cadastradas</span>
       </article>
       <article class="pasture-summary-card">
-        <p class="panel-kicker">Áreas cadastradas</p>
-        <strong>${formatInteger(rows.length)}</strong>
+        <p class="panel-kicker">Áreas em utilização</p>
+        <strong>${formatInteger(areasEmUtilizacao)}</strong>
         <span class="pasture-summary-detail">${isTotalView ? "em todas as fazendas" : `em ${escapeHtml(farm?.name || "fazenda")}`}</span>
       </article>
     </div>

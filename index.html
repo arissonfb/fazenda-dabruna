@@ -495,7 +495,7 @@
                   Categoria
                   <select id="sanitaryCategory" required></select>
                 </label>
-                <label>
+                <label id="sanitaryProductSingleWrap">
                   Produto utilizado
                   <select id="sanitaryProduct" required></select>
                 </label>
@@ -503,6 +503,11 @@
                   Descreva o produto
                   <input type="text" id="newProductName" maxlength="80" placeholder="Ex.: Vacina aftosa, Ivermectina 1%, Carrapaticida">
                 </label>
+                <div class="form-span-2 sanitary-products-multi" id="sanitaryProductsMultiWrap" hidden>
+                  <span class="sanitary-products-multi-label">Produtos aplicados neste manejo</span>
+                  <p class="sanitary-products-multi-hint">Marque todos os produtos usados — dá para combinar oral, injetável e pour on no mesmo manejo. Cada produto marcado vira um registro sanitário.</p>
+                  <div class="sanitary-products-multi-groups" id="sanitaryProductsMultiGroups"></div>
+                </div>
                 <label>
                   Potreiros
                   <select id="sanitaryPotrero" required></select>
@@ -947,6 +952,14 @@
           <span id="movementPotreiroLabel">Potreiro de destino</span>
           <select id="movementPotreiro"></select>
         </label>
+        <label id="movementDestFarmWrap" hidden>
+          Fazenda de destino
+          <select id="movementDestFarm"></select>
+        </label>
+        <label id="movementDestFarmOtherWrap" hidden class="form-span-2">
+          Nome da fazenda (não cadastrada)
+          <input type="text" id="movementDestFarmOther" maxlength="100" placeholder="Ex.: Fazenda Santa Rita">
+        </label>
         <label id="movementPotreirowDestWrap" hidden>
           Potreiro de destino
           <select id="movementPotreiroDest"></select>
@@ -954,6 +967,10 @@
         <label id="movementOvinoDestFarmWrap" hidden>
           Fazenda de destino
           <select id="movementOvinoDestFarm"></select>
+        </label>
+        <label id="movementOvinoDestFarmOtherWrap" hidden class="form-span-2">
+          Nome da fazenda (não cadastrada)
+          <input type="text" id="movementOvinoDestFarmOther" maxlength="100" placeholder="Ex.: Fazenda Santa Rita">
         </label>
         <div class="form-span-2" id="movCategoryTotalWrap" hidden>
           <p class="category-total-hint" id="movCategoryTotalHint"></p>
