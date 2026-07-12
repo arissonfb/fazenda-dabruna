@@ -1506,9 +1506,143 @@ function fixSanitaryDates2026Dec() {
   return changed;
 }
 
+// Migração pontual: garante que Remanso/Cerro Velho/Sarandi/Branquilho tenham
+// os potreiros e as quantidades da planilha mesmo em instalações que já
+// tinham dado salvo na nuvem antes dessa atualização (onde o seedData não é
+// lido). Idempotente e só ADITIVO: nunca sobrescreve um potreiro já existente
+// (por nome) nem uma categoria/ovino que já tenha quantidade > 0.
+function applyPastureCategoryFix2026Jul() {
+  const FARM_POTREIROS_FIX = {
+    "fazenda-remanso": [
+      { id: "pot-barragem", name: "Barragem" },
+      { id: "pot-xirca", name: "Xirca" },
+      { id: "pot-5-chapadao", name: "5 + chapadão" },
+      { id: "pot-7", name: "7" },
+      { id: "pot-tapera", name: "Tapera" },
+      { id: "pot-frente", name: "Frente" }
+    ],
+    "fazenda-cerro-velho": [
+      { id: "pot-1", name: "POT 1" },
+      { id: "pot-2", name: "POT 2" },
+      { id: "pot-3", name: "POT 3" },
+      { id: "pot-4", name: "POT 4" },
+      { id: "pot-5", name: "POT 5" },
+      { id: "pot-6", name: "POT 6" },
+      { id: "pot-7", name: "POT 7" },
+      { id: "pot-8", name: "POT 8" },
+      { id: "pot-9", name: "POT 9" },
+      { id: "pot-10", name: "POT 10" },
+      { id: "pot-11", name: "POT 11" },
+      { id: "pot-12", name: "POT 12" },
+      { id: "pot-12-nativo", name: "POT 12 nativo" }
+    ],
+    "fazenda-sarandi": [
+      { id: "pot-chico-rodeio", name: "Chico Rodeio" },
+      { id: "pot-campo-aberto", name: "Campo Aberto" },
+      { id: "pot-ze-roberto", name: "Zé Roberto" },
+      { id: "pot-esquina", name: "Esquina" },
+      { id: "pot-elibio-trevo", name: "Elibio - Trevo" },
+      { id: "pot-elibio", name: "Elibio" },
+      { id: "pot-pista", name: "Pista" },
+      { id: "pot-joao-bosco", name: "João Bosco" },
+      { id: "pot-preparo-ramon", name: "Preparo - Ramon" },
+      { id: "pot-soca-ramon", name: "Soca - Ramon" },
+      { id: "pot-barragem", name: "Barragem" }
+    ],
+    "fazenda-branquilho": [
+      { id: "pot-macaco", name: "Macaco" },
+      { id: "pot-pedreira", name: "Pedreira" }
+    ]
+  };
+
+  const FARM_CATEGORY_QTY_FIX = {
+    "fazenda-remanso": { "vaca-p-cria": 962 },
+    "fazenda-cerro-velho": {
+      "vaca-p-cria": 293, "vaca-descarte": 370, "vaquilhonas-13-24m": 1,
+      "novilhos-25-36m": 5, "touros-25-36m": 14, "touros-mais-36m": 38,
+      "terneiros-4-12m": 197, "terneiras-4-12m": 673
+    },
+    "fazenda-sarandi": { "vaca-descarte": 256, "vaquilhonas-13-24m": 439, "terneiros-4-12m": 457 },
+    "fazenda-branquilho": { "vaquilhonas-13-24m": 250 }
+  };
+
+  const FARM_OVINO_QTY_FIX = {
+    "fazenda-remanso": { borregas: 140, borregos: 148, capao: 44, carneiro: 19, "ovelha-cria": 471, "ovelha-descarte": 38 },
+    "fazenda-cerro-velho": { borregas: 126, borregos: 136, capao: 82, carneiro: 22, "ovelha-cria": 508, "ovelha-descarte": 91 },
+    "fazenda-sarandi": { borregas: 1, capao: 13 }
+  };
+
+  const OVINO_NAMES = { borregas: "Borregas", borregos: "Borregos", capao: "Capão", carneiro: "Carneiro", "ovelha-cria": "Ovelha Cria", "ovelha-descarte": "Ovelha Descarte" };
+
+  let changed = 0;
+
+  Object.entries(FARM_POTREIROS_FIX).forEach(([farmId, potreiros]) => {
+    const farm = state.data.farms[farmId];
+    if (!farm) return;
+    if (!Array.isArray(farm.potreiros)) farm.potreiros = [];
+    potreiros.forEach((p) => {
+      const exists = farm.potreiros.some((item) => normalizeText(item.name) === normalizeText(p.name));
+      if (!exists) {
+        farm.potreiros.push({ id: p.id, name: p.name, quantity: 0 });
+        changed++;
+      }
+    });
+  });
+
+  Object.entries(FARM_CATEGORY_QTY_FIX).forEach(([farmId, categoryQty]) => {
+    const farm = state.data.farms[farmId];
+    if (!farm) return;
+    Object.entries(categoryQty).forEach(([categoryId, qty]) => {
+      const category = (farm.categories || []).find((c) => c.id === categoryId);
+      if (category && Number(category.quantity || 0) === 0 && qty > 0) {
+        category.quantity = qty;
+        if (category.allocation && typeof category.allocation === "object") {
+          category.allocation[UNALLOCATED_POTREIRO_KEY] = qty;
+        }
+        changed++;
+      }
+    });
+  });
+
+  Object.entries(FARM_OVINO_QTY_FIX).forEach(([farmId, ovinoQty]) => {
+    const farm = state.data.farms[farmId];
+    if (!farm) return;
+    if (!Array.isArray(farm.ovinos)) farm.ovinos = [];
+    Object.entries(ovinoQty).forEach(([categoryId, qty]) => {
+      let entry = farm.ovinos.find((o) => o.categoryId === categoryId);
+      if (!entry) {
+        entry = { id: `ovino-${farmId}-${categoryId}`, categoryId, categoryName: OVINO_NAMES[categoryId] || categoryId, breedType: "", breedOther: "", quantity: 0 };
+        farm.ovinos.push(entry);
+      }
+      if (Number(entry.quantity || 0) === 0 && qty > 0) {
+        entry.quantity = qty;
+        changed++;
+      }
+    });
+  });
+
+  Object.keys(FARM_CATEGORY_QTY_FIX).forEach((farmId) => {
+    const farm = state.data.farms[farmId];
+    if (!farm || Number(farm.declaredTotal || 0) !== 0) return;
+    const bovinoTotal = (farm.categories || []).reduce((s, c) => s + Number(c.quantity || 0), 0);
+    const ovinoTotal = (farm.ovinos || []).reduce((s, o) => s + Number(o.quantity || 0), 0);
+    const newTotal = bovinoTotal + ovinoTotal;
+    if (newTotal > 0) {
+      farm.declaredTotal = newTotal;
+      changed++;
+    }
+  });
+
+  if (changed > 0) {
+    console.log(`[migração] ${changed} item(ns) de potreiros/categorias/ovinos corrigido(s) para Remanso/Cerro Velho/Sarandi/Branquilho.`);
+  }
+  return changed;
+}
+
 function boot() {
   try {
     if (fixSanitaryDates2026Dec() > 0) saveData({ skipCloud: false });
+    if (applyPastureCategoryFix2026Jul() > 0) saveData({ skipCloud: false });
     bindEvents();
     setAuthLoginMode(runtime.authLoginMode);
     renderAuthState();
@@ -2193,6 +2327,7 @@ async function cloudPull() {
     if (localJson !== cloudJson) {
       state.data = merged;
       fixSanitaryDates2026Dec();
+      applyPastureCategoryFix2026Jul();
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
       // Garante que registros importados (IMPORTED_SANITARY_RECORDS etc.)
       // sejam persistidos no Render após serem adicionados localmente
