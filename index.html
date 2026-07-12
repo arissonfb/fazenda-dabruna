@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <title>Painel Pecuário | Wolf Pecuária</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Yrsa:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260710a">
+  <link rel="stylesheet" href="./styles.css?v=20260711a">
   <link rel="stylesheet" href="./bruna.css">
 </head>
 <body class="login-mode">
@@ -1744,10 +1744,38 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./assets/jspdf.umd.min.js"></script>
   <script src="./assets/jspdf.autotable.min.js"></script>
-  <script src="./app.js?v=20260710a"></script>
-  <script src="./bruna-extras.js"></script>
-  <script src="./pastagens.js"></script>
-  <script src="./eventos.js"></script>
-  <script src="./alambrado.js"></script>
+  <script src="./app.js?v=20260711a"></script>
+  <script src="./bruna-extras.js?v=20260711a"></script>
+  <script src="./pastagens.js?v=20260711a"></script>
+  <script src="./eventos.js?v=20260711a"></script>
+  <script src="./alambrado.js?v=20260711a"></script>
+  <script>
+    /* Rede de segurança mobile: garante que toda <table> renderizada
+       (inclusive as futuras, via innerHTML) fique dentro de um
+       contêiner com rolagem horizontal própria, para nunca estourar
+       a largura da página em telas pequenas. */
+    (function () {
+      function wrapTable(table) {
+        if (table.closest(".table-wrap, .rep2-tw, .com2-tw, .mov-records-table-wrap, .bi-heatmap-wrap")) return;
+        var wrap = document.createElement("div");
+        wrap.className = "table-wrap";
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
+      }
+      function wrapAllTables(root) {
+        (root.querySelectorAll ? root : document).querySelectorAll("table").forEach(wrapTable);
+      }
+      wrapAllTables(document);
+      new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          mutation.addedNodes.forEach(function (node) {
+            if (node.nodeType !== 1) return;
+            if (node.tagName === "TABLE") wrapTable(node);
+            else if (node.querySelectorAll) wrapAllTables(node);
+          });
+        });
+      }).observe(document.body, { childList: true, subtree: true });
+    })();
+  </script>
 </body>
 </html>

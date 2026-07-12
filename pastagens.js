@@ -577,16 +577,16 @@ function renderPastureAreaRows(rows, isTotalView) {
 
               const procedureRows = procedures.map((p) => `
                 <tr>
-                  <td>${formatDate(p.date)}</td>
-                  <td>${escapeHtml(getPastureProcedureTypeLabel(p))}</td>
-                  <td>${escapeHtml(p.description || "—")}</td>
-                  <td>${escapeHtml(p.responsible || "—")}</td>
-                  <td>${formatWeight(p.areaHa || 0)}</td>
-                  <td>${formatWeight(p.quantity || 0)}</td>
-                  <td>${escapeHtml(getPastureUnitLabel(p.unit))}</td>
-                  <td>${formatCurrency(p.unitValue)}</td>
-                  <td>${formatCurrency(p.totalValue)}</td>
-                  <td>
+                  <td data-label="Data">${formatDate(p.date)}</td>
+                  <td data-label="Tipo">${escapeHtml(getPastureProcedureTypeLabel(p))}</td>
+                  <td data-label="Descrição">${escapeHtml(p.description || "—")}</td>
+                  <td data-label="Responsável">${escapeHtml(p.responsible || "—")}</td>
+                  <td data-label="Área (ha)">${formatWeight(p.areaHa || 0)}</td>
+                  <td data-label="Qtd.">${formatWeight(p.quantity || 0)}</td>
+                  <td data-label="Unid.">${escapeHtml(getPastureUnitLabel(p.unit))}</td>
+                  <td data-label="Vlr. unit.">${formatCurrency(p.unitValue)}</td>
+                  <td data-label="Total">${formatCurrency(p.totalValue)}</td>
+                  <td data-label="Ações">
                     <div class="pasture-row-actions">
                       <button type="button" data-pasture-action="edit-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Editar</button>
                       <button type="button" data-pasture-action="duplicate-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}" data-procedure-id="${escapeHtml(p.id)}">Duplicar</button>
@@ -598,19 +598,19 @@ function renderPastureAreaRows(rows, isTotalView) {
 
               return `
                 <tr class="pasture-area-row">
-                  ${isTotalView ? `<td>${escapeHtml(farm.name)}</td>` : ""}
-                  <td>
+                  ${isTotalView ? `<td data-label="Fazenda">${escapeHtml(farm.name)}</td>` : ""}
+                  <td data-label="Área">
                     <strong>${escapeHtml(area.name)}</strong>
                     <div class="pasture-area-meta">${subtitle}</div>
                   </td>
-                  <td>${escapeHtml(getPastureCultureLabel(area))} · ${escapeHtml(area.season || "—")}</td>
-                  <td>${formatDate(area.startDate)}</td>
-                  <td><span class="pasture-status ${escapeHtml(status)}">${escapeHtml(getPastureStatusLabel(status))}</span></td>
-                  <td>${formatHa(area.sizeHa)}</td>
-                  <td>${formatCurrency(totalCost)}</td>
-                  <td>${formatCurrency(costHa)}</td>
-                  <td>${formatInteger(procedures.length)}</td>
-                  <td>
+                  <td data-label="Cultura / Safra">${escapeHtml(getPastureCultureLabel(area))} · ${escapeHtml(area.season || "—")}</td>
+                  <td data-label="Início">${formatDate(area.startDate)}</td>
+                  <td data-label="Status"><span class="pasture-status ${escapeHtml(status)}">${escapeHtml(getPastureStatusLabel(status))}</span></td>
+                  <td data-label="Hectares">${formatHa(area.sizeHa)}</td>
+                  <td data-label="Custo total">${formatCurrency(totalCost)}</td>
+                  <td data-label="Custo / ha">${formatCurrency(costHa)}</td>
+                  <td data-label="Procedimentos">${formatInteger(procedures.length)}</td>
+                  <td data-label="Ações">
                     <div class="pasture-row-actions">
                       <button type="button" data-pasture-action="new-procedure" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">+ Procedimento</button>
                       <button type="button" data-pasture-action="edit-area" data-farm-id="${escapeHtml(farm.id)}" data-area-id="${escapeHtml(area.id)}">Editar</button>

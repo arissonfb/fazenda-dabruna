@@ -111,9 +111,9 @@ function renderEventosSection() {
           formatMovementPhotoCount(m),
         ];
         const actionCell = isAdmin()
-          ? `<td><button type="button" class="row-action-btn danger" data-evento-delete-farm="${escapeHtml(m.farmId)}" data-evento-delete-id="${escapeHtml(m.id)}">Excluir</button></td>`
+          ? `<td data-label="Ações"><button type="button" class="row-action-btn danger" data-evento-delete-farm="${escapeHtml(m.farmId)}" data-evento-delete-id="${escapeHtml(m.id)}">Excluir</button></td>`
           : "";
-        return `<tr>${cells.map((c) => `<td>${c}</td>`).join("")}${actionCell}</tr>`;
+        return `<tr>${cells.map((c, i) => `<td data-label="${escapeHtml(headerCols[i])}">${c}</td>`).join("")}${actionCell}</tr>`;
       }).join("")
     : `<tr><td colspan="${headerCols.length}" class="eventos-empty-hint">Nenhum registro de morte ou abate/consumo no período selecionado.</td></tr>`;
 

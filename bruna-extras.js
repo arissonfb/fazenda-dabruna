@@ -198,11 +198,11 @@ function addOvinoEditRow(entry = null) {
     `<option value="${breed}" ${entry?.breedType === breed ? "selected" : ""}>${escapeHtml(breed)}</option>`
   ).join("");
   tr.innerHTML = `
-    <td><select class="ovino-row-category">${categoryOptions}</select></td>
-    <td><select class="ovino-row-breed">${breedOptions}</select></td>
-    <td><input type="text" class="ovino-row-breed-other" maxlength="40" placeholder="Ex: Dorper" value="${escapeHtml(entry?.breedOther || "")}" ${entry?.breedType === "Outra" ? "" : "hidden"} /></td>
-    <td><input type="number" class="ovino-row-quantity" min="0" step="1" value="${Number(entry?.quantity || 0)}" /></td>
-    <td><button type="button" class="row-action-btn danger ovino-remove-row">Remover</button></td>
+    <td data-label="Categoria"><select class="ovino-row-category">${categoryOptions}</select></td>
+    <td data-label="Raça"><select class="ovino-row-breed">${breedOptions}</select></td>
+    <td data-label="Raça (outra)"><input type="text" class="ovino-row-breed-other" maxlength="40" placeholder="Ex: Dorper" value="${escapeHtml(entry?.breedOther || "")}" ${entry?.breedType === "Outra" ? "" : "hidden"} /></td>
+    <td data-label="Quantidade"><input type="number" class="ovino-row-quantity" min="0" step="1" value="${Number(entry?.quantity || 0)}" /></td>
+    <td data-label="Ações"><button type="button" class="row-action-btn danger ovino-remove-row">Remover</button></td>
   `;
   const breedSelect = tr.querySelector(".ovino-row-breed");
   const breedOtherInput = tr.querySelector(".ovino-row-breed-other");
@@ -312,21 +312,21 @@ function renderOvinoSection() {
     const rowTotal = OVINO_BREED_TYPES.reduce((sum, breed) => sum + matrix[cat.id][breed], 0);
     return `
       <tr>
-        <td>${escapeHtml(cat.name)}</td>
-        ${OVINO_BREED_TYPES.map((breed) => `<td>${formatInteger(matrix[cat.id][breed])}</td>`).join("")}
-        <td><strong>${formatInteger(rowTotal)}</strong></td>
+        <td data-label="Categoria">${escapeHtml(cat.name)}</td>
+        ${OVINO_BREED_TYPES.map((breed) => `<td data-label="${escapeHtml(breed)}">${formatInteger(matrix[cat.id][breed])}</td>`).join("")}
+        <td data-label="Total"><strong>${formatInteger(rowTotal)}</strong></td>
       </tr>
     `;
   }).join("");
 
   const totalsRow = `
     <tr>
-      <td><strong>Total</strong></td>
+      <td data-label="Categoria"><strong>Total</strong></td>
       ${OVINO_BREED_TYPES.map((breed) => {
         const colTotal = OVINO_CATEGORIES.reduce((sum, cat) => sum + matrix[cat.id][breed], 0);
-        return `<td><strong>${formatInteger(colTotal)}</strong></td>`;
+        return `<td data-label="${escapeHtml(breed)}"><strong>${formatInteger(colTotal)}</strong></td>`;
       }).join("")}
-      <td><strong>${formatInteger(grandTotal)}</strong></td>
+      <td data-label="Total"><strong>${formatInteger(grandTotal)}</strong></td>
     </tr>
   `;
 

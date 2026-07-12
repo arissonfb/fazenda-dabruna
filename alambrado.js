@@ -1329,17 +1329,17 @@ function renderAlambradoReportTable(records) {
     const anexos = r.anexos || [];
     const mainRow = `
       <tr>
-        <td>${escapeHtml(r.codigo)}</td>
-        <td>${formatDate(r.data)}</td>
-        <td>${escapeHtml(r._farmName)}</td>
-        <td>${escapeHtml(r.potreiroName || "—")}</td>
-        <td>${escapeHtml(r.tipoServicoLabel)}</td>
-        <td>${r.medida === "metro" ? "Metro" : "Unidade"}</td>
-        <td>${formatInteger(r.quantidade)}</td>
-        <td>${formatCurrency(r.valorUnitario)}</td>
-        <td>${formatCurrency(r.valorTotal)}</td>
-        <td>${escapeHtml(trimLabel(r.observacoes || "—", 50))}</td>
-        <td>${formatInteger(anexos.length)}</td>
+        <td data-label="Código">${escapeHtml(r.codigo)}</td>
+        <td data-label="Data">${formatDate(r.data)}</td>
+        <td data-label="Fazenda">${escapeHtml(r._farmName)}</td>
+        <td data-label="Potreiro">${escapeHtml(r.potreiroName || "—")}</td>
+        <td data-label="Tipo">${escapeHtml(r.tipoServicoLabel)}</td>
+        <td data-label="Medida">${r.medida === "metro" ? "Metro" : "Unidade"}</td>
+        <td data-label="Qtd.">${formatInteger(r.quantidade)}</td>
+        <td data-label="Valor unit.">${formatCurrency(r.valorUnitario)}</td>
+        <td data-label="Valor total">${formatCurrency(r.valorTotal)}</td>
+        <td data-label="Observações">${escapeHtml(trimLabel(r.observacoes || "—", 50))}</td>
+        <td data-label="Anexos">${formatInteger(anexos.length)}</td>
       </tr>
     `;
     const mediaRow = anexos.length ? `
@@ -1369,9 +1369,9 @@ function renderAlambradoReportTable(records) {
   tfoot.innerHTML = `
     <tr>
       <td colspan="6"><strong>Totais do período filtrado</strong></td>
-      <td>${formatInteger(totalMetros)} m / ${formatInteger(totalUnidades)} un.</td>
+      <td data-label="Qtd.">${formatInteger(totalMetros)} m / ${formatInteger(totalUnidades)} un.</td>
       <td></td>
-      <td><strong>${formatCurrency(totalGeral)}</strong></td>
+      <td data-label="Valor total"><strong>${formatCurrency(totalGeral)}</strong></td>
       <td colspan="2"></td>
     </tr>
   `;

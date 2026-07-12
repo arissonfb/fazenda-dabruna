@@ -1586,13 +1586,13 @@ function renderAuditTrailDialog() {
   elements.auditTrailBody.innerHTML = slice.length
     ?slice.map((entry) => `
         <tr>
-          <td>${new Date(entry.timestamp).toLocaleString("pt-BR")}</td>
-          <td>${escapeHtml(entry.userLogin)}<br><span class="field-note">${escapeHtml(getRoleLabel(entry.userRole === "admin" ?"admin" : "usuario"))}</span></td>
-          <td>${escapeHtml(entry.ip || "IP indisponível")}</td>
-          <td><span class="badge badge-neutral">${escapeHtml(entry.action)}</span></td>
-          <td>${escapeHtml(entry.farmName || "—")}</td>
-          <td>${escapeHtml(entry.recordCode || "—")}</td>
-          <td>${escapeHtml(entry.details || `${entry.entity}`)}</td>
+          <td data-label="Data/Hora">${new Date(entry.timestamp).toLocaleString("pt-BR")}</td>
+          <td data-label="Usuário">${escapeHtml(entry.userLogin)}<br><span class="field-note">${escapeHtml(getRoleLabel(entry.userRole === "admin" ?"admin" : "usuario"))}</span></td>
+          <td data-label="IP">${escapeHtml(entry.ip || "IP indisponível")}</td>
+          <td data-label="Ação"><span class="badge badge-neutral">${escapeHtml(entry.action)}</span></td>
+          <td data-label="Fazenda">${escapeHtml(entry.farmName || "—")}</td>
+          <td data-label="Referência">${escapeHtml(entry.recordCode || "—")}</td>
+          <td data-label="Detalhes">${escapeHtml(entry.details || `${entry.entity}`)}</td>
         </tr>
       `).join("")
     : `<tr><td colspan="7" class="table-empty-cell">${query ?"Nenhuma ação encontrada para a busca." : "Nenhuma ação auditada até o momento."}</td></tr>`;
@@ -4695,14 +4695,14 @@ function renderMovTypeRecordsBody(movType, page) {
         ?`<span class="movement-code">${escapeHtml(m.code)}</span>`
         : `<span class="movement-code movement-code-legacy">—</span>`;
       const farmCell = isTotalView
-        ?`<td><div class="mov-records-main-cell"><strong>${escapeHtml(m._farmName)}</strong><span>Origem do registro</span></div></td>`
+        ?`<td data-label="Fazenda"><div class="mov-records-main-cell"><strong>${escapeHtml(m._farmName)}</strong><span>Origem do registro</span></div></td>`
         : "";
       const currency = m.currency || getFarmCurrency(m._farmId);
       const sym = currency === "USD" ?"US$" : "R$";
       const currencyBadge = `<span class="currency-badge ${currency === "USD" ?"usd" : "brl"}">${currency}</span>`;
       const fmtVal = (v) => v > 0 ?`${sym} ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)}` : "—";
       const fmtKg = (v) => v > 0 ?`${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v)} kg` : "—";
-      const actionsCell = `<td class="movement-actions-cell">
+      const actionsCell = `<td class="movement-actions-cell" data-label="Ações">
         <button class="movement-action-btn edit-btn" title="Editar" data-farm-id="${escapeHtml(m._farmId)}" data-movement-id="${escapeHtml(m.id)}">Editar</button>
         <button class="movement-action-btn delete-btn" title="Excluir" data-farm-id="${escapeHtml(m._farmId)}" data-movement-id="${escapeHtml(m.id)}">Excluir</button>
       </td>`;
@@ -4712,13 +4712,13 @@ function renderMovTypeRecordsBody(movType, page) {
         const origin = p.sourceProperty ?escapeHtml(p.sourceProperty) : `<span class="muted-cell">—</span>`;
         const noteSpan = m.notes ?`<span>${escapeHtml(m.notes)}</span>` : "";
         return `<tr class="mov-record-row mov-record-row-compra">
-          <td>${code}</td>
+          <td data-label="Código">${code}</td>
           ${farmCell}
-          <td>${formatDate(m.date)}</td>
-          <td><div class="mov-records-main-cell"><strong>${escapeHtml(m.categoryName)}</strong>${noteSpan}</div></td>
-          <td class="num-col"><strong>${formatInteger(m.quantity)}</strong></td>
-          <td>${origin}</td>
-          <td class="num-col fin-value">${fmtVal(m.value)}</td>
+          <td data-label="Data">${formatDate(m.date)}</td>
+          <td data-label="Categoria"><div class="mov-records-main-cell"><strong>${escapeHtml(m.categoryName)}</strong>${noteSpan}</div></td>
+          <td class="num-col" data-label="Cabeças"><strong>${formatInteger(m.quantity)}</strong></td>
+          <td data-label="Origem / Propriedade">${origin}</td>
+          <td class="num-col fin-value" data-label="Valor Total">${fmtVal(m.value)}</td>
           ${actionsCell}
         </tr>`;
       }
@@ -4730,14 +4730,14 @@ function renderMovTypeRecordsBody(movType, page) {
         const buyerCell = buyer ?escapeHtml(buyer) : `<span class="muted-cell">—</span>`;
         const noteSpan = m.notes ?`<span>${escapeHtml(m.notes)}</span>` : "";
         return `<tr class="mov-record-row mov-record-row-venda">
-          <td>${code}</td>
+          <td data-label="Código">${code}</td>
           ${farmCell}
-          <td>${formatDate(m.date)}</td>
-          <td><div class="mov-records-main-cell"><strong>${escapeHtml(m.categoryName)}</strong>${noteSpan}</div>${getMovementPhotoFlagMarkup(m)}</td>
-          <td class="num-col"><strong>${formatInteger(m.quantity)}</strong></td>
-          <td>${buyerCell}</td>
-          <td class="num-col">${fmtKg(weightKg)}</td>
-          <td class="num-col fin-value">${fmtVal(m.value)}</td>
+          <td data-label="Data">${formatDate(m.date)}</td>
+          <td data-label="Categoria"><div class="mov-records-main-cell"><strong>${escapeHtml(m.categoryName)}</strong>${noteSpan}</div>${getMovementPhotoFlagMarkup(m)}</td>
+          <td class="num-col" data-label="Cabeças"><strong>${formatInteger(m.quantity)}</strong></td>
+          <td data-label="Frigorífico / Comprador">${buyerCell}</td>
+          <td class="num-col" data-label="Kg negociados">${fmtKg(weightKg)}</td>
+          <td class="num-col fin-value" data-label="Valor Total">${fmtVal(m.value)}</td>
           ${actionsCell}
         </tr>`;
       }
@@ -4745,12 +4745,12 @@ function renderMovTypeRecordsBody(movType, page) {
       // Generic types
       const deltaSign = m.delta > 0 ?"+" : "";
       return `<tr>
-        <td>${code}</td>
+        <td data-label="Código">${code}</td>
         ${farmCell}
-        <td>${formatDate(m.date)}</td>
-        <td>${escapeHtml(m.categoryName)}</td>
-        <td>${deltaSign}${formatInteger(m.quantity)}</td>
-        <td>${escapeHtml(getMovementNotes(m))}${getMovementPhotoFlagMarkup(m)}</td>
+        <td data-label="Data">${formatDate(m.date)}</td>
+        <td data-label="Categoria">${escapeHtml(m.categoryName)}</td>
+        <td data-label="Qtd.">${deltaSign}${formatInteger(m.quantity)}</td>
+        <td data-label="Obs.">${escapeHtml(getMovementNotes(m))}${getMovementPhotoFlagMarkup(m)}</td>
         ${actionsCell}
       </tr>`;
     }).join("");
@@ -5414,9 +5414,9 @@ function renderMovementsTable(farm) {
         <td data-label="Categoria">${escapeHtml(movement.categoryName)}</td>
         <td data-label="Qtd.">${deltaSign}${formatInteger(movement.quantity)}</td>
         <td data-label="Obs.">${escapeHtml(getMovementNotes(movement))}${getMovementPhotoFlagMarkup(movement)}</td>
-        <td class="movement-actions-cell">
-          <button class="movement-action-btn edit-btn" title="Editar" data-farm-id="${escapeHtml(movement._farmId)}" data-movement-id="${escapeHtml(movement.id)}">✏️</button>
-          <button class="movement-action-btn delete-btn" title="Excluir" data-farm-id="${escapeHtml(movement._farmId)}" data-movement-id="${escapeHtml(movement.id)}">🗑️</button>
+        <td class="movement-actions-cell" data-label="Ações">
+          <button class="movement-action-btn edit-btn" title="Editar" aria-label="Editar" data-farm-id="${escapeHtml(movement._farmId)}" data-movement-id="${escapeHtml(movement.id)}">✏️</button>
+          <button class="movement-action-btn delete-btn" title="Excluir" aria-label="Excluir" data-farm-id="${escapeHtml(movement._farmId)}" data-movement-id="${escapeHtml(movement.id)}">🗑️</button>
         </td>
       </tr>
     `;
@@ -5633,10 +5633,10 @@ function renderMovementsTable(farm) {
       : "";
     const actionButtons = record.kind === "movement"
       ?`
-          <button class="movement-action-btn edit-btn" title="Editar" data-farm-id="${escapeHtml(record.farmId)}" data-movement-id="${escapeHtml(record.id)}">✏️</button>
-          <button class="movement-action-btn delete-btn" title="Excluir" data-farm-id="${escapeHtml(record.farmId)}" data-movement-id="${escapeHtml(record.id)}">🗑️</button>
+          <button class="movement-action-btn edit-btn" title="Editar" aria-label="Editar" data-farm-id="${escapeHtml(record.farmId)}" data-movement-id="${escapeHtml(record.id)}">✏️</button>
+          <button class="movement-action-btn delete-btn" title="Excluir" aria-label="Excluir" data-farm-id="${escapeHtml(record.farmId)}" data-movement-id="${escapeHtml(record.id)}">🗑️</button>
         `
-      : `<button class="movement-action-btn edit-sanitary-btn" title="Editar sanitário" data-edit-sanitary-id="${escapeHtml(record.id)}">✏️</button>`;
+      : `<button class="movement-action-btn edit-sanitary-btn" title="Editar sanitário" aria-label="Editar sanitário" data-edit-sanitary-id="${escapeHtml(record.id)}">✏️</button>`;
     return `
       <tr>
         <td data-label="Código">${codeDisplay}</td>
@@ -5647,7 +5647,7 @@ function renderMovementsTable(farm) {
         <td data-label="Categoria">${escapeHtml(record.categoryName)}</td>
         <td data-label="Qtd.">${formatInteger(record.quantity)}</td>
         <td data-label="Registro">${escapeHtml(record.details || "—")}${record.kind === "movement" ?getMovementPhotoFlagMarkup(record.raw) : ""}</td>
-        <td class="movement-actions-cell">${actionButtons}</td>
+        <td class="movement-actions-cell" data-label="Ações">${actionButtons}</td>
       </tr>
     `;
   }).join("");
@@ -6035,10 +6035,10 @@ function openSanitaryProductsDialog(farm) {
           <tbody>
             ${rows.length ?rows.map((row) => `
               <tr>
-                <td><strong>${escapeHtml(row.product)}</strong></td>
-                <td>${formatInteger(row.applications)}</td>
-                <td>${formatInteger(row.animals)}</td>
-                <td>${row.latestDate ?formatDate(row.latestDate) : "—"}</td>
+                <td data-label="Produto"><strong>${escapeHtml(row.product)}</strong></td>
+                <td data-label="Aplicações">${formatInteger(row.applications)}</td>
+                <td data-label="Animais tratados">${formatInteger(row.animals)}</td>
+                <td data-label="Última aplicação">${row.latestDate ?formatDate(row.latestDate) : "—"}</td>
               </tr>
             `).join("") : `<tr><td colspan="4" class="table-empty-cell">Nenhum produto aplicado no período.</td></tr>`}
           </tbody>
@@ -6235,7 +6235,7 @@ function renderSanitaryTable(farm) {
     const editId = record.id || record.sourceId;
     return `
       <tr>
-        <td>${code}</td>
+        <td data-label="Código">${code}</td>
         <td data-label="Data">${formatDate(record.date)}</td>
         <td data-label="Fazenda"><span class="sanitary-origin manual">${escapeHtml(record._farmName)}</span></td>
         <td data-label="Categoria"><span class="cat-total-icon">${(record.especie || "bovino") === "ovino" ?"🐑" : "🐄"}</span> <strong>${escapeHtml(record.categoryName)}</strong></td>
@@ -13606,18 +13606,18 @@ function renderRepHistoryTable() {
 
     return `
       <tr class="${rec.verificationDate ? "r-done" : "r-pend"}">
-        <td><span class="rep2-code">${escapeHtml(rec.code || "—")}</span></td>
-        <td>${escapeHtml(rec.farmName || farmId)}</td>
-        <td>${typeTag}</td>
-        <td>${formatDate(rec.date)}</td>
-        <td><strong>${escapeHtml(rec.categoryName || rec.categoryId || "—")}</strong></td>
-        <td class="rep2-td-r">${formatInteger(qty)}</td>
-        <td>${verifCell}</td>
-        <td class="rep2-td-r">${pegouCell}</td>
-        <td class="rep2-td-r">${falhouCell}</td>
-        <td class="rep2-td-r"><span class="rep2-taxa-v ${taxaCls}">${taxaStr}</span></td>
-        <td title="${escapeHtml(rec.notes || "")}" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml((rec.notes || "").slice(0, 28) + (rec.notes?.length > 28 ? "…" : ""))}</td>
-        <td>
+        <td data-label="Código"><span class="rep2-code">${escapeHtml(rec.code || "—")}</span></td>
+        <td data-label="Fazenda">${escapeHtml(rec.farmName || farmId)}</td>
+        <td data-label="Tipo">${typeTag}</td>
+        <td data-label="Data">${formatDate(rec.date)}</td>
+        <td data-label="Categoria"><strong>${escapeHtml(rec.categoryName || rec.categoryId || "—")}</strong></td>
+        <td class="rep2-td-r" data-label="Qtd.">${formatInteger(qty)}</td>
+        <td data-label="Verificação">${verifCell}</td>
+        <td class="rep2-td-r" data-label="Prenha">${pegouCell}</td>
+        <td class="rep2-td-r" data-label="Falhada">${falhouCell}</td>
+        <td class="rep2-td-r" data-label="Taxa"><span class="rep2-taxa-v ${taxaCls}">${taxaStr}</span></td>
+        <td data-label="Obs." title="${escapeHtml(rec.notes || "")}" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml((rec.notes || "").slice(0, 28) + (rec.notes?.length > 28 ? "…" : ""))}</td>
+        <td data-label="Ações">
           <div class="rep2-acts">
             <button type="button" class="rep2-ab rep2-ab-edit" data-rep-edit-id="${escapeHtml(rec.id)}" data-farm-id="${escapeHtml(farmId)}">Editar</button>
             ${registrarBtn}
@@ -14946,18 +14946,18 @@ function renderComprasTable() {
       const currBadge = `<span class="currency-badge ${currency === "USD" ? "usd" : "brl"}">${currency}</span>`;
       const valuePerHead = p.valuePerHead || (m.quantity > 0 && m.value > 0 ? m.value / m.quantity : 0);
       return `<tr class="mov-record-row mov-record-row-compra">
-        <td>${code}</td>
-        <td><div class="mov-records-main-cell"><strong>${escapeHtml(m._farmName)}</strong></div></td>
-        <td>${formatDate(m.date)}</td>
-        <td><strong>${escapeHtml(m.categoryName)}</strong></td>
-        <td class="num-col"><strong>${formatInteger(m.quantity)}</strong></td>
-        <td>${origin}</td>
-        <td class="num-col">${fmtKg(p.avgWeight || 0)}</td>
-        <td class="num-col">${fmtKg(p.totalWeight || 0)}</td>
-        <td class="num-col">${fmtPriceKg(p.pricePerKg || 0)}</td>
-        <td class="num-col">${fmtVal(valuePerHead)}</td>
-        <td class="num-col fin-value">${currBadge} ${fmtVal(m.value)}</td>
-        <td class="movement-actions-cell">
+        <td data-label="Código">${code}</td>
+        <td data-label="Fazenda"><div class="mov-records-main-cell"><strong>${escapeHtml(m._farmName)}</strong></div></td>
+        <td data-label="Data">${formatDate(m.date)}</td>
+        <td data-label="Categoria"><strong>${escapeHtml(m.categoryName)}</strong></td>
+        <td class="num-col" data-label="Cabeças"><strong>${formatInteger(m.quantity)}</strong></td>
+        <td data-label="Origem / Propriedade">${origin}</td>
+        <td class="num-col" data-label="P. Médio">${fmtKg(p.avgWeight || 0)}</td>
+        <td class="num-col" data-label="P. Lote">${fmtKg(p.totalWeight || 0)}</td>
+        <td class="num-col" data-label="Valor/kg">${fmtPriceKg(p.pricePerKg || 0)}</td>
+        <td class="num-col" data-label="Valor/Animal">${fmtVal(valuePerHead)}</td>
+        <td class="num-col fin-value" data-label="Valor Total">${currBadge} ${fmtVal(m.value)}</td>
+        <td class="movement-actions-cell" data-label="Ações">
           <button class="movement-action-btn edit-btn" data-farm-id="${escapeHtml(m._farmId)}" data-movement-id="${escapeHtml(m.id)}">Editar</button>
           <button class="movement-action-btn delete-btn" data-farm-id="${escapeHtml(m._farmId)}" data-movement-id="${escapeHtml(m.id)}">Excluir</button>
         </td>
@@ -15624,19 +15624,19 @@ function renderVendasTable() {
       const modeLabel   = d.mode ? getSaleModeLabel(d.mode) : `<span class="muted-cell">—</span>`;
       const currBadge   = `<span class="currency-badge ${currency === "USD" ? "usd" : "brl"}">${currency}</span>`;
       return `<tr class="mov-record-row mov-record-row-venda">
-        <td>${code}</td>
-        <td><div class="mov-records-main-cell"><strong>${escapeHtml(m._farmName)}</strong></div></td>
-        <td>${formatDate(m.date)}</td>
-        <td><strong>${escapeHtml(m.categoryName)}</strong></td>
-        <td class="num-col"><strong>${formatInteger(m.quantity)}</strong></td>
-        <td>${buyerCell}</td>
-        <td><span class="sale-mode-badge">${modeLabel}</span></td>
-        <td class="num-col">${fmtKg(d.weightKg || 0)}</td>
-        <td class="num-col">${fmtKg(avgWeight)}</td>
-        <td class="num-col">${fmtPriceKg(pricePerKg)}</td>
-        <td class="num-col">${fmtVal(valuePerHead)}</td>
-        <td class="num-col fin-value">${currBadge} ${fmtVal(m.value)}</td>
-        <td class="movement-actions-cell">
+        <td data-label="Código">${code}</td>
+        <td data-label="Fazenda"><div class="mov-records-main-cell"><strong>${escapeHtml(m._farmName)}</strong></div></td>
+        <td data-label="Data">${formatDate(m.date)}</td>
+        <td data-label="Categoria"><strong>${escapeHtml(m.categoryName)}</strong></td>
+        <td class="num-col" data-label="Cabeças"><strong>${formatInteger(m.quantity)}</strong></td>
+        <td data-label="Frigorífico / Comprador">${buyerCell}</td>
+        <td data-label="Base"><span class="sale-mode-badge">${modeLabel}</span></td>
+        <td class="num-col" data-label="Kg Negociados">${fmtKg(d.weightKg || 0)}</td>
+        <td class="num-col" data-label="P. Médio">${fmtKg(avgWeight)}</td>
+        <td class="num-col" data-label="Preço/kg">${fmtPriceKg(pricePerKg)}</td>
+        <td class="num-col" data-label="Valor/Animal">${fmtVal(valuePerHead)}</td>
+        <td class="num-col fin-value" data-label="Valor Total">${currBadge} ${fmtVal(m.value)}</td>
+        <td class="movement-actions-cell" data-label="Ações">
           <button class="movement-action-btn edit-btn" data-farm-id="${escapeHtml(m._farmId)}" data-movement-id="${escapeHtml(m.id)}">Editar</button>
           <button class="movement-action-btn delete-btn" data-farm-id="${escapeHtml(m._farmId)}" data-movement-id="${escapeHtml(m.id)}">Excluir</button>
         </td>
