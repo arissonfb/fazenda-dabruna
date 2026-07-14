@@ -934,6 +934,9 @@ function injectPastureDialogs() {
           <label class="span-2" id="pastureAreaFarmField" hidden>Fazenda
             <select id="pastureAreaFarm"></select>
           </label>
+          <label class="span-2" id="pastureAreaFarmDisplayField" hidden>Fazenda selecionada
+            <input type="text" id="pastureAreaFarmDisplay" readonly />
+          </label>
           <label>Potreiro
             <select id="pastureAreaPotreiro" required></select>
           </label>
@@ -1414,14 +1417,20 @@ function openPastureAreaDialog(area, farm) {
   pastureAreaDialogContext = { areaId: area ? area.id : null };
 
   const farmField = document.getElementById("pastureAreaFarmField");
+  const farmDisplayField = document.getElementById("pastureAreaFarmDisplayField");
+  const farmDisplay = document.getElementById("pastureAreaFarmDisplay");
   const farmSelect = document.getElementById("pastureAreaFarm");
   if (isTotalView) {
     farmField.hidden = false;
+    farmDisplayField.hidden = true;
+    farmDisplay.value = "";
     farmSelect.innerHTML = getAllFarms().map((f) => `<option value="${escapeHtml(f.id)}">${escapeHtml(f.name)}</option>`).join("");
     farmSelect.value = (farm || getAllFarms()[0]).id;
     farmSelect.disabled = isEdit;
   } else {
     farmField.hidden = true;
+    farmDisplayField.hidden = false;
+    farmDisplay.value = getFarm()?.name || "";
     farmSelect.innerHTML = "";
     farmSelect.disabled = false;
   }
