@@ -7,59 +7,6 @@
    initializeAppShell, startAuditSession, logAuditEvent.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── Credenciais locais (sem backend) ──────────────────────────── */
-const BRUNA_CREDENTIALS = {
-  "bruna castro": { password: "BC@2026", role: "admin", userId: "admin-bruna" },
-  demo: { password: "fazenda2026", role: "usuario", userId: "user-bruna" }
-};
-
-/* ── Login local (sem backend) ───────────────────────────────────── */
-document.addEventListener("submit", function (event) {
-  if (event.target !== elements.loginForm) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-
-  const login = elements.loginUsername.value.trim().toLowerCase();
-  const password = elements.loginPassword.value;
-  const credential = BRUNA_CREDENTIALS[login];
-
-  elements.loginFeedback.hidden = true;
-  elements.loginFeedback.textContent = "";
-
-  if (!credential || credential.password !== password) {
-    elements.loginFeedback.hidden = false;
-    elements.loginFeedback.textContent = "Login ou senha incorretos. Tente novamente.";
-    return;
-  }
-
-  if (credential.role !== runtime.authLoginMode) {
-    elements.loginFeedback.hidden = false;
-    elements.loginFeedback.textContent = runtime.authLoginMode === "admin"
-      ? "Este login não possui perfil de Administrador."
-      : "Este login não possui perfil de Usuário padrão.";
-    return;
-  }
-
-  const user = state.data.auth.users.find((u) => u.id === credential.userId);
-  if (!user) {
-    elements.loginFeedback.hidden = false;
-    elements.loginFeedback.textContent = "Usuário não encontrado.";
-    return;
-  }
-
-  runtime.cloudToken = null;
-  runtime.cloudConflict = false;
-  runtime.cloudRevision = 0;
-  state.data.auth.sessionUserId = user.id;
-  elements.loginForm.reset();
-  startAuditSession();
-  logAuditEvent("Login", "auth", "Entrada no sistema");
-  saveData({ skipCloud: true });
-  renderAuthState();
-  initializeAppShell();
-  render();
-}, true);
-
 /* ── Renomear fazenda ─────────────────────────────────────────────── */
 const BRUNA_PENCIL_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`;
 
