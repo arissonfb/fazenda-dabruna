@@ -965,7 +965,20 @@
 
 @media (max-width: 720px) {
   .alb-modal-card {
-    max-height: 96vh;
+    width: calc(100vw - 12px);
+    max-height: calc(100vh - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+  .alb-panel {
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 16px 20px;
+  }
+  .alb-tabs {
+    padding: 12px 16px 0;
+  }
+  .alb-tab {
+    padding: 10px 12px;
+    font-size: 0.82rem;
   }
   .alb-filter-bar label {
     min-width: 130px;
