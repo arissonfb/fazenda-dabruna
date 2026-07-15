@@ -7815,7 +7815,8 @@ body[data-active-view="sanitary"] .hero {
   flex-shrink: 0;
   flex-wrap: wrap;
 }
-.rep2-btn-primary {
+/* --- Botoes padrao dos cabecalhos de modulo (Novo Registro / Gerar Relatorio) --- */
+.card-btn-new {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -7831,14 +7832,15 @@ body[data-active-view="sanitary"] .hero {
   box-shadow: 0 2px 8px rgba(27,110,62,.25);
   font-family: inherit;
 }
-.rep2-btn-primary:hover { background: #155a32; box-shadow: 0 4px 16px rgba(27,110,62,.35); }
-.rep2-btn-secondary {
+.card-btn-new:hover { background: #155a32; box-shadow: 0 4px 16px rgba(27,110,62,.35); }
+
+.card-btn-report {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: #fff;
   color: var(--text);
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--line);
   border-radius: 10px;
   padding: 9px 18px;
   font-size: 13px;
@@ -7847,7 +7849,7 @@ body[data-active-view="sanitary"] .hero {
   transition: border-color .15s, background .15s;
   font-family: inherit;
 }
-.rep2-btn-secondary:hover { border-color: var(--green); background: #f6faf6; }
+.card-btn-report:hover { border-color: var(--green); background: #f6faf6; }
 
 /* --- KPI Grid --- */
 .rep2-kpi-section { margin-bottom: 18px; }
@@ -8227,7 +8229,7 @@ body[data-active-view="sanitary"] .hero {
 @media (max-width: 680px) {
   .rep2-header-top { flex-direction: column; }
   .rep2-header-actions { width: 100%; }
-  .rep2-btn-primary,.rep2-btn-secondary { flex: 1; justify-content: center; }
+  .rep2-header-actions .card-btn-new,.rep2-header-actions .card-btn-report { flex: 1; justify-content: center; }
   .rep2-table-hd { flex-direction: column; align-items: flex-start; }
   .rep2-search { min-width: auto; width: 100%; }
 }
@@ -8248,25 +8250,6 @@ body[data-active-view="sanitary"] .hero {
 .com2-main-title { font-size:1.6rem;font-weight:800;color:var(--text);margin:0 0 5px;line-height:1.2; }
 .com2-subtitle { font-size:.85rem;color:var(--muted);max-width:540px;line-height:1.5;margin:0; }
 .com2-header-acts { display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap; }
-.com2-btn-pdf {
-  display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--text);
-  border:1.5px solid var(--border);border-radius:10px;padding:9px 18px;font-size:13px;
-  font-weight:600;cursor:pointer;transition:border-color .15s,background .15s;font-family:inherit;
-}
-.com2-btn-pdf:hover { border-color:var(--green);background:#f6faf6; }
-.com2-btn-new-v {
-  display:inline-flex;align-items:center;gap:6px;background:#8b1a1a;color:#fff;
-  border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;
-  cursor:pointer;transition:background .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(139,26,26,.25);font-family:inherit;
-}
-.com2-btn-new-v:hover { background:#6e1414;box-shadow:0 4px 16px rgba(139,26,26,.35); }
-.com2-btn-new-c {
-  display:inline-flex;align-items:center;gap:6px;background:#1b6e3e;color:#fff;
-  border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;
-  cursor:pointer;transition:background .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(27,110,62,.25);font-family:inherit;
-}
-.com2-btn-new-c:hover { background:#155a32;box-shadow:0 4px 16px rgba(27,110,62,.35); }
-
 /* --- KPI Grid --- */
 .com2-kpi-section { margin-bottom:18px; }
 .com2-kpi-grid { display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px; }
@@ -8390,7 +8373,7 @@ body[data-active-view="sanitary"] .hero {
 @media (max-width:680px)  {
   .com2-header-top { flex-direction:column; }
   .com2-header-acts { width:100%; }
-  .com2-btn-new-v,.com2-btn-new-c,.com2-btn-pdf { flex:1;justify-content:center; }
+  .com2-header-acts .card-btn-new,.com2-header-acts .card-btn-report { flex:1;justify-content:center; }
   .com2-search { min-width:auto;width:100%; }
   .com2-kpi-grid { grid-template-columns:1fr; }
   .com2-card { padding:18px 16px; }

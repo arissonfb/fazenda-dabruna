@@ -231,7 +231,7 @@
       <div id="dashboardView">
         <section class="actions-panel">
           <div class="register-launcher" id="registerLauncher">
-            <button type="button" class="register-gold-btn" id="registerGoldBtn" aria-expanded="false" aria-haspopup="true">
+            <button type="button" class="card-btn-new" id="registerGoldBtn" aria-expanded="false" aria-haspopup="true">
               <span class="register-gold-plus">+</span>
               Registrar Manejo
             </button>
@@ -293,9 +293,7 @@
           <div class="actions-secondary">
             <button type="button" class="action-btn secondary" id="editStockButton">Editar estoque</button>
             <button type="button" class="action-btn secondary" id="georefButton" hidden>Georreferenciamento</button>
-            <button type="button" class="action-btn pdf" id="exportPdfButton">Gerar PDF</button>
-            <button type="button" class="action-btn secondary" id="exportSanitaryPdfMainBtn">PDF Sanitário</button>
-            <button type="button" class="action-btn secondary" id="exportRepPdfMainBtn">PDF Reprodução</button>
+            <button type="button" class="card-btn-report" id="exportPdfButton">Gerar Relatório</button>
           </div>
         </section>
 
@@ -549,8 +547,8 @@
                 <h2>Manejo Sanitário registrado</h2>
               </div>
               <div class="sanitary-header-actions">
-                <button type="button" class="action-btn purchase" id="openSanitaryDialogButton">Registro Sanitário</button>
-                <button type="button" class="action-btn secondary" id="exportSanitaryPdfBtn">Relatório Sanitário PDF</button>
+                <button type="button" class="card-btn-new" id="openSanitaryDialogButton">+ Novo Registro</button>
+                <button type="button" class="card-btn-report" id="exportSanitaryPdfBtn">Gerar Relatório</button>
               </div>
             </div>
             <div class="san-history-toolbar">
@@ -611,11 +609,11 @@
               <p class="rep2-subtitle">Acompanhamento de inseminações, prenhezes, falhadas e desempenho por fazenda</p>
             </div>
             <div class="rep2-header-actions">
-              <button type="button" class="rep2-btn-secondary" id="exportRepPdfBtn">
+              <button type="button" class="card-btn-report" id="exportRepPdfBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-                Relatorio PDF
+                Gerar Relatório
               </button>
-              <button type="button" class="rep2-btn-primary" id="repRegisterBtn">
+              <button type="button" class="card-btn-new" id="repRegisterBtn">
                 + Novo Evento Reprodutivo
               </button>
             </div>
@@ -705,11 +703,11 @@
               <p class="com2-subtitle">Acompanhamento de aquisicoes, investimentos e desempenho por fazenda</p>
             </div>
             <div class="com2-header-acts">
-              <button type="button" class="com2-btn-pdf" id="exportComprasPdfBtn">
+              <button type="button" class="card-btn-report" id="exportComprasPdfBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Gerar PDF
+                Gerar Relatório
               </button>
-              <button type="button" class="com2-btn-new-c" id="comprasNovaBtn">+ Nova Compra</button>
+              <button type="button" class="card-btn-new" id="comprasNovaBtn">+ Nova Compra</button>
             </div>
           </div>
           <div class="farm-switch compras-farm-switch" id="comprasFarmSwitch"></div>
@@ -807,11 +805,11 @@
               <p class="com2-subtitle">Acompanhamento de vendas, receita e desempenho comercial por fazenda</p>
             </div>
             <div class="com2-header-acts">
-              <button type="button" class="com2-btn-pdf" id="exportVendasPdfBtn">
+              <button type="button" class="card-btn-report" id="exportVendasPdfBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Gerar PDF
+                Gerar Relatório
               </button>
-              <button type="button" class="com2-btn-new-v" id="vendasNovaBtn">+ Nova Venda</button>
+              <button type="button" class="card-btn-new" id="vendasNovaBtn">+ Nova Venda</button>
             </div>
           </div>
           <div class="farm-switch comercial-farm-switch" id="vendasFarmSwitch"></div>

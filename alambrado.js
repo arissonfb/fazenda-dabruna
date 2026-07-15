@@ -372,10 +372,7 @@ document.body.insertAdjacentHTML("beforeend", `
       <div class="alb-panel" id="albPanelRelatorio" hidden>
         <div class="alb-filter-bar" id="albReportFilterBar"></div>
         <div class="alb-report-actions">
-          <button type="button" class="action-btn pdf" id="albExportPdfBtn">Exportar PDF</button>
-          <button type="button" class="action-btn secondary" id="albExportExcelBtn">Exportar Excel</button>
-          <button type="button" class="ghost-btn" id="albPrintBtn">Imprimir</button>
-          <button type="button" class="ghost-btn" id="albSaveChartsBtn">Salvar gráficos (imagens)</button>
+          <button type="button" class="card-btn-report" id="albExportPdfBtn">Gerar Relatório</button>
         </div>
         <div class="summary-grid alb-kpi-grid" id="albReportKpis"></div>
         <div class="alb-charts-grid" id="albChartsGrid">
@@ -1571,123 +1568,12 @@ async function exportAlambradoPdf() {
   doc.save(`relatorio-alambrado-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-function exportAlambradoExcel() {
-  if (typeof window.XLSX === "undefined") {
-    alert("A biblioteca de exportação Excel não foi carregada. Verifique sua conexão e tente novamente.");
-    return;
-  }
-  const records = getFilteredAlambradoRecords(runtime.albReportFilters);
-  const rows = records.map((r) => ({
-    "Código": r.codigo,
-    "Data": formatDate(r.data),
-    "Fazenda": r._farmName,
-    "Potreiro": r.potreiroName || "",
-    "Tipo de serviço": r.tipoServicoLabel,
-    "Medida": r.medida === "metro" ? "Metro" : "Unidade",
-    "Quantidade/Metragem": r.quantidade,
-    "Valor unitário": r.valorUnitario,
-    "Valor total": r.valorTotal,
-    "Observações": r.observacoes || "",
-    "Qtd. anexos": (r.anexos || []).length
-  }));
-  const worksheet = window.XLSX.utils.json_to_sheet(rows);
-  const workbook = window.XLSX.utils.book_new();
-  window.XLSX.utils.book_append_sheet(workbook, worksheet, "Servicos de Alambrado");
-  window.XLSX.writeFile(workbook, `relatorio-alambrado-${new Date().toISOString().slice(0, 10)}.xlsx`);
-}
-
-function printAlambradoReport() {
-  const records = getFilteredAlambradoRecords(runtime.albReportFilters);
-  const kpisHtml = document.getElementById("albReportKpis")?.innerHTML || "";
-  const chartIds = ["albChartMonthlyTotal", "albChartAnnualTotal", "albChartMonthlyByType", "albChartAnnualByType", "albChartPercentByType", "albChartByFarm", "albChartByPotreiro"];
-  const chartsHtml = chartIds.map((id) => {
-    const canvas = document.getElementById(id);
-    if (!canvas || !canvas.width || !canvas.height) return "";
-    const title = canvas.dataset.albChartTitle || "";
-    return `<div class="p-chart"><h3>${escapeHtml(title)}</h3><img src="${canvas.toDataURL("image/png", 1.0)}"></div>`;
-  }).join("");
-  const rowsHtml = records.map((r) => `
-    <tr>
-      <td>${escapeHtml(r.codigo)}</td><td>${formatDate(r.data)}</td><td>${escapeHtml(r._farmName)}</td>
-      <td>${escapeHtml(r.potreiroName || "—")}</td><td>${escapeHtml(r.tipoServicoLabel)}</td>
-      <td>${formatInteger(r.quantidade)}</td><td>${formatCurrency(r.valorUnitario)}</td><td>${formatCurrency(r.valorTotal)}</td>
-    </tr>
-  `).join("");
-  const valorTotal = records.reduce((s, r) => s + Number(r.valorTotal || 0), 0);
-
-  const mediaBlocksHtml = records.filter((r) => (r.anexos || []).length > 0).map((r) => `
-    <div class="p-media-block">
-      <h4>${escapeHtml(r.codigo)} — ${escapeHtml(r.tipoServicoLabel)} (${formatDate(r.data)}, ${escapeHtml(r._farmName)})</h4>
-      <div class="p-media-grid">
-        ${(r.anexos || []).map((a) => a.tipo_arquivo === "video"
-          ? `<video src="${a.url}" controls preload="metadata"></video>`
-          : `<img src="${a.url}" alt="${escapeHtml(a.nome_arquivo)}">`
-        ).join("")}
-      </div>
-    </div>
-  `).join("");
-
-  const win = window.open("", "_blank");
-  if (!win) { alert("Habilite pop-ups para imprimir o relatório."); return; }
-  win.document.write(`
-    <!doctype html><html><head><meta charset="utf-8"><title>Relatório de Serviços de Alambrado</title>
-    <style>
-      body{font-family:Arial,Helvetica,sans-serif;color:#2d2319;padding:24px;}
-      h1{font-size:20px;margin-bottom:4px;}
-      .p-kpis{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;}
-      .p-kpis .summary-card{border:1px solid #ddd;border-radius:10px;padding:10px 14px;min-width:150px;}
-      .p-kpis .summary-card p{margin:0 0 4px;color:#7a6754;font-size:11px;}
-      .p-kpis .summary-card strong{font-size:16px;}
-      .p-charts{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:20px 0;}
-      .p-chart img{width:100%;}
-      table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px;}
-      th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
-      th{background:#f2ede4;}
-      tfoot td{font-weight:bold;background:#f7f1e6;}
-      .p-media-block{margin-top:18px;page-break-inside:avoid;}
-      .p-media-block h4{margin:0 0 8px;font-size:12px;color:#375b43;}
-      .p-media-grid{display:flex;flex-wrap:wrap;gap:8px;}
-      .p-media-grid img,.p-media-grid video{width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid #ccc;background:#000;}
-      @media print { .p-charts { grid-template-columns:repeat(2,1fr); } }
-    </style></head><body>
-    <h1>Relatório de Serviços de Alambrado</h1>
-    <p>Gerado em ${new Date().toLocaleString("pt-BR")}</p>
-    <div class="p-kpis">${kpisHtml}</div>
-    <div class="p-charts">${chartsHtml}</div>
-    <table>
-      <thead><tr><th>Código</th><th>Data</th><th>Fazenda</th><th>Potreiro</th><th>Tipo</th><th>Qtd.</th><th>Valor unit.</th><th>Valor total</th></tr></thead>
-      <tbody>${rowsHtml}</tbody>
-      <tfoot><tr><td colspan="7">Total geral</td><td>${formatCurrency(valorTotal)}</td></tr></tfoot>
-    </table>
-    ${mediaBlocksHtml ? `<h2>Anexos por Serviço</h2>${mediaBlocksHtml}` : ""}
-    </body></html>
-  `);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 400);
-}
-
-function saveAlambradoChartsAsImages() {
-  const chartIds = ["albChartMonthlyTotal", "albChartAnnualTotal", "albChartMonthlyByType", "albChartAnnualByType", "albChartPercentByType", "albChartByFarm", "albChartByPotreiro"];
-  chartIds.forEach((id) => {
-    const canvas = document.getElementById(id);
-    if (!canvas || !canvas.width || !canvas.height) return;
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png", 1.0);
-    link.download = `grafico-alambrado-${id}.png`;
-    link.click();
-  });
-}
-
 document.getElementById("albExportPdfBtn").addEventListener("click", () => {
   exportAlambradoPdf().catch((error) => {
     console.error("Falha ao gerar PDF do relatório de alambrado.", error);
     alert("Não foi possível gerar o PDF do relatório.");
   });
 });
-document.getElementById("albExportExcelBtn").addEventListener("click", exportAlambradoExcel);
-document.getElementById("albPrintBtn").addEventListener("click", printAlambradoReport);
-document.getElementById("albSaveChartsBtn").addEventListener("click", saveAlambradoChartsAsImages);
 
 /* ── Dados de demonstração ─────────────────────────────────────────── */
 

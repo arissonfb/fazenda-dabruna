@@ -3705,8 +3705,6 @@ function bindEvents() {
   });
 
   document.getElementById("exportSanitaryPdfBtn")?.addEventListener("click", exportSanitaryPdfReport);
-  document.getElementById("exportSanitaryPdfMainBtn")?.addEventListener("click", exportSanitaryPdfReport);
-  document.getElementById("exportRepPdfMainBtn")?.addEventListener("click", exportReproducaoPdf);
 
   elements.potreirosShortcut.addEventListener("click", () => {
     state.activeView = "potreiros";

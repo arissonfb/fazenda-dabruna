@@ -796,9 +796,8 @@ function renderPastagensView() {
           <h2>Pastagens / Custo por Hectare</h2>
         </div>
         <div class="form-actions">
-          <button type="button" class="ghost-btn" data-pasture-action="export-excel">Exportar Excel</button>
-          <button type="button" class="ghost-btn" data-pasture-action="export-pdf">Exportar PDF</button>
-          <button type="button" class="action-btn purchase" data-pasture-action="new-area">+ Nova área</button>
+          <button type="button" class="card-btn-report" data-pasture-action="export-pdf">Gerar Relatório</button>
+          <button type="button" class="card-btn-new" data-pasture-action="new-area">+ Nova área</button>
         </div>
       </div>
 
