@@ -13465,6 +13465,49 @@ function exportBackup() {
   alert(`Backup realizado com sucesso!\nArquivo: backup-painel-pecuario-${dateTag}.json\nGuarde em local seguro (Drive, pen drive, etc).`);
 }
 
+// Mescla aditiva: mantem tudo que ja existe nos dados atuais e so acrescenta
+// o que e novo (por id, em arrays; por chave, em objetos). Nunca sobrescreve
+// um valor ja existente, para nao haver perda de dados ao restaurar um backup
+// feito por outra pessoa/dispositivo. Mesma logica usada pelo servidor em
+// POST /api/data/merge.
+function deepMergeAddOnly(currentValue, incomingValue) {
+  if (Array.isArray(currentValue) && Array.isArray(incomingValue)) {
+    const allHaveIds = (arr) => arr.length === 0 || arr.every((item) => item && typeof item === "object" && "id" in item);
+    if (allHaveIds(currentValue) && allHaveIds(incomingValue)) {
+      const byId = new Map(currentValue.map((item) => [String(item.id), item]));
+      for (const item of incomingValue) {
+        const key = String(item.id);
+        if (!byId.has(key)) byId.set(key, item);
+      }
+      return Array.from(byId.values());
+    }
+    const seen = new Set(currentValue.map((item) => JSON.stringify(item)));
+    const merged = [...currentValue];
+    for (const item of incomingValue) {
+      const key = JSON.stringify(item);
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    }
+    return merged;
+  }
+
+  const isPlainObject = (value) => value && typeof value === "object" && !Array.isArray(value);
+  if (isPlainObject(currentValue) && isPlainObject(incomingValue)) {
+    const merged = { ...currentValue };
+    for (const key of Object.keys(incomingValue)) {
+      merged[key] = key in currentValue
+        ? deepMergeAddOnly(currentValue[key], incomingValue[key])
+        : incomingValue[key];
+    }
+    return merged;
+  }
+
+  if (currentValue === null || currentValue === undefined) return incomingValue;
+  return currentValue;
+}
+
 async function handleEmergencyRestore(event) {
   const file = event.target.files[0];
   event.target.value = "";
@@ -13482,16 +13525,19 @@ async function handleEmergencyRestore(event) {
     const confirmed = confirm(
       `Backup de ${new Date(payload.dataBackup || Date.now()).toLocaleDateString("pt-BR")} encontrado.\n\n` +
       `Fazendas: ${Object.keys(payload.dados.farms || {}).join(", ")}\n\n` +
-      `Restaurar estes dados? Os dados atuais do dispositivo serão substituídos.`
+      `Mesclar estes dados com os dados atuais deste dispositivo? Nada é apagado — só o que for novo no arquivo é adicionado.`
     );
     if (!confirmed) return;
 
-    const restored = ensureDataShape(payload.dados, { preserveSnapshot: true });
-    restored.selectedFarmId = TOTAL_FARM_ID;
-    restored.auth.sessionUserId = "";
+    const backupData = ensureDataShape(payload.dados, { preserveSnapshot: true });
+    const rawCurrent = window.localStorage.getItem(STORAGE_KEY);
+    const currentData = rawCurrent ? ensureDataShape(JSON.parse(rawCurrent)) : null;
+    const merged = currentData ? deepMergeAddOnly(currentData, backupData) : backupData;
+    merged.selectedFarmId = TOTAL_FARM_ID;
+    merged.auth.sessionUserId = "";
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
-    alert("Backup restaurado com sucesso!\n\nAgora faça login com seu usuário. Se o servidor estiver fora, use o acesso de emergência quando solicitado.");
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    alert("Backup mesclado com sucesso!\n\nAgora faça login com seu usuário. Se o servidor estiver fora, use o acesso de emergência quando solicitado.");
     location.reload();
   } catch (err) {
     alert("Erro ao ler o arquivo de backup: " + (err.message || "arquivo inválido."));
@@ -13504,7 +13550,7 @@ async function handleRestoreFile(event) {
   if (!file) return;
 
   const confirmed = confirm(
-    "Restaurar o backup vai substituir TODOS os dados atuais do sistema.\n\nTem certeza que deseja continuar?"
+    "Restaurar o backup vai mesclar os dados do arquivo com os dados atuais do sistema — nada é apagado, só o que for novo é adicionado.\n\nTem certeza que deseja continuar?"
   );
   if (!confirmed) return;
 
@@ -13517,23 +13563,23 @@ async function handleRestoreFile(event) {
       return;
     }
 
-    const restored = ensureDataShape(payload.dados, { preserveSnapshot: true });
+    const backupData = ensureDataShape(payload.dados, { preserveSnapshot: true });
     const currentSessionUserId = state.data.auth.sessionUserId;
     const currentUsers = Array.isArray(state.data.auth.users) ?[...state.data.auth.users] : [];
-    restored.selectedFarmId = TOTAL_FARM_ID;
-    restored.auth.users = currentUsers;
-    restored.auth.sessionUserId = restored.auth.users.some((user) => user.id === currentSessionUserId)
-      ?currentSessionUserId
-      : "";
 
-    state.data = restored;
-    logAuditEvent("Restauração", "sistema", `Backup restaurado${payload.dataBackup ?` de ${new Date(payload.dataBackup).toLocaleString("pt-BR")}` : ""}`);
+    const merged = deepMergeAddOnly(state.data, backupData);
+    merged.selectedFarmId = TOTAL_FARM_ID;
+    merged.auth.users = currentUsers;
+    merged.auth.sessionUserId = currentSessionUserId;
+
+    state.data = merged;
+    logAuditEvent("Restauração", "sistema", `Backup mesclado${payload.dataBackup ?` de ${new Date(payload.dataBackup).toLocaleString("pt-BR")}` : ""}`);
     saveData();
     markBackupDone();
     renderAuthState();
     initializeAppShell();
     render();
-    alert(`Backup restaurado com sucesso!\nData do backup: ${payload.dataBackup ?new Date(payload.dataBackup).toLocaleString("pt-BR") : "desconhecida"}`);
+    alert(`Backup mesclado com sucesso!\nData do backup: ${payload.dataBackup ?new Date(payload.dataBackup).toLocaleString("pt-BR") : "desconhecida"}\n\nRegistros que já existiam não foram alterados — apenas os novos do arquivo foram adicionados.`);
   } catch (error) {
     console.error("Falha ao restaurar backup.", error);
     alert("Não foi possível restaurar o backup. Verifique se o arquivo está correto.");
