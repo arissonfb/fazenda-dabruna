@@ -1,0 +1,20 @@
+{
+  "name": "Wolf Pecuária - Painel",
+  "short_name": "Wolf Pecuária",
+  "description": "Painel de gestão pecuária Wolf Agricultura e Pecuária",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "./assets/wolf-seal.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

@@ -9,6 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Yrsa:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css?v=20260711c">
   <link rel="stylesheet" href="./bruna.css">
+
+  <!-- PWA / offline: permite instalar na tela de inicio (iOS e Android)
+       e abrir o painel mesmo sem internet via service-worker.js -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#111111">
+  <link rel="apple-touch-icon" href="./assets/wolf-seal.jpg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Wolf Pecuária">
 </head>
 <body class="login-mode">
   <section class="splash-shell" id="splashShell" aria-label="Tela de abertura">
@@ -1772,6 +1781,15 @@
   <script src="./pastagens.js?v=20260712c"></script>
   <script src="./eventos.js?v=20260711a"></script>
   <script src="./alambrado.js?v=20260711a"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch((err) => {
+          console.warn("Service worker nao pode ser registrado:", err);
+        });
+      });
+    }
+  </script>
   <script>
     /* Rede de segurança mobile: garante que toda <table> renderizada
        (inclusive as futuras, via innerHTML) fique dentro de um
