@@ -3001,7 +3001,10 @@ async function handleLoginSubmit(event) {
     initializeAppShell();
     try {
       await refreshUsersFromApi();
-      await cloudPull();
+      // Envia primeiro (nao baixa direto): garante que qualquer dado
+      // gravado offline suba para a nuvem via mesclagem aditiva, em vez
+      // de ser sobrescrito por um cloudPull antes de ter sido enviado.
+      await cloudPush();
     } catch (syncError) {
       console.warn("Login concluido, mas a sincronizacao inicial falhou.", syncError);
       setApiNotice("Login concluido, mas a sincronizacao inicial falhou. Seus dados locais continuam disponiveis.", "warn");
