@@ -1195,6 +1195,8 @@ const elements = {
   movementValue: document.getElementById("movementValue"),
   movementNotes: document.getElementById("movementNotes"),
   movementNotesLabel: document.getElementById("movementNotesLabel"),
+  movementInterventionQtyWrap: document.getElementById("movementInterventionQtyWrap"),
+  movementInterventionQty: document.getElementById("movementInterventionQty"),
   movementPhotoWrap: document.getElementById("movementPhotoWrap"),
   movementPhotos: document.getElementById("movementPhotos"),
   movementPhotoPanel: document.getElementById("movementPhotoPanel"),
@@ -4919,14 +4921,21 @@ function renderDashboardSectionCards(farm) {
   });
 }
 
+function getRecordInterventionQty(movement) {
+  const qty = Number(movement.quantity || 0);
+  if (typeof movement.interventionQty === "number") {
+    return Math.max(0, Math.min(movement.interventionQty, qty));
+  }
+  return (movement.notes || "").trim() ?qty : 0;
+}
+
 function getBirthInterventionStats(movements, year, month) {
   let total = 0;
   let withIntervention = 0;
   movements.forEach((m) => {
     if (m.type !== "nascimento" || !movementMatchesPeriod(m, year, month)) return;
-    const qty = Number(m.quantity || 0);
-    total += qty;
-    if ((m.notes || "").trim()) withIntervention += qty;
+    total += Number(m.quantity || 0);
+    withIntervention += getRecordInterventionQty(m);
   });
   return { total, withIntervention };
 }
@@ -5307,9 +5316,8 @@ function renderBirthDashboard() {
   let total = 0;
   let withIntervention = 0;
   movements.forEach((m) => {
-    const qty = Number(m.quantity || 0);
-    total += qty;
-    if ((m.notes || "").trim()) withIntervention += qty;
+    total += Number(m.quantity || 0);
+    withIntervention += getRecordInterventionQty(m);
   });
   const pct = total > 0 ?((withIntervention / total) * 100).toFixed(1) : "0.0";
   const farmLabel = isTotalView ?"Todas as fazendas" : escapeHtml(farms[0]?.name || "");
@@ -6195,6 +6203,9 @@ function openEditMovementDialog(farmId, movementId) {
   elements.movementQuantity.value = movement.quantity;
   elements.adjustDirection.value = movement.delta >= 0 ?"add" : "sub";
   elements.movementNotes.value = movement.notes || "";
+  if (elements.movementInterventionQty) {
+    elements.movementInterventionQty.value = movement.interventionQty ?String(movement.interventionQty) : "";
+  }
 
   if (movement.type === "venda" && movement.saleDetails) {
     const d = movement.saleDetails;
@@ -8840,6 +8851,7 @@ function openMovementDialog(initialType) {
   elements.movementCarcassKg.value = "";
   elements.movementValue.value = "";
   elements.movementNotes.value = "";
+  if (elements.movementInterventionQty) elements.movementInterventionQty.value = "";
   if (elements.movSaleBuyer) elements.movSaleBuyer.value = "";
   if (elements.movSaleYieldPct) elements.movSaleYieldPct.value = "";
   const saleTotalsBar = document.getElementById("movSaleTotalsBar");
@@ -9569,6 +9581,13 @@ function updateMovementFormForType(type) {
       elements.movementCategory.classList.remove("select-locked");
     }
   }
+
+  if (elements.movementInterventionQtyWrap) {
+    elements.movementInterventionQtyWrap.hidden = !isBirth;
+    if (!isBirth && elements.movementInterventionQty) {
+      elements.movementInterventionQty.value = "";
+    }
+  }
 }
 
 function updateSaleFieldVisibility() {
@@ -10169,6 +10188,9 @@ async function handleMovementSubmit(event) {
     const oldMov = editFarm.movements[oldIdx];
     const date  = elements.movementDate.value;
     const notes = elements.movementNotes.value.trim();
+    const interventionQty = oldMov.type === "nascimento"
+      ?Math.max(0, Math.min(Number(elements.movementInterventionQty?.value || 0), oldMov.quantity || 0))
+      : oldMov.interventionQty;
     let value = Number(elements.movementValue.value || 0);
     let saleDetails = oldMov.saleDetails;
     let purchaseDetails = oldMov.purchaseDetails;
@@ -10196,6 +10218,7 @@ async function handleMovementSubmit(event) {
       saleDetails,
       purchaseDetails,
       notes,
+      interventionQty,
       userModified: true,
       updatedAt: new Date().toISOString()
     };
@@ -10222,6 +10245,9 @@ async function handleMovementSubmit(event) {
   const date = elements.movementDate.value;
   const categoryId = elements.movementCategory.value;
   const notes = elements.movementNotes.value.trim();
+  const interventionQty = type === "nascimento"
+    ?Math.max(0, Math.min(Number(elements.movementInterventionQty?.value || 0), quantity || 0))
+    : 0;
   const category = farm.categories.find((item) => item.id === categoryId);
   let value = Number(elements.movementValue.value || 0);
   let saleDetails = null;
@@ -10229,7 +10255,7 @@ async function handleMovementSubmit(event) {
   const species = elements.movementSpecies?.value || "bovino";
 
   if (species === "ovino") {
-    handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value });
+    handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value, interventionQty });
     return;
   }
 
@@ -10414,6 +10440,7 @@ async function handleMovementSubmit(event) {
     purchaseDetails,
     currency: getFarmCurrency(farm.id),
     notes,
+    interventionQty,
     especie: "bovino",
     potreiro: selectedPotreiro,
     photos: movementTypeSupportsPhotos(type) ?runtime.movementPhotoDrafts.map((photo) => ({ ...photo })) : [],
@@ -10438,7 +10465,7 @@ async function handleMovementSubmit(event) {
   render();
 }
 
-function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value }) {
+function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value, interventionQty = 0 }) {
   const categoryMeta = getFarmOvinoCategories(farm).find((item) => item.id === categoryId);
   if (!categoryMeta || !date || !quantity || quantity < 1) {
     alert("Selecione uma categoria, informe a data e uma quantidade válida (mínimo 1) para o lançamento.");
@@ -10624,6 +10651,7 @@ function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date
     purchaseDetails,
     currency: getFarmCurrency(farm.id),
     notes,
+    interventionQty,
     especie: "ovino",
     photos: movementTypeSupportsPhotos(type) ? runtime.movementPhotoDrafts.map((photo) => ({ ...photo })) : [],
     userModified: true,
@@ -12762,10 +12790,10 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .forEach((m) => {
         const qty = Number(m.quantity || 0);
-        const hasNotes = Boolean((m.notes || "").trim());
+        const recordInterventionQty = getRecordInterventionQty(m);
         totalQty += qty;
         totalValue += Number(m.value || 0);
-        if (isBirth && hasNotes) interventionQty += qty;
+        if (isBirth) interventionQty += recordInterventionQty;
         rows.push([
           m.code || "—",
           ...(multiFarm ?[farm.name] : []),
@@ -12773,12 +12801,13 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
           m.categoryName || "-",
           formatInteger(qty),
           m.value ?formatCurrency(m.value) : "-",
+          ...(isBirth ?[recordInterventionQty > 0 ?formatInteger(recordInterventionQty) : "-"] : []),
           m.notes || "-"
         ]);
       });
   });
 
-  const head = ["Código", ...(multiFarm ?["Fazenda"] : []), "Data", "Categoria", "Qtd.", "Valor", notesLabel];
+  const head = ["Código", ...(multiFarm ?["Fazenda"] : []), "Data", "Categoria", "Qtd.", "Valor", ...(isBirth ?["Qtd. c/ interv."] : []), notesLabel];
   const notesColIndex = head.length - 1;
 
   doc.autoTable({
@@ -12791,6 +12820,10 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
     columnStyles: { [notesColIndex]: { cellWidth: multiFarm ?85 : 105 } },
     didParseCell: (data) => {
       if (isBirth && data.section === "body" && data.column.index === notesColIndex && data.cell.raw !== "-") {
+        data.cell.styles.textColor = [163, 52, 30];
+        data.cell.styles.fontStyle = "bold";
+      }
+      if (isBirth && data.section === "body" && data.column.index === notesColIndex - 1 && data.cell.raw !== "-") {
         data.cell.styles.textColor = [163, 52, 30];
         data.cell.styles.fontStyle = "bold";
       }
@@ -13031,6 +13064,7 @@ function ensureDataShape(data, options = {}) {
       delta: Number(movement.delta || 0),
       value: Number(movement.value || 0),
       notes: movement.notes || "",
+      interventionQty: movement.type === "nascimento" ?Number(movement.interventionQty || 0) : movement.interventionQty,
       photos: normalizeMovementPhotos(movement.photos),
       saleDetails: movement.saleDetails
         ?{
