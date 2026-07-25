@@ -4677,6 +4677,8 @@ function renderHomeView() {
   const saleHead = salesMov.reduce((s, m) => s + Number(m.quantity || 0), 0);
   const saleValue = salesMov.reduce((s, m) => s + Number(m.value || 0), 0);
 
+  const birthStats = getBirthInterventionStats(farms.flatMap((f) => f.movements || []), year, month);
+
   const allPotreiros = farms.flatMap((f) => getPotreroEntries(f));
   const totalPotreiros = allPotreiros.length;
   const allocatedAnimals = farms.reduce((s, f) => s + getRegisteredPotreroAnimals(f), 0);
@@ -4751,6 +4753,17 @@ function renderHomeView() {
       metricLabel: "animais no rebanho",
       badge: totalDeclared > 0 ? `Declarado: ${formatInteger(totalDeclared)} cabeças` : null,
       actions: ["Registrar movimentação", "Ver estoque"]
+    },
+    {
+      view: "nascimento",
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4-3 7-6.5 7-11a7 7 0 0 0-14 0c0 4.5 3 8 7 11z"/><path d="M12 8v5"/><path d="M9.5 10.5h5"/></svg>`,
+      accent: "#a05a2c", bg: "#fdecd7",
+      title: "Nascimentos",
+      desc: "Partos registrados, intervenções necessárias e novos animais incorporados ao rebanho",
+      metric: formatInteger(birthStats.total),
+      metricLabel: `nascidos em ${periodLabel}`,
+      badge: birthStats.total > 0 ? `${formatInteger(birthStats.withIntervention)} com intervenção` : null,
+      actions: ["Novo nascimento", "Ver nascimentos"]
     }
   ];
 
@@ -4800,6 +4813,14 @@ function renderHomeView() {
     trigger.addEventListener("click", (e) => {
       e.stopPropagation();
       const view = trigger.dataset.navHome;
+      if (view === "nascimento") {
+        if (trigger.classList.contains("hmc-btn-primary")) {
+          openMovementDialog("nascimento");
+        } else {
+          openMovTypeRecordsDlg("nascimento");
+        }
+        return;
+      }
       state.activeView = view;
       if (view === "compras") runtime.comprasPage = 0;
       if (view === "vendas") runtime.vendasPage = 0;
@@ -4912,6 +4933,9 @@ function getBirthInterventionStats(movements, year, month) {
 
 function renderDashboardVisualHerdGrid(farm) {
   if (!elements.visualHerdGrid) return;
+  elements.visualHerdGrid.innerHTML = "";
+  elements.visualHerdGrid.hidden = true;
+  return;
 
   const monthly = summarizePeriod(farm, state.filters.year, state.filters.month);
   const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
