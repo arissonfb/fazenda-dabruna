@@ -952,7 +952,7 @@
           <select id="movementCategory" required></select>
         </label>
         <label>
-          Quantidade
+          <span id="movementQuantityLabel">Quantidade</span>
           <input type="number" id="movementQuantity" min="1" step="1" required>
         </label>
         <label id="movementPotreiroWrap" hidden>
@@ -1082,6 +1082,22 @@
           Quantos tiveram intervenção
           <input type="number" id="movementInterventionQty" min="0" step="1" placeholder="0">
         </label>
+
+        <!-- NASCIMENTO: detalhamento dos partos -->
+        <div class="form-section form-span-2" id="birthDetailSection" hidden>
+          <div class="form-section-header">Detalhamento dos partos</div>
+          <p class="field-note" id="birthLegacyNotice" hidden></p>
+          <div class="birth-summary-bar" id="birthSummaryBar">
+            <span>Total de nascimentos: <strong id="birthStatTotal">0</strong></span>
+            <span>Total classificado: <strong id="birthStatClassified">0</strong></span>
+            <span>Restante: <strong id="birthStatRemaining">0</strong></span>
+            <span>Classificado: <strong id="birthStatPercent">0%</strong></span>
+          </div>
+          <p class="birth-summary-msg" id="birthClassificationMsg" hidden></p>
+          <div id="birthOccurrencesList"></div>
+          <button type="button" class="ghost-btn birth-add-btn" id="addBirthOccurrenceBtn">+ Adicionar ocorrência</button>
+        </div>
+
         <label class="form-span-2" id="movementNotesWrap">
           <span id="movementNotesLabel">Observação</span>
           <textarea id="movementNotes" maxlength="500" rows="3" placeholder="Ex.: lote comprado em leilão"></textarea>

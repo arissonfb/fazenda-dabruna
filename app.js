@@ -237,6 +237,62 @@ const MOVEMENT_PHOTO_TYPES = new Set(["compra", "venda", "morte", "consumo", "na
 const MAX_MOVEMENT_PHOTOS = 6;
 const MOVEMENT_PHOTO_MAX_DIMENSION = 1280;
 const MOVEMENT_PHOTO_QUALITY = 0.82;
+
+const BIRTH_TIPO_PARTO_OPTIONS = [
+  "Parto normal, sem auxílio",
+  "Parto normal com auxílio leve",
+  "Parto prolongado",
+  "Parto distócico — dificuldade de nascimento",
+  "Parto prematuro",
+  "Parto gemelar",
+  "Aborto",
+  "Natimorto",
+  "Cesariana",
+  "Fetotomia — retirada de feto morto",
+  "Outro"
+];
+
+const BIRTH_CAUSA_DIFICULDADE_OPTIONS = [
+  "Não houve dificuldade",
+  "Bezerro muito grande",
+  "Desproporção entre o feto e a pelve da vaca",
+  "Dilatação insuficiente",
+  "Contrações fracas ou ausência de contrações",
+  "Apresentação posterior",
+  "Apresentação transversal",
+  "Cabeça desviada",
+  "Membros anteriores ou posteriores flexionados",
+  "Torção uterina",
+  "Prolapso vaginal",
+  "Prolapso uterino",
+  "Gestação gemelar com posicionamento inadequado",
+  "Malformação fetal",
+  "Outro"
+];
+
+const BIRTH_INTERVENCAO_OPTIONS = [
+  "Apenas acompanhamento",
+  "Correção manual da posição do bezerro",
+  "Tração manual",
+  "Utilização de cordas ou correntes obstétricas",
+  "Utilização de extrator obstétrico",
+  "Utilização de fórceps",
+  "Administração de medicamentos",
+  "Aplicação de anestesia",
+  "Cesariana",
+  "Fetotomia",
+  "Reanimação do bezerro",
+  "Limpeza das vias respiratórias",
+  "Estímulo respiratório",
+  "Aquecimento do recém-nascido",
+  "Cura ou desinfecção do umbigo",
+  "Fornecimento de colostro",
+  "Encaminhamento para atendimento médico-veterinário",
+  "Outro"
+];
+
+const BIRTH_CAUSA_NENHUMA = "Não houve dificuldade";
+const BIRTH_INTERVENCAO_NENHUMA = "Apenas acompanhamento";
 const CLOUDINARY_CLOUD_NAME = "dsmpclqqa";
 const CLOUDINARY_UPLOAD_PRESET = "m6pymz4w";
 const BACKUP_DATE_KEY = "painelPecuarioBruna.lastBackup";
@@ -1023,6 +1079,8 @@ const runtime = {
   pendingMovementDialogType: "",
   returnToMovTypeRecords: null,
   movementPhotoDrafts: [],
+  birthOccurrenceDrafts: [],
+  birthLegacyEditNotice: "",
   editStockContextFarmId: TOTAL_FARM_ID,
   pdfContextFarmId: TOTAL_FARM_ID,
   arapeyKmlData: null,
@@ -1198,6 +1256,16 @@ const elements = {
   movementNotesLabel: document.getElementById("movementNotesLabel"),
   movementInterventionQtyWrap: document.getElementById("movementInterventionQtyWrap"),
   movementInterventionQty: document.getElementById("movementInterventionQty"),
+  movementQuantityLabel: document.getElementById("movementQuantityLabel"),
+  birthDetailSection: document.getElementById("birthDetailSection"),
+  birthLegacyNotice: document.getElementById("birthLegacyNotice"),
+  birthStatTotal: document.getElementById("birthStatTotal"),
+  birthStatClassified: document.getElementById("birthStatClassified"),
+  birthStatRemaining: document.getElementById("birthStatRemaining"),
+  birthStatPercent: document.getElementById("birthStatPercent"),
+  birthClassificationMsg: document.getElementById("birthClassificationMsg"),
+  birthOccurrencesList: document.getElementById("birthOccurrencesList"),
+  addBirthOccurrenceBtn: document.getElementById("addBirthOccurrenceBtn"),
   movementPhotoWrap: document.getElementById("movementPhotoWrap"),
   movementPhotos: document.getElementById("movementPhotos"),
   movementPhotoPanel: document.getElementById("movementPhotoPanel"),
@@ -3904,6 +3972,12 @@ function bindEvents() {
   elements.movementPhotos.addEventListener("change", handleMovementPhotosChange);
   elements.movementPhotoPreview.addEventListener("click", handleMovementPhotoPreviewClick);
 
+  elements.addBirthOccurrenceBtn?.addEventListener("click", handleAddBirthOccurrenceClick);
+  elements.birthOccurrencesList?.addEventListener("click", handleBirthOccurrencesListClick);
+  elements.birthOccurrencesList?.addEventListener("input", handleBirthOccurrencesFieldChange);
+  elements.birthOccurrencesList?.addEventListener("change", handleBirthOccurrencesFieldChange);
+  elements.movementQuantity?.addEventListener("input", updateBirthSummary);
+
   elements.movementSaleMode.addEventListener("change", updateSaleFieldVisibility);
   [
     elements.movementLivePrice,
@@ -4805,11 +4879,14 @@ function renderHomeView() {
               <strong class="hmc-value" style="color:${card.accent}">${escapeHtml(card.metric)}</strong>
               <span class="hmc-unit">${escapeHtml(card.metricLabel)}</span>
             </div>
+            ${card.view === "nascimento" ?`<button type="button" class="hmc-btn-report hmc-report-btn" data-nav-home="nascimento">
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/><path d="M9 9h1"/></svg>
+              Gerar Relatório PDF
+            </button>` : ""}
           </div>
           <div class="hmc-actions">
             <button type="button" class="hmc-btn-primary" style="background:${card.accent}" data-nav-home="${escapeHtml(card.view)}">${escapeHtml(card.actions[0])}</button>
             <button type="button" class="hmc-btn-secondary" data-nav-home="${escapeHtml(card.view)}">${escapeHtml(card.actions[1])}</button>
-            ${card.view === "nascimento" ?`<button type="button" class="hmc-btn-secondary hmc-btn-report" data-nav-home="nascimento">Gerar Relatório PDF</button>` : ""}
           </div>
         </div>
       `).join("")}
@@ -4928,12 +5005,96 @@ function renderDashboardSectionCards(farm) {
   });
 }
 
+function birthOccurrenceHasIntervention(occ) {
+  const list = Array.isArray(occ.intervencoesRealizadas) ? occ.intervencoesRealizadas : [];
+  return !(list.length === 1 && list[0] === BIRTH_INTERVENCAO_NENHUMA) && list.length > 0;
+}
+
 function getRecordInterventionQty(movement) {
   const qty = Number(movement.quantity || 0);
+  if (Array.isArray(movement.birthOccurrences) && movement.birthOccurrences.length) {
+    const sum = movement.birthOccurrences.reduce((acc, occ) => {
+      return acc + (birthOccurrenceHasIntervention(occ) ? Number(occ.quantidade || 0) : 0);
+    }, 0);
+    return Math.max(0, Math.min(sum, qty));
+  }
   if (typeof movement.interventionQty === "number") {
     return Math.max(0, Math.min(movement.interventionQty, qty));
   }
   return (movement.notes || "").trim() ?qty : 0;
+}
+
+function summarizeBirthOccurrencesForRow(movement) {
+  if (!Array.isArray(movement.birthOccurrences) || !movement.birthOccurrences.length) {
+    return movement.notes || "-";
+  }
+  return movement.birthOccurrences
+    .map((occ) => {
+      const tipo = occ.tipoParto === "Outro" ? (occ.outroTipoParto || "Outro") : occ.tipoParto;
+      return `${formatInteger(occ.quantidade || 0)} ${tipo || "?"}`;
+    })
+    .join("; ");
+}
+
+function computeBirthOccurrenceStats(movements) {
+  const stats = {
+    totalNascimentos: 0,
+    totalClassificado: 0,
+    byTipoParto: {},
+    byCausa: {},
+    byIntervencao: {},
+    semAuxilio: 0,
+    comAuxilio: 0,
+    distocicos: 0,
+    cesarianas: 0,
+    abortos: 0,
+    natimortos: 0
+  };
+
+  movements.forEach((m) => {
+    if (m.type !== "nascimento") return;
+    stats.totalNascimentos += Number(m.quantity || 0);
+    if (!Array.isArray(m.birthOccurrences)) return;
+
+    m.birthOccurrences.forEach((occ) => {
+      const qty = Number(occ.quantidade || 0);
+      if (qty <= 0) return;
+      stats.totalClassificado += qty;
+
+      const tipo = occ.tipoParto === "Outro" ? (occ.outroTipoParto || "Outro") : occ.tipoParto;
+      if (tipo) stats.byTipoParto[tipo] = (stats.byTipoParto[tipo] || 0) + qty;
+
+      (occ.causasDificuldade || []).forEach((causa) => {
+        const label = causa === "Outro" ? (occ.outraCausaDificuldade || "Outro") : causa;
+        stats.byCausa[label] = (stats.byCausa[label] || 0) + qty;
+      });
+
+      (occ.intervencoesRealizadas || []).forEach((interv) => {
+        const label = interv === "Outro" ? (occ.outraIntervencao || "Outro") : interv;
+        stats.byIntervencao[label] = (stats.byIntervencao[label] || 0) + qty;
+      });
+
+      if (occ.tipoParto === "Parto normal, sem auxílio") stats.semAuxilio += qty;
+      else if (occ.tipoParto) stats.comAuxilio += qty;
+
+      if (occ.tipoParto === "Parto distócico — dificuldade de nascimento") stats.distocicos += qty;
+      if (occ.tipoParto === "Cesariana") stats.cesarianas += qty;
+      if (occ.tipoParto === "Aborto") stats.abortos += qty;
+      if (occ.tipoParto === "Natimorto") stats.natimortos += qty;
+    });
+  });
+
+  const pct = (n) => stats.totalClassificado > 0 ? +((n / stats.totalClassificado) * 100).toFixed(1) : 0;
+  stats.pctSemAuxilio = pct(stats.semAuxilio);
+  stats.pctComAuxilio = pct(stats.comAuxilio);
+  stats.pctDistocicos = pct(stats.distocicos);
+
+  const topEntry = (map) => Object.entries(map).sort((a, b) => b[1] - a[1])[0] || null;
+  stats.topIntervencao = topEntry(stats.byIntervencao);
+  stats.topCausa = topEntry(stats.byCausa);
+  stats.topTipoParto = topEntry(stats.byTipoParto);
+
+  return stats;
 }
 
 function getBirthInterventionStats(movements, year, month) {
@@ -5329,6 +5490,13 @@ function renderBirthDashboard() {
   const pct = total > 0 ?((withIntervention / total) * 100).toFixed(1) : "0.0";
   const farmLabel = isTotalView ?"Todas as fazendas" : escapeHtml(farms[0]?.name || "");
 
+  const stats = computeBirthOccurrenceStats(movements);
+  const classifiedPct = stats.totalNascimentos > 0 ?((stats.totalClassificado / stats.totalNascimentos) * 100).toFixed(1) : "0.0";
+  const remaining = Math.max(0, stats.totalNascimentos - stats.totalClassificado);
+  const topProcedure = stats.topIntervencao
+    ?`<span class="comm-stat"><span>Procedimento mais realizado:</span> <strong>${escapeHtml(stats.topIntervencao[0])}</strong> <span>(${formatInteger(stats.topIntervencao[1])})</span></span>`
+    : "";
+
   el.innerHTML = `
     <div class="comm-summary">
       <div class="comm-summary-row">
@@ -5341,6 +5509,22 @@ function renderBirthDashboard() {
           <span class="comm-stat"><strong>${formatInteger(total)}</strong> <span>nascidos</span></span>
           <span class="comm-sep">·</span>
           <span class="comm-stat comm-birth-alert"><strong>${formatInteger(withIntervention)}</strong> <span>com intervenção (${pct}%)</span></span>
+        </div>
+      </div>
+      <div class="comm-summary-row">
+        <div class="comm-row-stats">
+          <span class="comm-stat"><strong>${formatInteger(stats.totalClassificado)}</strong> <span>classificados (${classifiedPct}%)</span></span>
+          <span class="comm-sep">·</span>
+          <span class="comm-stat"><strong>${formatInteger(remaining)}</strong> <span>não classificados</span></span>
+          <span class="comm-sep">·</span>
+          <span class="comm-stat"><strong>${formatInteger(stats.distocicos)}</strong> <span>distócicos (${stats.pctDistocicos}%)</span></span>
+          <span class="comm-sep">·</span>
+          <span class="comm-stat"><strong>${formatInteger(stats.cesarianas)}</strong> <span>cesarianas</span></span>
+          <span class="comm-sep">·</span>
+          <span class="comm-stat"><strong>${formatInteger(stats.abortos)}</strong> <span>abortos</span></span>
+          <span class="comm-sep">·</span>
+          <span class="comm-stat"><strong>${formatInteger(stats.natimortos)}</strong> <span>natimortos</span></span>
+          ${topProcedure ?`<span class="comm-sep">·</span>${topProcedure}` : ""}
         </div>
       </div>
     </div>
@@ -6259,6 +6443,11 @@ function openEditMovementDialog(farmId, movementId) {
   }
 
   resetMovementPhotoDrafts();
+  if (movement.type === "nascimento") {
+    loadBirthOccurrenceDraftsFromMovement(movement);
+  } else {
+    resetBirthOccurrenceDrafts();
+  }
   updateMovementFormForType(movement.type);
 
   // Tipo e categoria definidos por ÚLTIMO — após updateMovementFormForType para nada sobrescrever
@@ -8869,6 +9058,7 @@ function openMovementDialog(initialType) {
   elements.movementValue.value = "";
   elements.movementNotes.value = "";
   if (elements.movementInterventionQty) elements.movementInterventionQty.value = "";
+  resetBirthOccurrenceDrafts();
   if (elements.movSaleBuyer) elements.movSaleBuyer.value = "";
   if (elements.movSaleYieldPct) elements.movSaleYieldPct.value = "";
   const saleTotalsBar = document.getElementById("movSaleTotalsBar");
@@ -8980,6 +9170,330 @@ function handleMovementPhotoPreviewClick(event) {
 
   runtime.movementPhotoDrafts = runtime.movementPhotoDrafts.filter((photo) => photo.id !== trigger.dataset.removeMovementPhoto);
   renderMovementPhotoDrafts();
+}
+
+// ── Detalhamento dos partos (nascimento) ──────────────────────────────────
+
+function createBirthOccurrenceDraft() {
+  return {
+    id: createMovementId(),
+    quantidade: "",
+    tipoParto: "",
+    outroTipoParto: "",
+    causasDificuldade: [],
+    outraCausaDificuldade: "",
+    intervencoesRealizadas: [],
+    outraIntervencao: "",
+    observacoes: ""
+  };
+}
+
+function resetBirthOccurrenceDrafts() {
+  runtime.birthOccurrenceDrafts = [];
+  runtime.birthLegacyEditNotice = "";
+  renderBirthOccurrenceDrafts();
+}
+
+function loadBirthOccurrenceDraftsFromMovement(movement) {
+  if (Array.isArray(movement.birthOccurrences) && movement.birthOccurrences.length) {
+    runtime.birthOccurrenceDrafts = movement.birthOccurrences.map((occ) => ({
+      id: occ.id || createMovementId(),
+      quantidade: occ.quantidade != null ? String(occ.quantidade) : "",
+      tipoParto: occ.tipoParto || "",
+      outroTipoParto: occ.outroTipoParto || "",
+      causasDificuldade: Array.isArray(occ.causasDificuldade) ? [...occ.causasDificuldade] : [],
+      outraCausaDificuldade: occ.outraCausaDificuldade || "",
+      intervencoesRealizadas: Array.isArray(occ.intervencoesRealizadas) ? [...occ.intervencoesRealizadas] : [],
+      outraIntervencao: occ.outraIntervencao || "",
+      observacoes: occ.observacoes || ""
+    }));
+    runtime.birthLegacyEditNotice = "";
+  } else {
+    runtime.birthOccurrenceDrafts = [];
+    const legacyText = (movement.notes || "").trim();
+    const legacyQty = Number(movement.interventionQty || 0);
+    runtime.birthLegacyEditNotice = (legacyText || legacyQty > 0)
+      ? `Registro anterior ao detalhamento de partos — intervenção registrada: "${legacyText || "—"}"${legacyQty > 0 ? ` (qtd. c/ intervenção: ${legacyQty})` : ""}. Dado preservado; adicione ocorrências abaixo se quiser detalhar este lançamento.`
+      : "";
+  }
+  renderBirthOccurrenceDrafts();
+}
+
+function serializeBirthOccurrences() {
+  return runtime.birthOccurrenceDrafts.map((occ) => ({
+    id: occ.id || createMovementId(),
+    quantidade: Number(occ.quantidade) || 0,
+    tipoParto: occ.tipoParto,
+    outroTipoParto: occ.tipoParto === "Outro" ? occ.outroTipoParto.trim() : "",
+    causasDificuldade: [...occ.causasDificuldade],
+    outraCausaDificuldade: occ.causasDificuldade.includes("Outro") ? occ.outraCausaDificuldade.trim() : "",
+    intervencoesRealizadas: [...occ.intervencoesRealizadas],
+    outraIntervencao: occ.intervencoesRealizadas.includes("Outro") ? occ.outraIntervencao.trim() : "",
+    observacoes: (occ.observacoes || "").trim()
+  }));
+}
+
+function validateBirthOccurrences(totalQuantity) {
+  const total = Number(totalQuantity || 0);
+  const drafts = runtime.birthOccurrenceDrafts;
+
+  for (let i = 0; i < drafts.length; i++) {
+    const occ = drafts[i];
+    const label = `Ocorrência ${i + 1}`;
+    const qty = Number(occ.quantidade);
+    if (!Number.isFinite(qty) || qty < 1) {
+      return { ok: false, message: `${label}: informe uma quantidade válida (mínimo 1).` };
+    }
+    if (!occ.tipoParto) {
+      return { ok: false, message: `${label}: selecione o tipo de parto.` };
+    }
+    if (occ.tipoParto === "Outro" && !occ.outroTipoParto.trim()) {
+      return { ok: false, message: `${label}: descreva o tipo de parto.` };
+    }
+    if (!occ.causasDificuldade.length) {
+      return { ok: false, message: `${label}: selecione ao menos uma causa da dificuldade (ou "${BIRTH_CAUSA_NENHUMA}").` };
+    }
+    if (occ.causasDificuldade.includes("Outro") && !occ.outraCausaDificuldade.trim()) {
+      return { ok: false, message: `${label}: descreva a causa da dificuldade.` };
+    }
+    if (!occ.intervencoesRealizadas.length) {
+      return { ok: false, message: `${label}: selecione ao menos uma intervenção realizada (ou "${BIRTH_INTERVENCAO_NENHUMA}").` };
+    }
+    if (occ.intervencoesRealizadas.includes("Outro") && !occ.outraIntervencao.trim()) {
+      return { ok: false, message: `${label}: descreva a intervenção realizada.` };
+    }
+  }
+
+  const classified = drafts.reduce((sum, occ) => sum + (Number(occ.quantidade) || 0), 0);
+  if (classified > total) {
+    return { ok: false, message: `A soma das ocorrências (${formatInteger(classified)}) ultrapassa o total de nascimentos (${formatInteger(total)}).` };
+  }
+
+  return { ok: true, message: "" };
+}
+
+function updateBirthSummary() {
+  if (!elements.birthStatTotal) return;
+  const total = Number(elements.movementQuantity?.value || 0);
+  const classified = runtime.birthOccurrenceDrafts.reduce((sum, occ) => sum + (Number(occ.quantidade) || 0), 0);
+  const remaining = Math.max(0, total - classified);
+  const pct = total > 0 ? Math.min(100, (classified / total) * 100) : 0;
+
+  elements.birthStatTotal.textContent = formatInteger(total);
+  elements.birthStatClassified.textContent = formatInteger(classified);
+  elements.birthStatRemaining.textContent = formatInteger(remaining);
+  elements.birthStatPercent.textContent = `${pct.toFixed(1)}%`;
+
+  const msgEl = elements.birthClassificationMsg;
+  const bar = elements.birthDetailSection?.querySelector("#birthSummaryBar");
+  if (!msgEl) return;
+
+  if (classified > total) {
+    msgEl.hidden = false;
+    msgEl.textContent = `A soma das ocorrências (${formatInteger(classified)}) ultrapassa o total de nascimentos (${formatInteger(total)}). Ajuste as quantidades antes de salvar.`;
+    msgEl.className = "birth-summary-msg birth-summary-msg-error";
+    bar?.classList.add("birth-summary-bar-error");
+    bar?.classList.remove("birth-summary-bar-warning");
+  } else if (total > 0 && classified < total) {
+    msgEl.hidden = false;
+    msgEl.textContent = `Ainda restam ${formatInteger(total - classified)} nascimentos não classificados.`;
+    msgEl.className = "birth-summary-msg birth-summary-msg-warning";
+    bar?.classList.add("birth-summary-bar-warning");
+    bar?.classList.remove("birth-summary-bar-error");
+  } else {
+    msgEl.hidden = true;
+    bar?.classList.remove("birth-summary-bar-error", "birth-summary-bar-warning");
+  }
+}
+
+function renderBirthOccurrenceDrafts() {
+  const list = elements.birthOccurrencesList;
+  if (!list) return;
+
+  if (elements.birthLegacyNotice) {
+    elements.birthLegacyNotice.hidden = !runtime.birthLegacyEditNotice;
+    elements.birthLegacyNotice.textContent = runtime.birthLegacyEditNotice || "";
+  }
+
+  if (!runtime.birthOccurrenceDrafts.length) {
+    list.innerHTML = `<p class="birth-empty-hint">Nenhuma ocorrência adicionada ainda.</p>`;
+    updateBirthSummary();
+    return;
+  }
+
+  list.innerHTML = runtime.birthOccurrenceDrafts.map((occ, index) => {
+    const tipoOptions = BIRTH_TIPO_PARTO_OPTIONS.map((opt) => `<option value="${escapeHtml(opt)}" ${occ.tipoParto === opt ? "selected" : ""}>${escapeHtml(opt)}</option>`).join("");
+
+    const causasCheckboxes = BIRTH_CAUSA_DIFICULDADE_OPTIONS.map((opt) => `
+      <label class="birth-checkbox">
+        <input type="checkbox" data-occ-field="causasDificuldade" data-occ-value="${escapeHtml(opt)}" ${occ.causasDificuldade.includes(opt) ? "checked" : ""}>
+        <span>${escapeHtml(opt)}</span>
+      </label>`).join("");
+
+    const intervencoesCheckboxes = BIRTH_INTERVENCAO_OPTIONS.map((opt) => `
+      <label class="birth-checkbox">
+        <input type="checkbox" data-occ-field="intervencoesRealizadas" data-occ-value="${escapeHtml(opt)}" ${occ.intervencoesRealizadas.includes(opt) ? "checked" : ""}>
+        <span>${escapeHtml(opt)}</span>
+      </label>`).join("");
+
+    return `
+      <article class="birth-occurrence-card" data-occ-index="${index}">
+        <div class="birth-occurrence-header">
+          <strong>Ocorrência ${index + 1}</strong>
+          <div class="birth-occurrence-actions">
+            <button type="button" class="ghost-btn" data-occ-action="duplicate">Duplicar</button>
+            <button type="button" class="ghost-btn" data-occ-action="remove">Remover</button>
+          </div>
+        </div>
+        <div class="birth-occurrence-grid">
+          <label>
+            Quantidade de ocorrências
+            <input type="number" min="1" step="1" data-occ-field="quantidade" value="${escapeHtml(String(occ.quantidade ?? ""))}" required>
+          </label>
+          <label>
+            Tipo de parto
+            <select data-occ-field="tipoParto" required>
+              <option value="">Selecione...</option>
+              ${tipoOptions}
+            </select>
+          </label>
+          <label class="form-span-2" data-occ-other-wrap="tipoParto" ${occ.tipoParto === "Outro" ? "" : "hidden"}>
+            Descreva o tipo de parto
+            <input type="text" maxlength="150" data-occ-field="outroTipoParto" value="${escapeHtml(occ.outroTipoParto)}">
+          </label>
+
+          <div class="form-span-2 birth-checkbox-group">
+            <span class="birth-checkbox-group-title">Causa da dificuldade no parto</span>
+            <div class="birth-checkbox-grid">${causasCheckboxes}</div>
+          </div>
+          <label class="form-span-2" data-occ-other-wrap="causasDificuldade" ${occ.causasDificuldade.includes("Outro") ? "" : "hidden"}>
+            Descreva a causa da dificuldade
+            <input type="text" maxlength="150" data-occ-field="outraCausaDificuldade" value="${escapeHtml(occ.outraCausaDificuldade)}">
+          </label>
+
+          <div class="form-span-2 birth-checkbox-group">
+            <span class="birth-checkbox-group-title">Intervenções realizadas</span>
+            <div class="birth-checkbox-grid">${intervencoesCheckboxes}</div>
+          </div>
+          <label class="form-span-2" data-occ-other-wrap="intervencoesRealizadas" ${occ.intervencoesRealizadas.includes("Outro") ? "" : "hidden"}>
+            Descreva a intervenção realizada
+            <input type="text" maxlength="150" data-occ-field="outraIntervencao" value="${escapeHtml(occ.outraIntervencao)}">
+          </label>
+
+          <label class="form-span-2">
+            Observações complementares
+            <textarea rows="2" maxlength="500" data-occ-field="observacoes" placeholder="Opcional">${escapeHtml(occ.observacoes)}</textarea>
+          </label>
+        </div>
+      </article>`;
+  }).join("");
+
+  updateBirthSummary();
+}
+
+function applyBirthCheckboxSelection(occ, field, value, checked) {
+  const exclusiveValue = field === "causasDificuldade" ? BIRTH_CAUSA_NENHUMA : field === "intervencoesRealizadas" ? BIRTH_INTERVENCAO_NENHUMA : null;
+  let current = Array.isArray(occ[field]) ? [...occ[field]] : [];
+
+  if (checked) {
+    if (value === exclusiveValue) {
+      current = [exclusiveValue];
+    } else {
+      current = current.filter((v) => v !== exclusiveValue);
+      if (!current.includes(value)) current.push(value);
+    }
+  } else {
+    current = current.filter((v) => v !== value);
+  }
+
+  occ[field] = current;
+}
+
+function syncBirthOccurrenceCardVisibility(card, occ) {
+  const tipoOtherWrap = card.querySelector('[data-occ-other-wrap="tipoParto"]');
+  if (tipoOtherWrap) {
+    const show = occ.tipoParto === "Outro";
+    tipoOtherWrap.hidden = !show;
+    const input = tipoOtherWrap.querySelector("input");
+    if (input) input.required = show;
+  }
+  const causaOtherWrap = card.querySelector('[data-occ-other-wrap="causasDificuldade"]');
+  if (causaOtherWrap) {
+    const show = occ.causasDificuldade.includes("Outro");
+    causaOtherWrap.hidden = !show;
+    const input = causaOtherWrap.querySelector("input");
+    if (input) input.required = show;
+  }
+  const intervOtherWrap = card.querySelector('[data-occ-other-wrap="intervencoesRealizadas"]');
+  if (intervOtherWrap) {
+    const show = occ.intervencoesRealizadas.includes("Outro");
+    intervOtherWrap.hidden = !show;
+    const input = intervOtherWrap.querySelector("input");
+    if (input) input.required = show;
+  }
+
+  card.querySelectorAll('input[type="checkbox"][data-occ-field="causasDificuldade"]').forEach((cb) => {
+    cb.checked = occ.causasDificuldade.includes(cb.dataset.occValue);
+  });
+  card.querySelectorAll('input[type="checkbox"][data-occ-field="intervencoesRealizadas"]').forEach((cb) => {
+    cb.checked = occ.intervencoesRealizadas.includes(cb.dataset.occValue);
+  });
+}
+
+function handleBirthOccurrencesFieldChange(event) {
+  const card = event.target.closest("[data-occ-index]");
+  if (!card) return;
+  const index = Number(card.dataset.occIndex);
+  const occ = runtime.birthOccurrenceDrafts[index];
+  if (!occ) return;
+  const field = event.target.dataset.occField;
+  if (!field) return;
+
+  if (event.target.type === "checkbox") {
+    applyBirthCheckboxSelection(occ, field, event.target.dataset.occValue, event.target.checked);
+    syncBirthOccurrenceCardVisibility(card, occ);
+    updateBirthSummary();
+    return;
+  }
+
+  occ[field] = event.target.value;
+  if (field === "quantidade") {
+    updateBirthSummary();
+  }
+  if (field === "tipoParto") {
+    syncBirthOccurrenceCardVisibility(card, occ);
+  }
+}
+
+function handleBirthOccurrencesListClick(event) {
+  const actionBtn = event.target.closest("[data-occ-action]");
+  if (!actionBtn) return;
+  const card = actionBtn.closest("[data-occ-index]");
+  if (!card) return;
+  const index = Number(card.dataset.occIndex);
+  const action = actionBtn.dataset.occAction;
+
+  if (action === "remove") {
+    runtime.birthOccurrenceDrafts.splice(index, 1);
+    renderBirthOccurrenceDrafts();
+  } else if (action === "duplicate") {
+    const source = runtime.birthOccurrenceDrafts[index];
+    if (source) {
+      const clone = {
+        ...source,
+        id: createMovementId(),
+        causasDificuldade: [...source.causasDificuldade],
+        intervencoesRealizadas: [...source.intervencoesRealizadas]
+      };
+      runtime.birthOccurrenceDrafts.splice(index + 1, 0, clone);
+      renderBirthOccurrenceDrafts();
+    }
+  }
+}
+
+function handleAddBirthOccurrenceClick() {
+  runtime.birthOccurrenceDrafts.push(createBirthOccurrenceDraft());
+  renderBirthOccurrenceDrafts();
 }
 
 function openAlocarDialog() {
@@ -9583,12 +10097,10 @@ function updateMovementFormForType(type) {
 
   const isBirth = type === "nascimento";
   if (elements.movementNotesLabel) {
-    elements.movementNotesLabel.textContent = isBirth ?"Intervenção" : "Observação";
+    elements.movementNotesLabel.textContent = "Observação";
   }
   if (elements.movementNotes) {
-    elements.movementNotes.placeholder = isBirth
-      ?"Ex.: parto assistido, cesariana, uso de tração, complicações…"
-      : "Ex.: lote comprado em leilão";
+    elements.movementNotes.placeholder = "Ex.: lote comprado em leilão";
   }
 
   if (elements.movementCategory) {
@@ -9599,10 +10111,19 @@ function updateMovementFormForType(type) {
     }
   }
 
+  // Campos legados de intervenção — não são mais exibidos; a estrutura nova
+  // (birthDetailSection) substitui esta UI para novos registros.
   if (elements.movementInterventionQtyWrap) {
-    elements.movementInterventionQtyWrap.hidden = !isBirth;
-    if (!isBirth && elements.movementInterventionQty) {
-      elements.movementInterventionQty.value = "";
+    elements.movementInterventionQtyWrap.hidden = true;
+  }
+
+  if (elements.movementQuantityLabel) {
+    elements.movementQuantityLabel.textContent = isBirth ? "Quantidade total de nascimentos" : "Quantidade";
+  }
+  if (elements.birthDetailSection) {
+    elements.birthDetailSection.hidden = !isBirth;
+    if (isBirth) {
+      updateBirthSummary();
     }
   }
 }
@@ -10205,9 +10726,16 @@ async function handleMovementSubmit(event) {
     const oldMov = editFarm.movements[oldIdx];
     const date  = elements.movementDate.value;
     const notes = elements.movementNotes.value.trim();
-    const interventionQty = oldMov.type === "nascimento"
-      ?Math.max(0, Math.min(Number(elements.movementInterventionQty?.value || 0), oldMov.quantity || 0))
-      : oldMov.interventionQty;
+    const interventionQty = oldMov.interventionQty;
+    let birthOccurrences = oldMov.birthOccurrences;
+    if (oldMov.type === "nascimento") {
+      const birthValidation = validateBirthOccurrences(oldMov.quantity);
+      if (!birthValidation.ok) {
+        alert(birthValidation.message);
+        return;
+      }
+      birthOccurrences = serializeBirthOccurrences();
+    }
     let value = Number(elements.movementValue.value || 0);
     let saleDetails = oldMov.saleDetails;
     let purchaseDetails = oldMov.purchaseDetails;
@@ -10236,6 +10764,7 @@ async function handleMovementSubmit(event) {
       purchaseDetails,
       notes,
       interventionQty,
+      birthOccurrences,
       userModified: true,
       updatedAt: new Date().toISOString()
     };
@@ -10247,6 +10776,7 @@ async function handleMovementSubmit(event) {
     saveData();
     populateYearFilter();
     resetMovementPhotoDrafts();
+    resetBirthOccurrenceDrafts();
     elements.movementDialog.close();
     render();
     return;
@@ -10262,9 +10792,16 @@ async function handleMovementSubmit(event) {
   const date = elements.movementDate.value;
   const categoryId = elements.movementCategory.value;
   const notes = elements.movementNotes.value.trim();
-  const interventionQty = type === "nascimento"
-    ?Math.max(0, Math.min(Number(elements.movementInterventionQty?.value || 0), quantity || 0))
-    : 0;
+  const interventionQty = 0;
+  let birthOccurrences = undefined;
+  if (type === "nascimento") {
+    const birthValidation = validateBirthOccurrences(quantity);
+    if (!birthValidation.ok) {
+      alert(birthValidation.message);
+      return;
+    }
+    birthOccurrences = serializeBirthOccurrences();
+  }
   const category = farm.categories.find((item) => item.id === categoryId);
   let value = Number(elements.movementValue.value || 0);
   let saleDetails = null;
@@ -10272,7 +10809,7 @@ async function handleMovementSubmit(event) {
   const species = elements.movementSpecies?.value || "bovino";
 
   if (species === "ovino") {
-    handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value, interventionQty });
+    handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value, interventionQty, birthOccurrences });
     return;
   }
 
@@ -10458,6 +10995,7 @@ async function handleMovementSubmit(event) {
     currency: getFarmCurrency(farm.id),
     notes,
     interventionQty,
+    birthOccurrences,
     especie: "bovino",
     potreiro: selectedPotreiro,
     photos: movementTypeSupportsPhotos(type) ?runtime.movementPhotoDrafts.map((photo) => ({ ...photo })) : [],
@@ -10478,11 +11016,12 @@ async function handleMovementSubmit(event) {
   saveData();
   populateYearFilter();
   resetMovementPhotoDrafts();
+  resetBirthOccurrenceDrafts();
   elements.movementDialog.close();
   render();
 }
 
-function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value, interventionQty = 0 }) {
+function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date, categoryId, notes, value, interventionQty = 0, birthOccurrences }) {
   const categoryMeta = getFarmOvinoCategories(farm).find((item) => item.id === categoryId);
   if (!categoryMeta || !date || !quantity || quantity < 1) {
     alert("Selecione uma categoria, informe a data e uma quantidade válida (mínimo 1) para o lançamento.");
@@ -10669,6 +11208,7 @@ function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date
     currency: getFarmCurrency(farm.id),
     notes,
     interventionQty,
+    birthOccurrences,
     especie: "ovino",
     photos: movementTypeSupportsPhotos(type) ? runtime.movementPhotoDrafts.map((photo) => ({ ...photo })) : [],
     userModified: true,
@@ -10688,6 +11228,7 @@ function handleOvinoMovementSubmit(farm, { type, quantity, adjustDirection, date
   saveData();
   populateYearFilter();
   resetMovementPhotoDrafts();
+  resetBirthOccurrenceDrafts();
   elements.movementDialog.close();
   render();
 }
@@ -12791,7 +13332,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
   const typeMeta = MOVEMENT_TYPES.find((item) => item.value === operation);
   const opLabel = typeMeta?.label || "Movimentações";
   const isBirth = operation === "nascimento";
-  const notesLabel = isBirth ?"Intervenção" : "Observação";
+  const notesLabel = isBirth ?"Detalhamento dos partos" : "Observação";
   const multiFarm = farms.length > 1;
   const opTitle = onlyWithIntervention ?`${opLabel} (somente c/ intervenção)` : opLabel;
 
@@ -12816,6 +13357,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
   doc.text(`Período analisado: ${periodLabel}`, 42, 33);
 
   const rows = [];
+  const birthMovements = [];
   let totalQty = 0;
   let totalValue = 0;
   let interventionQty = 0;
@@ -12829,7 +13371,10 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
         const recordInterventionQty = getRecordInterventionQty(m);
         totalQty += qty;
         totalValue += Number(m.value || 0);
-        if (isBirth) interventionQty += recordInterventionQty;
+        if (isBirth) {
+          interventionQty += recordInterventionQty;
+          birthMovements.push(m);
+        }
         rows.push([
           m.code || "—",
           ...(multiFarm ?[farm.name] : []),
@@ -12838,7 +13383,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
           formatInteger(qty),
           m.value ?formatCurrency(m.value) : "-",
           ...(isBirth ?[recordInterventionQty > 0 ?formatInteger(recordInterventionQty) : "-"] : []),
-          m.notes || "-"
+          isBirth ?summarizeBirthOccurrencesForRow(m) : (m.notes || "-")
         ]);
       });
   });
@@ -12881,6 +13426,38 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
     doc.setFontSize(10);
     doc.setTextColor(163, 52, 30);
     doc.text(`Nascimentos com intervenção: ${formatInteger(interventionQty)} de ${formatInteger(totalQty)} (${pct}%)`, 14, nextY);
+  }
+
+  if (isBirth && birthMovements.length) {
+    const stats = computeBirthOccurrenceStats(birthMovements);
+    if (stats.totalClassificado > 0) {
+      const breakdownRows = [
+        ...Object.entries(stats.byTipoParto).sort((a, b) => b[1] - a[1]).map(([label, qty]) => ["Tipo de parto", label, formatInteger(qty)]),
+        ...Object.entries(stats.byCausa).sort((a, b) => b[1] - a[1]).map(([label, qty]) => ["Causa da dificuldade", label, formatInteger(qty)]),
+        ...Object.entries(stats.byIntervencao).sort((a, b) => b[1] - a[1]).map(([label, qty]) => ["Intervenção realizada", label, formatInteger(qty)])
+      ];
+
+      doc.autoTable({
+        startY: nextY + 8,
+        head: [["Categoria", "Detalhe", "Qtd."]],
+        body: breakdownRows,
+        theme: "striped",
+        headStyles: { fillColor: [163, 52, 30] },
+        styles: { overflow: "linebreak", valign: "top", fontSize: 9 },
+        columnStyles: { 2: { cellWidth: 20, halign: "right" } }
+      });
+
+      const breakdownSummaryY = doc.lastAutoTable.finalY + 8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(45, 35, 25);
+      doc.text(
+        `Sem auxílio: ${stats.pctSemAuxilio}%    Com auxílio: ${stats.pctComAuxilio}%    Distócicos: ${stats.pctDistocicos}%    ` +
+        `Cesarianas: ${formatInteger(stats.cesarianas)}    Abortos: ${formatInteger(stats.abortos)}    Natimortos: ${formatInteger(stats.natimortos)}`,
+        14, breakdownSummaryY
+      );
+      nextY = breakdownSummaryY;
+    }
   }
 
   addPdfFooters(doc, { coverPage: true });
@@ -13102,6 +13679,9 @@ function ensureDataShape(data, options = {}) {
       value: Number(movement.value || 0),
       notes: movement.notes || "",
       interventionQty: movement.type === "nascimento" ?Number(movement.interventionQty || 0) : movement.interventionQty,
+      birthOccurrences: movement.type === "nascimento"
+        ?(Array.isArray(movement.birthOccurrences) ? movement.birthOccurrences : [])
+        : movement.birthOccurrences,
       photos: normalizeMovementPhotos(movement.photos),
       saleDetails: movement.saleDetails
         ?{
