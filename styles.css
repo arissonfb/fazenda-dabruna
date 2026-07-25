@@ -1866,7 +1866,7 @@ input {
 }
 
 select,
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 textarea {
   min-height: 48px;
   border-radius: 14px;
@@ -1874,6 +1874,25 @@ textarea {
   background: rgba(255, 255, 255, 0.88);
   padding: 0 14px;
   color: var(--text);
+}
+
+/* Checkboxes e radios não devem herdar o tamanho/padding dos campos de
+   texto acima — sem isso ficam desproporcionalmente grandes em qualquer
+   lista de seleção múltipla do sistema. */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  max-width: 18px;
+  max-height: 18px;
+  padding: 0 !important;
+  margin: 0;
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--green);
 }
 
 .actions-panel {
@@ -3328,7 +3347,7 @@ textarea {
   color: var(--text);
 }
 
-.birth-occurrence-grid input,
+.birth-occurrence-grid input:not([type="checkbox"]):not([type="radio"]),
 .birth-occurrence-grid select,
 .birth-occurrence-grid textarea {
   border: 1px solid var(--line);
@@ -3347,28 +3366,64 @@ textarea {
   margin-bottom: 6px;
 }
 
+/* Grade de opções de seleção múltipla (causa da dificuldade, intervenções
+   realizadas): duas colunas equilibradas no desktop, uma no celular. */
 .birth-checkbox-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 4px 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+  row-gap: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px 12px;
   background: rgba(245, 235, 218, 0.4);
 }
 
-.birth-checkbox {
+/* Cada opção é uma label clicável: [checkbox] texto, na mesma linha.
+   Especificidade reforçada (.birth-checkbox-grid .birth-checkbox) porque
+   a regra genérica ".form-grid label" (display:grid) tem a mesma
+   especificidade de ".birth-checkbox" sozinha e vence por ordem no
+   arquivo, empilhando o checkbox acima do texto. */
+.birth-checkbox-grid .birth-checkbox {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  line-height: 1.3;
+  min-width: 0;
   font-weight: 500;
-  padding: 3px 0;
   color: var(--text);
 }
 
-.birth-checkbox input {
-  margin: 0;
+.birth-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  margin: 1px 0 0;
+  padding: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--green);
+}
+
+.birth-checkbox span {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* Campo "Descreva..." de uma opção "Outro" dentro de uma lista de
+   checkboxes: recuo alinhado ao início do texto da opção (padding da
+   grade de checkboxes + largura do checkbox + gap: 12px + 16px + 8px),
+   sem alterar o tamanho do próprio checkbox. */
+.birth-outro-indent {
+  padding-left: 37px;
+  margin-top: -4px;
 }
 
 @media (max-width: 640px) {
@@ -3377,6 +3432,7 @@ textarea {
   }
   .birth-checkbox-grid {
     grid-template-columns: 1fr;
+    row-gap: 9px;
   }
 }
 
@@ -7480,7 +7536,7 @@ body::before {
 
 /* ─── Inputs e selects ─── */
 select,
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 textarea {
   min-height: 38px;
   border-radius: 8px;

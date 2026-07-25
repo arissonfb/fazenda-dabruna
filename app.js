@@ -9366,7 +9366,7 @@ function renderBirthOccurrenceDrafts() {
             <span class="birth-checkbox-group-title">Causa da dificuldade no parto</span>
             <div class="birth-checkbox-grid">${causasCheckboxes}</div>
           </div>
-          <label class="form-span-2" data-occ-other-wrap="causasDificuldade" ${occ.causasDificuldade.includes("Outro") ? "" : "hidden"}>
+          <label class="form-span-2 birth-outro-indent" data-occ-other-wrap="causasDificuldade" ${occ.causasDificuldade.includes("Outro") ? "" : "hidden"}>
             Descreva a causa da dificuldade
             <input type="text" maxlength="150" data-occ-field="outraCausaDificuldade" value="${escapeHtml(occ.outraCausaDificuldade)}">
           </label>
@@ -9375,7 +9375,7 @@ function renderBirthOccurrenceDrafts() {
             <span class="birth-checkbox-group-title">Intervenções realizadas</span>
             <div class="birth-checkbox-grid">${intervencoesCheckboxes}</div>
           </div>
-          <label class="form-span-2" data-occ-other-wrap="intervencoesRealizadas" ${occ.intervencoesRealizadas.includes("Outro") ? "" : "hidden"}>
+          <label class="form-span-2 birth-outro-indent" data-occ-other-wrap="intervencoesRealizadas" ${occ.intervencoesRealizadas.includes("Outro") ? "" : "hidden"}>
             Descreva a intervenção realizada
             <input type="text" maxlength="150" data-occ-field="outraIntervencao" value="${escapeHtml(occ.outraIntervencao)}">
           </label>
