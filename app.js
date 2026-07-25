@@ -6141,6 +6141,15 @@ function renderMovementsTable(farm) {
 }
 
 function revertMovementEffect(farm, movement) {
+  if (movement.especie === "ovino") {
+    const entry = (farm.ovinos || []).find((item) => item.categoryId === movement.categoryId)
+      || (farm.ovinos || []).find((item) => (item.categoryName || "").toLowerCase() === (movement.categoryName || "").toLowerCase());
+    if (entry && movement.delta) {
+      entry.quantity -= movement.delta;
+    }
+    return;
+  }
+
   let category = farm.categories.find((c) => c.id === movement.categoryId);
   if (!category && movement.categoryName) {
     // ID antigo pode estar obsoleto — tenta por nome como fallback
