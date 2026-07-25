@@ -12793,6 +12793,10 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
   const isBirth = operation === "nascimento";
   const notesLabel = isBirth ?"Intervenção" : "Observação";
   const multiFarm = farms.length > 1;
+  const opTitle = onlyWithIntervention ?`${opLabel} (somente c/ intervenção)` : opLabel;
+
+  await appendPdfCoverPage(doc, farms, periodLabel, `Relatório de ${opTitle}`);
+  doc.addPage();
 
   try {
     const imageData = await loadLogoForPdf("#ffffff");
@@ -12805,7 +12809,6 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
   doc.setFontSize(18);
   doc.text("Wolf Agricultura e Pecuária", 42, 18);
   doc.setFontSize(15);
-  const opTitle = onlyWithIntervention ?`${opLabel} (somente c/ intervenção)` : opLabel;
   doc.text(`Relatório de ${opTitle} - ${multiFarm ?"Consolidado" : farms[0].name}`, 42, 26);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
@@ -12880,7 +12883,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
     doc.text(`Nascimentos com intervenção: ${formatInteger(interventionQty)} de ${formatInteger(totalQty)} (${pct}%)`, 14, nextY);
   }
 
-  addPdfFooters(doc, { coverPage: false });
+  addPdfFooters(doc, { coverPage: true });
 
   const farmSuffix = multiFarm ?"todas-fazendas" : slugify(farms[0].name || "");
   const periodSuffix = month === "all" ?year : `${year}-${month}`;
