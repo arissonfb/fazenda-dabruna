@@ -474,17 +474,23 @@ body::before {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  padding: 36px 40px 28px;
+  padding: 40px 40px 32px;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
+  background: linear-gradient(180deg, rgba(201, 168, 76, 0.05) 0%, rgba(201, 168, 76, 0) 65%);
 }
 
 .home-hero-copy .eyebrow {
   margin: 0 0 6px;
 }
 
+.home-hero-copy {
+  display: flex;
+  flex-direction: column;
+}
+
 .tech-credential-compact {
-  margin-top: 10px;
+  margin-top: 14px;
   padding: 6px 14px;
 }
 
@@ -493,12 +499,13 @@ body::before {
 }
 
 .home-hero-title {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   font-family: "Yrsa", serif;
-  font-size: 2.1rem;
+  font-size: 2.3rem;
   font-weight: 700;
   color: var(--text);
   line-height: 1.15;
+  letter-spacing: 0.01em;
 }
 
 .home-hero-sub {
@@ -508,40 +515,69 @@ body::before {
 }
 
 .home-hero-farm {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 0.82rem;
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .home-hero-actions {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12px;
+  gap: 14px;
   flex-shrink: 0;
 }
 
-.home-hero-badge {
+/* ── KPI de destaque: total geral de animais ──────────────────────
+   Card premium institucional — verde escuro profundo com friso
+   dourado, reservado para o número mais importante do painel. */
+.home-hero-kpi-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 3px;
+  min-width: 220px;
+  padding: 18px 30px 16px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(155deg, var(--green-deep) 0%, var(--green) 100%);
+  border: 1px solid var(--gold-glow);
+  box-shadow: 0 16px 36px -12px rgba(40, 67, 51, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
   flex-shrink: 0;
 }
 
-.home-hero-total {
-  font-size: 2.6rem;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--text);
-  font-family: "Manrope", sans-serif;
+.home-hero-kpi-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold-light) 50%, transparent);
 }
 
-.home-hero-unit {
-  font-size: 0.72rem;
-  color: var(--muted);
+.home-hero-kpi-label {
+  font-size: 0.68rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 2px;
+  letter-spacing: 0.12em;
+  color: var(--gold-light);
+}
+
+.home-hero-kpi-value {
+  font-family: "Manrope", sans-serif;
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fbf8f2;
+  letter-spacing: -0.01em;
+}
+
+.home-hero-kpi-caption {
+  font-size: 0.74rem;
+  color: rgba(251, 248, 242, 0.68);
+  font-weight: 600;
 }
 
 /* Grade de cards */
@@ -731,7 +767,9 @@ body::before {
 @media (max-width: 640px) {
   .home-hero { padding: 20px 16px 16px; }
   .home-hero-title { font-size: 1.5rem; }
-  .home-hero-total { font-size: 2rem; }
+  .home-hero-actions { align-items: stretch; width: 100%; }
+  .home-hero-kpi-card { align-items: flex-start; width: 100%; min-width: 0; padding: 16px 20px 14px; }
+  .home-hero-kpi-value { font-size: 2.1rem; }
   .home-module-grid {
     grid-template-columns: 1fr;
     padding: 14px 14px 22px;

@@ -231,8 +231,9 @@ const ARAPEY_PRIMARY_GEO_KEYS = new Set([
   "prad 8"
 ]);
 const PDF_LOGO_PATH = "./assets/wolf-seal.jpg";
-const PDF_COVER_IMAGE_PATH = "./assets/wolf-bull-only.png";
+const PDF_COVER_IMAGE_PATH = "./assets/wolf-banner-hero.png";
 const TECHNICAL_MANAGER_NAME = "Bruna Castro";
+const TECHNICAL_MANAGER_CREDENTIAL = "Zootecnista CRMV/Z: 01174";
 const MOVEMENT_PHOTO_TYPES = new Set(["compra", "venda", "morte", "consumo", "nascimento", "transferencia", "ajuste"]);
 const MAX_MOVEMENT_PHOTOS = 6;
 const MOVEMENT_PHOTO_MAX_DIMENSION = 1280;
@@ -4860,9 +4861,10 @@ function renderHomeView() {
       </div>
       <div class="home-hero-actions">
         <button type="button" class="action-btn pdf" id="homeExecutivePdfBtn">Relatório Executivo</button>
-        <div class="home-hero-badge">
-          <span class="home-hero-total">${formatInteger(totalAnimals)}</span>
-          <span class="home-hero-unit">animais</span>
+        <div class="home-hero-kpi-card">
+          <span class="home-hero-kpi-label">Total de Animais</span>
+          <strong class="home-hero-kpi-value">${formatInteger(totalAnimals)}</strong>
+          <span class="home-hero-kpi-caption">animais cadastrados</span>
         </div>
       </div>
     </div>
@@ -11831,28 +11833,11 @@ function fitImageContain(doc, imageDataUrl, box, hAlign = "center") {
   return { drawX, drawY, drawW, drawH };
 }
 
-// Renders linear-gradient(to right, #000 0%, rgba(0,0,0,.75) 15%, transparent 45%)
-// as an offscreen canvas and drops it in as a PNG overlay, so the left edge
-// of the cover photo blends into the black panel instead of showing a hard
-// seam. A canvas gradient is used (rather than stacking translucent jsPDF
-// rects) because adjacent semi-transparent rects visibly band/seam in PDF
-// viewers — a real gradient raster doesn't.
-function drawLeftEdgeFade(doc, x, y, w, h) {
-  const fadeWidth = w * 0.45;
-  const scale = 3;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(2, Math.round(fadeWidth * scale));
-  canvas.height = Math.max(2, Math.round(h * scale));
-  const ctx = canvas.getContext("2d");
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-  gradient.addColorStop(0, "rgba(6, 6, 6, 1)");
-  gradient.addColorStop(0.15 / 0.45, "rgba(6, 6, 6, 0.75)");
-  gradient.addColorStop(1, "rgba(6, 6, 6, 0)");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  doc.addImage(canvas.toDataURL("image/png"), "PNG", x, y, fadeWidth, h);
-}
-
+// Capa institucional usada por todos os relatórios em PDF: banner de marca
+// (assets/wolf-banner-hero.png) ocupando a metade superior da página, com
+// os dados do relatório (seção, propriedade, responsável técnica) logo
+// abaixo, sobre o mesmo fundo preto — sem recorte/alinhamento lateral, já
+// que a imagem é uma composição fechada (logo + selo + foto).
 async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Relatório Pecuário") {
   const { width, height } = getPdfPageSize(doc);
   const scopeLabel = farms.length === 1
@@ -11863,58 +11848,62 @@ async function appendPdfCoverPage(doc, farms, periodLabel, reportSubtitle = "Rel
 
   doc.setFillColor(6, 6, 6);
   doc.rect(0, 0, width, height, "F");
-  const imageX = width * 0.52;
-  const imageW = width - imageX;
+
   try {
     const coverImage = await loadAssetAsDataUrl(PDF_COVER_IMAGE_PATH);
     const { drawX, drawY, drawW, drawH } = fitImageContain(
       doc,
       coverImage,
-      { x: imageX, y: 0, w: imageW, h: height },
-      "right"
+      { x: 0, y: 0, w: width, h: 128 },
+      "center"
     );
-    doc.addImage(coverImage, "JPEG", drawX, drawY, drawW, drawH);
-    drawLeftEdgeFade(doc, drawX, drawY, drawW, drawH);
+    doc.addImage(coverImage, "PNG", drawX, drawY, drawW, drawH);
   } catch (error) {
     console.warn("Não foi possível carregar a imagem da capa do PDF.", error);
   }
 
-  const left = 18;
-  doc.setDrawColor(197, 167, 74);
-  doc.setLineWidth(1.1);
-  doc.line(left, 27, left + 19, 27);
-  doc.setTextColor(197, 167, 74);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("PREMIUM", left, 40);
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
-  doc.text("Painel Pecuário", left, 56);
-  doc.text("Premium", left, 72);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(13);
-  doc.setTextColor(215, 215, 215);
-  doc.text(reportSubtitle, left, 91);
+  const left = 20;
+  const gold = [197, 167, 74];
+  const white = [244, 241, 234];
+  const muted = [160, 160, 160];
 
-  doc.setDrawColor(197, 167, 74);
+  doc.setDrawColor(...gold);
   doc.setLineWidth(0.6);
-  doc.line(left, 122, left + 50, 122);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setTextColor(197, 167, 74);
-  doc.text("RESPONSÁVEL TÉCNICA", left, 131);
-  doc.setFontSize(17);
-  doc.setTextColor(255, 255, 255);
-  doc.text(TECHNICAL_MANAGER_NAME, left, 143);
+  doc.line(left, 136, left + 50, 136);
 
+  doc.setFont("times", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(...gold);
+  doc.text(reportSubtitle, left, 150);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.2);
+  doc.setTextColor(...gold);
+  doc.text("PROPRIEDADE", left, 161);
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(11.5);
+  doc.setTextColor(...white);
+  doc.text(scopeLabel, left, 169);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.2);
+  doc.setTextColor(...gold);
+  doc.text("RESPONSÁVEL TÉCNICA", left, 180);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12.5);
+  doc.setTextColor(...white);
+  doc.text(TECHNICAL_MANAGER_NAME, left, 188);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...muted);
+  doc.text(TECHNICAL_MANAGER_CREDENTIAL, left, 195);
+
   doc.setFontSize(8);
-  doc.setTextColor(170, 170, 170);
-  doc.text(`Fazenda: ${scopeLabel}`, left, height - 21);
-  doc.text(`Período: ${periodLabel}`, left, height - 13);
-  doc.setDrawColor(197, 167, 74);
+  doc.text(`Período: ${periodLabel}`, left, 203);
+
+  doc.setDrawColor(...gold);
   doc.setLineWidth(0.5);
-  doc.line(left, height - 7, left + 74, height - 7);
+  doc.line(left, 207, left + 40, 207);
 }
 
 function appendFarmDividerPage(doc, farm, periodLabel, year, month, sectionIndex, sectionCount) {
