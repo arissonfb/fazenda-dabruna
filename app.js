@@ -141,7 +141,8 @@ const STANDARD_FARM_CATEGORIES = [
   { id: "touros-mais-36m", name: "Touros (mais de 36m)" },
   { id: "terneiros-0-4m", name: "Terneiros/as (0-4 meses)" },
   { id: "terneiros-4-12m", name: "Terneiros (4-12 meses)" },
-  { id: "terneiras-4-12m", name: "Terneiras (4-12 meses)" }
+  { id: "terneiras-4-12m", name: "Terneiras (4-12 meses)" },
+  { id: "terneiros-mf", name: "Terneiros M/F" }
 ];
 
 const STANDARD_OVINO_CATEGORIES = [
@@ -153,8 +154,25 @@ const STANDARD_OVINO_CATEGORIES = [
   { id: "cordeira", name: "Cordeira" },
   { id: "cordeiro", name: "Cordeiro" },
   { id: "ovelha-cria", name: "Ovelha Cria" },
-  { id: "ovelha-descarte", name: "Ovelha Descarte" }
+  { id: "ovelha-descarte", name: "Ovelha Descarte" },
+  { id: "cordeiros-mf", name: "Cordeiros M/F" }
 ];
+
+const BIRTH_HOLDING_CATEGORY_ID = { bovino: "terneiros-mf", ovino: "cordeiros-mf" };
+
+function getBirthCategoryId(species) {
+  return BIRTH_HOLDING_CATEGORY_ID[species === "ovino" ?"ovino" : "bovino"];
+}
+
+function lockMovementCategoryToBirth(species) {
+  if (!elements.movementCategory) return;
+  const birthCategoryId = getBirthCategoryId(species);
+  const hasOption = [...elements.movementCategory.options].some((option) => option.value === birthCategoryId);
+  if (hasOption) {
+    elements.movementCategory.value = birthCategoryId;
+  }
+  elements.movementCategory.classList.add("select-locked");
+}
 
 const MONTHLY_REPORT_CATEGORIES = [
   { value: "estoque", label: "Controle de estoque animal" },
@@ -1176,6 +1194,7 @@ const elements = {
   movementValueLabel: document.getElementById("movementValueLabel"),
   movementValue: document.getElementById("movementValue"),
   movementNotes: document.getElementById("movementNotes"),
+  movementNotesLabel: document.getElementById("movementNotesLabel"),
   movementPhotoWrap: document.getElementById("movementPhotoWrap"),
   movementPhotos: document.getElementById("movementPhotos"),
   movementPhotoPanel: document.getElementById("movementPhotoPanel"),
@@ -1366,6 +1385,7 @@ const elements = {
   pdfFarmList: document.getElementById("pdfFarmList"),
   pdfYearFilter: document.getElementById("pdfYearFilter"),
   pdfMonthFilter: document.getElementById("pdfMonthFilter"),
+  pdfOperationFilter: document.getElementById("pdfOperationFilter"),
   monthlyDataDialog: document.getElementById("monthlyDataDialog"),
   monthlyDataForm: document.getElementById("monthlyDataForm"),
   closeMonthlyDataDialog: document.getElementById("closeMonthlyDataDialog"),
@@ -3848,6 +3868,10 @@ function bindEvents() {
     syncMovementPotreirosOptions();
     updateSaleFieldVisibility();
     updateMovementCategoryTotal();
+    if (elements.movementType?.value === "nascimento") {
+      lockMovementCategoryToBirth(elements.movementSpecies?.value || "bovino");
+      updateMovementCategoryTotal();
+    }
     if (elements.movementType?.value === "transferencia") {
       const farm = getMovementDialogFarm();
       if ((elements.movementSpecies?.value || "bovino") === "ovino") {
@@ -4117,6 +4141,14 @@ function populatePdfPeriodFilters() {
   [...elements.pdfMonthFilter.options].forEach((option) => {
     option.selected = option.value === state.filters.month;
   });
+
+  if (elements.pdfOperationFilter) {
+    elements.pdfOperationFilter.innerHTML = [
+      '<option value="all">Relatório completo (todas as operações)</option>',
+      ...MOVEMENT_TYPES.map((type) => `<option value="${type.value}">Somente ${type.label}</option>`)
+    ].join("");
+    elements.pdfOperationFilter.value = "all";
+  }
 }
 
 function render() {
@@ -4866,26 +4898,38 @@ function renderDashboardSectionCards(farm) {
   });
 }
 
+function getBirthInterventionStats(movements, year, month) {
+  let total = 0;
+  let withIntervention = 0;
+  movements.forEach((m) => {
+    if (m.type !== "nascimento" || !movementMatchesPeriod(m, year, month)) return;
+    const qty = Number(m.quantity || 0);
+    total += qty;
+    if ((m.notes || "").trim()) withIntervention += qty;
+  });
+  return { total, withIntervention };
+}
+
 function renderDashboardVisualHerdGrid(farm) {
   if (!elements.visualHerdGrid) return;
-  elements.visualHerdGrid.innerHTML = "";
-  elements.visualHerdGrid.hidden = true;
-  return;
 
   const monthly = summarizePeriod(farm, state.filters.year, state.filters.month);
   const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
   const periodLabel = state.filters.month === "all"
     ?`Ano ${state.filters.year}`
     : `${MONTH_NAMES[Number(state.filters.month) - 1]}/${state.filters.year}`;
+  const allMovements = isTotalView ?getAllFarms().flatMap((f) => f.movements) : farm.movements;
+  const birthStats = getBirthInterventionStats(allMovements, state.filters.year, state.filters.month);
 
   const stats = [
-    { label: "Nascimento", value: monthly.byType.nascimento, img: "./assets/calf.svg",        detail: "nascidos no período",       movType: "nascimento" },
+    { label: "Nascimento", value: monthly.byType.nascimento, img: "./assets/calf.svg",        detail: "nascidos no período",       movType: "nascimento", sub: birthStats.total > 0 ?`${formatInteger(birthStats.withIntervention)} de ${formatInteger(birthStats.total)} com intervenção` : "" },
     { label: "Venda",    value: monthly.byType.venda,   img: "./assets/angus-login.svg", detail: "animais vendidos",        movType: "venda"   },
     { label: "Morte",    value: monthly.byType.morte,   img: "./assets/cow.svg",         detail: "mortes registradas",      movType: "morte"   },
     { label: "Abate",    value: monthly.byType.consumo, img: "./assets/bull.svg",        detail: "abates e consumo interno",movType: "consumo" },
     { label: "Compras",  value: monthly.byType.compra,  img: "./assets/herd.svg",        detail: "animais comprados",       movType: "compra"  },
   ];
 
+  elements.visualHerdGrid.hidden = false;
   elements.visualHerdGrid.innerHTML = stats.map((stat) => `
     <button type="button" class="visual-card visual-card-action visual-card-button" data-mov="${stat.movType}" title="Registrar ${stat.label}" aria-label="Abrir registro de ${stat.label}${isTotalView ?" no total" : ` em ${escapeHtml(farm.name)}`}">
       <div class="visual-card-image">
@@ -4900,6 +4944,7 @@ function renderDashboardVisualHerdGrid(farm) {
           <span class="visual-card-share visual-card-count">${formatInteger(stat.value)}</span>
         </div>
         <p>${stat.value === 0 ?"Nenhum registro no período." : `${formatInteger(stat.value)} ${stat.detail}.`}</p>
+        ${stat.sub ?`<p class="visual-card-sub">${escapeHtml(stat.sub)}</p>` : ""}
         <span class="visual-card-cta">Abrir registro</span>
       </div>
     </button>
@@ -9437,6 +9482,24 @@ function updateMovementFormForType(type) {
     renderMovementPhotoDrafts();
   }
   updateSaleFieldVisibility();
+
+  const isBirth = type === "nascimento";
+  if (elements.movementNotesLabel) {
+    elements.movementNotesLabel.textContent = isBirth ?"Intervenção" : "Observação";
+  }
+  if (elements.movementNotes) {
+    elements.movementNotes.placeholder = isBirth
+      ?"Ex.: parto assistido, cesariana, uso de tração, complicações…"
+      : "Ex.: lote comprado em leilão";
+  }
+
+  if (elements.movementCategory) {
+    if (isBirth) {
+      lockMovementCategoryToBirth(species);
+    } else {
+      elements.movementCategory.classList.remove("select-locked");
+    }
+  }
 }
 
 function updateSaleFieldVisibility() {
@@ -10996,6 +11059,7 @@ function handlePdfOptionsSubmit(event) {
   event.preventDefault();
   const farmIds = getSelectedPdfFarmIds();
   const period = getPdfPeriodSelection();
+  const operation = elements.pdfOperationFilter?.value || "all";
 
   if (!farmIds.length) {
     alert("Selecione pelo menos uma fazenda para gerar o PDF.");
@@ -11003,7 +11067,11 @@ function handlePdfOptionsSubmit(event) {
   }
 
   elements.pdfOptionsDialog.close();
-  exportPdfReport(farmIds, period);
+  if (operation === "all") {
+    exportPdfReport(farmIds, period);
+  } else {
+    exportMovementTypePdfReport(farmIds, period, operation);
+  }
 }
 
 async function addPdfHeader(doc, farm, periodLabel, monthly) {
@@ -12566,6 +12634,122 @@ async function exportPdfReport(farmIds = [state.data.selectedFarmId], period = {
   addPdfFooters(doc, { coverPage: true });
 
   doc.save(getPdfFileName(farms, year, month));
+}
+
+// Focused report for a single operation (Compra, Venda, Nascimento, etc.),
+// listing every matching movement with its full notes/intervention text.
+async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId], period = { year: state.filters.year, month: state.filters.month }, operation = "all") {
+  const farms = farmIds.map((farmId) => state.data.farms[farmId]).filter(Boolean);
+  if (!farms.length) {
+    alert("Nenhuma fazenda válida foi selecionada para o PDF.");
+    return;
+  }
+
+  if (!window.jspdf || typeof window.jspdf.jsPDF !== "function") {
+    alert("A biblioteca de PDF não foi carregada. Verifique sua conexão e tente novamente.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  if (typeof doc.autoTable !== "function") {
+    alert("O módulo de tabela do PDF não foi carregado. Verifique sua conexão e tente novamente.");
+    return;
+  }
+
+  const year = String(period.year || state.filters.year);
+  const month = period.month || state.filters.month;
+  const periodLabel = month === "all" ?`Ano de ${year}` : `${MONTH_NAMES[Number(month) - 1]} de ${year}`;
+  const typeMeta = MOVEMENT_TYPES.find((item) => item.value === operation);
+  const opLabel = typeMeta?.label || "Movimentações";
+  const isBirth = operation === "nascimento";
+  const notesLabel = isBirth ?"Intervenção" : "Observação";
+  const multiFarm = farms.length > 1;
+
+  try {
+    const imageData = await loadLogoForPdf("#ffffff");
+    doc.addImage(imageData, "JPEG", 14, 10, 22, 22);
+  } catch (error) {
+    console.warn("Não foi possível carregar o logo para o PDF.", error);
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text("Wolf Agricultura e Pecuária", 42, 18);
+  doc.setFontSize(15);
+  doc.text(`Relatório de ${opLabel} - ${multiFarm ?"Consolidado" : farms[0].name}`, 42, 26);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor(45, 35, 25);
+  doc.text(`Período analisado: ${periodLabel}`, 42, 33);
+
+  const rows = [];
+  let totalQty = 0;
+  let totalValue = 0;
+  let interventionQty = 0;
+  farms.forEach((farm) => {
+    farm.movements
+      .filter((m) => m.type === operation && movementMatchesPeriod(m, year, month))
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .forEach((m) => {
+        const qty = Number(m.quantity || 0);
+        const hasNotes = Boolean((m.notes || "").trim());
+        totalQty += qty;
+        totalValue += Number(m.value || 0);
+        if (isBirth && hasNotes) interventionQty += qty;
+        rows.push([
+          m.code || "—",
+          ...(multiFarm ?[farm.name] : []),
+          formatDate(m.date),
+          m.categoryName || "-",
+          formatInteger(qty),
+          m.value ?formatCurrency(m.value) : "-",
+          m.notes || "-"
+        ]);
+      });
+  });
+
+  const head = ["Código", ...(multiFarm ?["Fazenda"] : []), "Data", "Categoria", "Qtd.", "Valor", notesLabel];
+  const notesColIndex = head.length - 1;
+
+  doc.autoTable({
+    startY: 40,
+    head: [head],
+    body: rows.length ?rows : [Array(head.length).fill("-")],
+    theme: "striped",
+    headStyles: { fillColor: [43, 132, 184] },
+    styles: { overflow: "linebreak", valign: "top" },
+    columnStyles: { [notesColIndex]: { cellWidth: multiFarm ?85 : 105 } },
+    didParseCell: (data) => {
+      if (isBirth && data.section === "body" && data.column.index === notesColIndex && data.cell.raw !== "-") {
+        data.cell.styles.textColor = [163, 52, 30];
+        data.cell.styles.fontStyle = "bold";
+      }
+    }
+  });
+
+  const summaryY = doc.lastAutoTable.finalY + 8;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(45, 35, 25);
+  const valuePart = totalValue > 0 ?`    Valor total: ${formatCurrency(totalValue)}` : "";
+  doc.text(`Total de registros: ${rows.length}    Quantidade total: ${formatInteger(totalQty)}${valuePart}`, 14, summaryY);
+
+  let nextY = summaryY;
+  if (isBirth && totalQty > 0) {
+    const pct = ((interventionQty / totalQty) * 100).toFixed(1);
+    nextY += 7;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(163, 52, 30);
+    doc.text(`Nascimentos com intervenção: ${formatInteger(interventionQty)} de ${formatInteger(totalQty)} (${pct}%)`, 14, nextY);
+  }
+
+  addPdfFooters(doc, { coverPage: false });
+
+  const farmSuffix = multiFarm ?"todas-fazendas" : slugify(farms[0].name || "");
+  const periodSuffix = month === "all" ?year : `${year}-${month}`;
+  doc.save(`relatorio-${slugify(opLabel)}-${farmSuffix}-${periodSuffix}.pdf`);
 }
 
 // Full consolidated report: stock/comercial, sanitary and reproduction

@@ -1078,9 +1078,9 @@
           <input type="number" id="movementValue" min="0" step="0.01" placeholder="0,00">
           <span class="field-fmt-hint" id="fmtMovementValue"></span>
         </label>
-        <label>
-          Observação
-          <input type="text" id="movementNotes" maxlength="120" placeholder="Ex.: lote comprado em leilão">
+        <label class="form-span-2" id="movementNotesWrap">
+          <span id="movementNotesLabel">Observação</span>
+          <textarea id="movementNotes" maxlength="500" rows="3" placeholder="Ex.: lote comprado em leilão"></textarea>
         </label>
         <label class="form-span-2" id="movementPhotoWrap" hidden>
           Fotos do registro
@@ -1296,6 +1296,12 @@
           Mês do PDF
           <select id="pdfMonthFilter">
             <option value="all">Ano inteiro</option>
+          </select>
+        </label>
+        <label class="form-span-2">
+          Operação
+          <select id="pdfOperationFilter">
+            <option value="all">Relatório completo (todas as operações)</option>
           </select>
         </label>
       </div>

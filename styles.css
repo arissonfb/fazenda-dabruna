@@ -1836,7 +1836,8 @@ input {
 }
 
 select,
-input {
+input,
+textarea {
   min-height: 48px;
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -2249,6 +2250,13 @@ input {
 .visual-card-action:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+.visual-card-sub {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a05a2c;
 }
 
 .visual-card-cta {
@@ -7275,7 +7283,8 @@ body::before {
 
 /* ─── Inputs e selects ─── */
 select,
-input {
+input,
+textarea {
   min-height: 38px;
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.14);
@@ -7286,10 +7295,19 @@ input {
 }
 
 select:focus,
-input:focus {
+input:focus,
+textarea:focus {
   outline: none;
   border-color: rgba(0, 0, 0, 0.38);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+textarea {
+  min-height: 84px;
+  padding: 10px 12px;
+  line-height: 1.4;
+  resize: vertical;
+  font-family: inherit;
 }
 
 /* ─── Panels ─── */
@@ -7727,10 +7745,6 @@ tr:last-child td { border-bottom: none; }
 
 .smc-value {
   font-size: 1.8rem;
-}
-
-#visualHerdGrid {
-  display: none !important;
 }
 
 body[data-active-view="sanitary"] .hero {
