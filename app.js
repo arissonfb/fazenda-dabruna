@@ -5018,6 +5018,8 @@ function openMovTypeRecordsDlg(movType, options = {}) {
   const isCommercial = movType === "compra" || movType === "venda";
   if (isCommercial) {
     renderCommercialDashboard(movType);
+  } else if (movType === "nascimento") {
+    renderBirthDashboard();
   } else if (elements.movCommercialDashboard) {
     elements.movCommercialDashboard.hidden = true;
     elements.movCommercialDashboard.innerHTML = "";
@@ -5285,6 +5287,49 @@ function renderCommercialDashboard(movType) {
   }
 
   el.innerHTML = `<div class="comm-summary">${brlHtml}${usdHtml}</div>`;
+  el.hidden = false;
+}
+
+function renderBirthDashboard() {
+  const el = elements.movCommercialDashboard;
+  if (!el) return;
+
+  const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
+  const farms = isTotalView ?getAllFarms() : [getFarm()].filter(Boolean);
+  const movements = farms.flatMap((f) => f.movements.filter((m) => m.type === "nascimento"));
+
+  if (!movements.length) {
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+
+  let total = 0;
+  let withIntervention = 0;
+  movements.forEach((m) => {
+    const qty = Number(m.quantity || 0);
+    total += qty;
+    if ((m.notes || "").trim()) withIntervention += qty;
+  });
+  const pct = total > 0 ?((withIntervention / total) * 100).toFixed(1) : "0.0";
+  const farmLabel = isTotalView ?"Todas as fazendas" : escapeHtml(farms[0]?.name || "");
+
+  el.innerHTML = `
+    <div class="comm-summary">
+      <div class="comm-summary-row">
+        <div class="comm-row-meta">
+          <span class="comm-row-farms">${farmLabel}</span>
+        </div>
+        <div class="comm-row-stats">
+          <span class="comm-stat"><strong>${formatInteger(movements.length)}</strong> <span>registros</span></span>
+          <span class="comm-sep">·</span>
+          <span class="comm-stat"><strong>${formatInteger(total)}</strong> <span>nascidos</span></span>
+          <span class="comm-sep">·</span>
+          <span class="comm-stat comm-birth-alert"><strong>${formatInteger(withIntervention)}</strong> <span>com intervenção (${pct}%)</span></span>
+        </div>
+      </div>
+    </div>
+  `;
   el.hidden = false;
 }
 

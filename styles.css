@@ -2962,6 +2962,11 @@ textarea {
   color: var(--muted);
   font-size: 0.8rem;
 }
+.comm-birth-alert strong,
+.comm-birth-alert span {
+  color: #a05a2c;
+  font-weight: 700;
+}
 .comm-farm-tags {
   display: flex;
   flex-wrap: wrap;

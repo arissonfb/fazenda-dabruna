@@ -9,15 +9,15 @@
 // forem atualizados em um novo deploy, bump também o CACHE_VERSION
 // abaixo e a lista PRECACHE_URLS. Sem isso, quem estiver offline pode
 // ficar preso numa versão antiga do painel.
-const CACHE_VERSION = "wolf-shell-20260724b";
+const CACHE_VERSION = "wolf-shell-20260724c";
 
 const PRECACHE_URLS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./bruna.css",
-  "./styles.css?v=20260724a",
-  "./app.js?v=20260724b",
+  "./styles.css?v=20260724b",
+  "./app.js?v=20260724c",
   "./bruna-extras.js?v=20260714a",
   "./pastagens.js?v=20260712c",
   "./eventos.js?v=20260711a",
