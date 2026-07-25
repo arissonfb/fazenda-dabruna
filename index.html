@@ -237,6 +237,31 @@
 
       <div id="homeView" hidden></div>
 
+      <section class="movements-full-section" id="homeHistorySection" hidden>
+        <article class="panel timeline-panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">Histórico principal</p>
+            <h2>Movimentações e atos do sistema</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead id="movementsTableHead">
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Categoria</th>
+                <th>Qtd.</th>
+                <th>Obs.</th>
+              </tr>
+            </thead>
+            <tbody id="movementsTableBody"></tbody>
+          </table>
+        </div>
+        </article>
+      </section>
+
       <div id="dashboardView">
         <section class="actions-panel">
           <div class="register-launcher" id="registerLauncher">
@@ -425,31 +450,6 @@
             <span class="chip" id="monthlyProtocolCount">0 registros</span>
           </div>
           <div id="monthlyProtocolList"></div>
-          </article>
-        </section>
-
-        <section class="movements-full-section">
-          <article class="panel timeline-panel">
-          <div class="panel-header">
-            <div>
-              <p class="panel-kicker">Histórico principal</p>
-              <h2>Movimentações e atos do sistema</h2>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead id="movementsTableHead">
-                <tr>
-                  <th>Data</th>
-                  <th>Tipo</th>
-                  <th>Categoria</th>
-                  <th>Qtd.</th>
-                  <th>Obs.</th>
-                </tr>
-              </thead>
-              <tbody id="movementsTableBody"></tbody>
-            </table>
-          </div>
           </article>
         </section>
 
@@ -1308,6 +1308,13 @@
             <option value="all">Relatório completo (todas as operações)</option>
           </select>
         </label>
+        <label class="scope-option form-span-2" id="pdfInterventionOnlyWrap" hidden>
+          <input type="checkbox" id="pdfInterventionOnly">
+          <div>
+            <strong>Somente com intervenção</strong>
+            <span>Mostra no relatório apenas os nascimentos em que algum animal precisou de intervenção.</span>
+          </div>
+        </label>
       </div>
 
       <div class="user-list pdf-farm-list" id="pdfFarmList" hidden></div>
@@ -1786,7 +1793,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./assets/jspdf.umd.min.js"></script>
   <script src="./assets/jspdf.autotable.min.js"></script>
-  <script src="./app.js?v=20260724d"></script>
+  <script src="./app.js?v=20260724e"></script>
   <script src="./bruna-extras.js?v=20260714a"></script>
   <script src="./pastagens.js?v=20260712c"></script>
   <script src="./eventos.js?v=20260711a"></script>

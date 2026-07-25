@@ -1112,6 +1112,7 @@ const elements = {
   auditTrailButton: document.getElementById("auditTrailButton"),
   dashboardFarmLabel: document.getElementById("dashboardFarmLabel"),
   homeView: document.getElementById("homeView"),
+  homeHistorySection: document.getElementById("homeHistorySection"),
   dashboardView: document.getElementById("dashboardView"),
   sanitaryView: document.getElementById("sanitaryView"),
   heroMetrics: document.getElementById("heroMetrics"),
@@ -1388,6 +1389,8 @@ const elements = {
   pdfYearFilter: document.getElementById("pdfYearFilter"),
   pdfMonthFilter: document.getElementById("pdfMonthFilter"),
   pdfOperationFilter: document.getElementById("pdfOperationFilter"),
+  pdfInterventionOnlyWrap: document.getElementById("pdfInterventionOnlyWrap"),
+  pdfInterventionOnly: document.getElementById("pdfInterventionOnly"),
   monthlyDataDialog: document.getElementById("monthlyDataDialog"),
   monthlyDataForm: document.getElementById("monthlyDataForm"),
   closeMonthlyDataDialog: document.getElementById("closeMonthlyDataDialog"),
@@ -4073,12 +4076,13 @@ function bindEvents() {
   elements.closeGeorefDialog.addEventListener("click", () => elements.georefDialog.close());
   elements.georefDialog.addEventListener("close", clearGeorefDraft);
   elements.closeMonthlyDataDialog.addEventListener("click", () => elements.monthlyDataDialog.close());
-  elements.exportPdfButton.addEventListener("click", openPdfOptionsDialog);
+  elements.exportPdfButton.addEventListener("click", () => openPdfOptionsDialog());
   elements.closePdfOptionsDialog.addEventListener("click", () => elements.pdfOptionsDialog.close());
   elements.pdfOptionsForm.addEventListener("submit", handlePdfOptionsSubmit);
   elements.pdfOptionsForm.querySelectorAll('input[name="pdfScope"]').forEach((input) => {
     input.addEventListener("change", updatePdfScopeMode);
   });
+  elements.pdfOperationFilter?.addEventListener("change", updatePdfInterventionFilterVisibility);
 
   elements.movementForm.addEventListener("submit", handleMovementSubmit);
   elements.categoryForm.addEventListener("submit", handleCategorySubmit);
@@ -4805,6 +4809,7 @@ function renderHomeView() {
           <div class="hmc-actions">
             <button type="button" class="hmc-btn-primary" style="background:${card.accent}" data-nav-home="${escapeHtml(card.view)}">${escapeHtml(card.actions[0])}</button>
             <button type="button" class="hmc-btn-secondary" data-nav-home="${escapeHtml(card.view)}">${escapeHtml(card.actions[1])}</button>
+            ${card.view === "nascimento" ?`<button type="button" class="hmc-btn-secondary hmc-btn-report" data-nav-home="nascimento">Gerar Relatório PDF</button>` : ""}
           </div>
         </div>
       `).join("")}
@@ -4816,7 +4821,9 @@ function renderHomeView() {
       e.stopPropagation();
       const view = trigger.dataset.navHome;
       if (view === "nascimento") {
-        if (trigger.classList.contains("hmc-btn-primary")) {
+        if (trigger.classList.contains("hmc-btn-report")) {
+          openPdfOptionsDialog("nascimento");
+        } else if (trigger.classList.contains("hmc-btn-primary")) {
           openMovementDialog("nascimento");
         } else {
           openMovTypeRecordsDlg("nascimento");
@@ -5471,6 +5478,7 @@ function renderActiveView() {
   const view = state.activeView;
   document.body.dataset.activeView = view;
   if (elements.homeView) elements.homeView.hidden = view !== "home";
+  if (elements.homeHistorySection) elements.homeHistorySection.hidden = view !== "home";
   elements.dashboardView.hidden = view !== "dashboard";
   elements.sanitaryView.hidden = view !== "sanitary";
   elements.potreirosView.hidden = view !== "potreiros";
@@ -11083,7 +11091,7 @@ function getDiscrepancyText(farm) {
   return `Atenção: o total declarado para ${farm.name} é ${formatInteger(farm.declaredTotal)} animais, mas o estoque atual mostra ${formatInteger(computedTotal)}. Diferença de ${formatInteger(difference)} animais.`;
 }
 
-function openPdfOptionsDialog() {
+function openPdfOptionsDialog(presetOperation = "all") {
   elements.pdfOptionsForm.reset();
   runtime.pdfContextFarmId = state.data.selectedFarmId;
   populatePdfPeriodFilters();
@@ -11093,7 +11101,19 @@ function openPdfOptionsDialog() {
     currentScope.checked = true;
   }
   updatePdfScopeMode();
+  if (elements.pdfOperationFilter && presetOperation !== "all") {
+    elements.pdfOperationFilter.value = presetOperation;
+  }
+  updatePdfInterventionFilterVisibility();
   elements.pdfOptionsDialog.showModal();
+}
+
+function updatePdfInterventionFilterVisibility() {
+  if (!elements.pdfInterventionOnlyWrap) return;
+  elements.pdfInterventionOnlyWrap.hidden = elements.pdfOperationFilter?.value !== "nascimento";
+  if (elements.pdfInterventionOnlyWrap.hidden && elements.pdfInterventionOnly) {
+    elements.pdfInterventionOnly.checked = false;
+  }
 }
 
 function renderPdfFarmOptions(selectedIds = []) {
@@ -11157,6 +11177,7 @@ function handlePdfOptionsSubmit(event) {
   const farmIds = getSelectedPdfFarmIds();
   const period = getPdfPeriodSelection();
   const operation = elements.pdfOperationFilter?.value || "all";
+  const onlyWithIntervention = operation === "nascimento" && Boolean(elements.pdfInterventionOnly?.checked);
 
   if (!farmIds.length) {
     alert("Selecione pelo menos uma fazenda para gerar o PDF.");
@@ -11167,7 +11188,7 @@ function handlePdfOptionsSubmit(event) {
   if (operation === "all") {
     exportPdfReport(farmIds, period);
   } else {
-    exportMovementTypePdfReport(farmIds, period, operation);
+    exportMovementTypePdfReport(farmIds, period, operation, { onlyWithIntervention });
   }
 }
 
@@ -12735,7 +12756,8 @@ async function exportPdfReport(farmIds = [state.data.selectedFarmId], period = {
 
 // Focused report for a single operation (Compra, Venda, Nascimento, etc.),
 // listing every matching movement with its full notes/intervention text.
-async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId], period = { year: state.filters.year, month: state.filters.month }, operation = "all") {
+async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId], period = { year: state.filters.year, month: state.filters.month }, operation = "all", options = {}) {
+  const onlyWithIntervention = Boolean(options.onlyWithIntervention);
   const farms = farmIds.map((farmId) => state.data.farms[farmId]).filter(Boolean);
   if (!farms.length) {
     alert("Nenhuma fazenda válida foi selecionada para o PDF.");
@@ -12774,7 +12796,8 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
   doc.setFontSize(18);
   doc.text("Wolf Agricultura e Pecuária", 42, 18);
   doc.setFontSize(15);
-  doc.text(`Relatório de ${opLabel} - ${multiFarm ?"Consolidado" : farms[0].name}`, 42, 26);
+  const opTitle = onlyWithIntervention ?`${opLabel} (somente c/ intervenção)` : opLabel;
+  doc.text(`Relatório de ${opTitle} - ${multiFarm ?"Consolidado" : farms[0].name}`, 42, 26);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor(45, 35, 25);
@@ -12787,6 +12810,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
   farms.forEach((farm) => {
     farm.movements
       .filter((m) => m.type === operation && movementMatchesPeriod(m, year, month))
+      .filter((m) => !onlyWithIntervention || getRecordInterventionQty(m) > 0)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .forEach((m) => {
         const qty = Number(m.quantity || 0);
@@ -12851,7 +12875,8 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
 
   const farmSuffix = multiFarm ?"todas-fazendas" : slugify(farms[0].name || "");
   const periodSuffix = month === "all" ?year : `${year}-${month}`;
-  doc.save(`relatorio-${slugify(opLabel)}-${farmSuffix}-${periodSuffix}.pdf`);
+  const interventionSuffix = onlyWithIntervention ?"-com-intervencao" : "";
+  doc.save(`relatorio-${slugify(opLabel)}${interventionSuffix}-${farmSuffix}-${periodSuffix}.pdf`);
 }
 
 // Full consolidated report: stock/comercial, sanitary and reproduction
