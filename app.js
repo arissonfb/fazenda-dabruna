@@ -1253,6 +1253,7 @@ const elements = {
   movementValueLabel: document.getElementById("movementValueLabel"),
   movementValue: document.getElementById("movementValue"),
   movementNotes: document.getElementById("movementNotes"),
+  movementNotesWrap: document.getElementById("movementNotesWrap"),
   movementNotesLabel: document.getElementById("movementNotesLabel"),
   movementInterventionQtyWrap: document.getElementById("movementInterventionQtyWrap"),
   movementInterventionQty: document.getElementById("movementInterventionQty"),
@@ -10125,6 +10126,15 @@ function updateMovementFormForType(type) {
     if (isBirth) {
       updateBirthSummary();
     }
+  }
+
+  // Nascimento não usa valor financeiro nem observação geral — cada
+  // ocorrência já tem seu próprio campo de observações complementares.
+  if (isBirth) {
+    if (elements.movementValueWrap) elements.movementValueWrap.hidden = true;
+    if (elements.movementNotesWrap) elements.movementNotesWrap.hidden = true;
+  } else if (elements.movementNotesWrap) {
+    elements.movementNotesWrap.hidden = false;
   }
 }
 
