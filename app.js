@@ -4288,65 +4288,12 @@ function renderOverviewPanel() {
   const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
   const farms = isTotalView ?getAllFarms() : [state.data.farms[state.data.selectedFarmId]].filter(Boolean);
   const selectedFarm = farms[0];
-  const totals = farms.reduce((accumulator, farm) => {
-    accumulator.stock += getFarmTotal(farm);
-    accumulator.declared += Number(farm.declaredTotal || 0);
-    accumulator.potreiros += getPotreroEntries(farm).length;
-    accumulator.potreroAnimals += getRegisteredPotreroAnimals(farm);
-    accumulator.sanitary += getFilteredSanitaryRecords(farm).length;
-    return accumulator;
-  }, { stock: 0, declared: 0, potreiros: 0, potreroAnimals: 0, sanitary: 0 });
-  const movementTotals = farms.reduce((accumulator, farm) => {
-    const monthly = summarizePeriod(farm, state.filters.year, state.filters.month);
-    const sales = summarizeSalePeriod(farm, state.filters.year, state.filters.month);
-    const purchases = summarizePurchasePeriod(farm, state.filters.year, state.filters.month);
-    accumulator.entries += monthly.byType.compra + monthly.byType.nascimento + monthly.adjustPositive;
-    accumulator.exits += monthly.byType.venda + monthly.byType.consumo + monthly.byType.morte + monthly.adjustNegative;
-    accumulator.saldo += monthly.saldo;
-    accumulator.salesValue += sales.totalValue;
-    accumulator.purchaseValue += purchases.totalValue;
-    accumulator.saleAnimals += sales.movements.reduce((sum, movement) => sum + Number(movement.quantity || 0), 0);
-    accumulator.purchaseAnimals += purchases.totalAnimals;
-    return accumulator;
-  }, { entries: 0, exits: 0, saldo: 0, salesValue: 0, purchaseValue: 0, saleAnimals: 0, purchaseAnimals: 0 });
-  const repRecords = farms.flatMap((farm) => getReproductionRecords(farm));
-  const repStats = calcReproductionStats(repRecords);
-  const pendingRep = repRecords.filter((record) => !record.verificationDate).length;
 
   elements.globalPanelKicker.textContent = isTotalView ?"Operação consolidada" : "Operação da fazenda";
   elements.globalPanelTitle.textContent = isTotalView ?"Manejo total das fazendas" : `Manejo de ${selectedFarm?.name || "fazenda"}`;
   elements.globalPanelChip.textContent = isTotalView ?"Grupo Wolf" : selectedFarm?.name || "Fazenda";
 
-  const cards = [
-    {
-      title: "Manejo / estoque",
-      value: formatInteger(totals.stock),
-      detail: `${formatInteger(totals.potreiros)} campos | ${formatInteger(totals.potreroAnimals)} cabeças alocadas`
-    },
-    {
-      title: "Receita de Vendas",
-      value: formatCurrency(movementTotals.salesValue),
-      detail: `${formatInteger(movementTotals.saleAnimals)} animais vendidos no período`
-    },
-    {
-      title: "Sanitário",
-      value: formatInteger(totals.sanitary),
-      detail: "registros no período filtrado"
-    },
-    {
-      title: "Reprodução",
-      value: repStats.taxaSucesso != null ?`${repStats.taxaSucesso.toFixed(1)}%` : "-",
-      detail: `${formatInteger(repStats.totalPegou)} prenhas | ${formatInteger(pendingRep)} pendentes`
-    }
-  ];
-
-  elements.globalSummaryGrid.innerHTML = cards.map((card) => `
-    <article class="summary-card ops-card">
-      <p class="panel-kicker">${card.title}</p>
-      <strong>${card.value}</strong>
-      <p>${card.detail}</p>
-    </article>
-  `).join("");
+  if (elements.globalSummaryGrid) elements.globalSummaryGrid.innerHTML = "";
 
   elements.globalFarmBreakdown.innerHTML = farms.map((farm) => {
     const movements = summarizePeriod(farm, state.filters.year, state.filters.month);
@@ -4356,24 +4303,42 @@ function renderOverviewPanel() {
     const total = getFarmTotal(farm);
     const bovinoTotal = getFarmBovinoTotal(farm);
     const ovinoTotal = getFarmOvinoTotal(farm);
+    const sanitaryCount = getFilteredSanitaryRecords(farm, state.filters.year, state.filters.month).length;
     return `
       <article class="global-farm-card ops-farm-card">
         <div class="farm-card-header">
-          <div>
-            <p class="panel-kicker">${escapeHtml(farm.name)}</p>
+          <div class="farm-card-heading">
+            <p class="farm-card-name">${escapeHtml(farm.name)}</p>
+            <div class="farm-card-chips">
+              <span class="chip chip-entry">+${formatInteger(movements.byType.compra + movements.byType.nascimento)} ent.</span>
+              <span class="chip chip-exit">-${formatInteger(movements.byType.venda + movements.byType.morte + movements.byType.consumo)} saí.</span>
+            </div>
+          </div>
+          <div class="farm-card-hero">
             <strong class="farm-card-total">${formatInteger(total)}</strong>
-            <span class="farm-card-species">🐄 ${formatInteger(bovinoTotal)} · 🐑 ${formatInteger(ovinoTotal)}</span>
+            <span class="farm-card-total-label">animais no rebanho</span>
           </div>
-          <div class="farm-card-chips">
-            <span class="chip chip-entry">+${formatInteger(movements.byType.compra + movements.byType.nascimento)} ent.</span>
-            <span class="chip chip-exit">-${formatInteger(movements.byType.venda + movements.byType.morte + movements.byType.consumo)} saí.</span>
-          </div>
+          <span class="farm-card-species">🐄 Bovinos ${formatInteger(bovinoTotal)} · 🐑 Ovinos ${formatInteger(ovinoTotal)}</span>
         </div>
-        <div class="ops-farm-metrics">
-          <span>Venda<strong>${formatCurrency(sales.totalValue)}</strong></span>
-          <span>Compra<strong>${formatCurrency(purchases.totalValue)}</strong></span>
-          <span>Saldo<strong>${formatCurrency(balance)}</strong></span>
-          <span>Campos<strong>${formatInteger(getPotreroTotals(farm).totalPotreiros || 0)}</strong></span>
+        <div class="ops-farm-body">
+          <div class="ops-farm-metrics">
+            <span>Venda<strong>${formatCurrency(sales.totalValue)}</strong></span>
+            <span>Compra<strong>${formatCurrency(purchases.totalValue)}</strong></span>
+            <span>Saldo<strong>${formatCurrency(balance)}</strong></span>
+            <span>Campos<strong>${formatInteger(getPotreroTotals(farm).totalPotreiros || 0)}</strong></span>
+          </div>
+          <div class="ops-farm-footer">
+            <p class="ops-farm-footer-title">Informações complementares do rebanho</p>
+            <div class="ops-farm-footer-row">
+              <span class="ops-farm-pill">Compras: ${formatInteger(movements.byType.compra)} animais</span>
+              <span class="ops-farm-pill">Vendas: ${formatInteger(movements.byType.venda)} animais</span>
+            </div>
+            <div class="ops-farm-footer-row">
+              <span class="ops-farm-pill">Nascimentos: ${formatInteger(movements.byType.nascimento)}</span>
+              <span class="ops-farm-pill">Mortes: ${formatInteger(movements.byType.morte)}</span>
+              <span class="ops-farm-pill">Sanitário: ${formatInteger(sanitaryCount)} registros</span>
+            </div>
+          </div>
         </div>
       </article>
     `;
