@@ -8038,6 +8038,14 @@ tr:last-child td { border-bottom: none; }
   flex-shrink: 0;
 }
 
+.global-farm-card.ops-farm-card .farm-card-chips .chip-entry,
+.global-farm-card.ops-farm-card .farm-card-chips .chip-exit {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-color: transparent;
+  font-weight: 700;
+}
+
 .farm-card-hero {
   display: flex;
   align-items: baseline;
