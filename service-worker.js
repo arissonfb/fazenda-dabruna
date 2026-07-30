@@ -17,7 +17,7 @@ const PRECACHE_URLS = [
   "./manifest.json",
   "./bruna.css",
   "./styles.css?v=20260727b",
-  "./app.js?v=20260727a",
+  "./app.js?v=20260729a",
   "./bruna-extras.js?v=20260714a",
   "./pastagens.js?v=20260712c",
   "./eventos.js?v=20260711a",
