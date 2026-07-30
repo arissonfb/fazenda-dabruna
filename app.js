@@ -13272,6 +13272,117 @@ async function exportPdfReport(farmIds = [state.data.selectedFarmId], period = {
   doc.save(getPdfFileName(farms, year, month));
 }
 
+// Builds the wrapped text lines shown inside a birth detail card: one entry
+// per birth occurrence (type + optional observation), or the plain notes
+// text when the movement has no structured occurrences recorded.
+function buildBirthCardLines(doc, movement, innerWidth) {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  const lines = [];
+
+  if (Array.isArray(movement.birthOccurrences) && movement.birthOccurrences.length) {
+    movement.birthOccurrences.forEach((occ) => {
+      const tipo = occ.tipoParto === "Outro" ? (occ.outroTipoParto || "Outro") : occ.tipoParto;
+      lines.push({ text: `•  ${formatInteger(occ.quantidade || 0)} — ${tipo || "Não classificado"}`, bold: true });
+      const obs = (occ.observacoes || "").trim();
+      if (obs) {
+        doc.splitTextToSize(`Obs.: ${obs}`, innerWidth - 8).forEach((line) => lines.push({ text: line, indent: true }));
+      }
+    });
+  } else {
+    const notes = (movement.notes || "").trim();
+    if (notes) {
+      doc.splitTextToSize(notes, innerWidth - 4).forEach((line) => lines.push({ text: line }));
+    } else {
+      lines.push({ text: "Sem detalhamento registrado.", italic: true });
+    }
+  }
+
+  return lines;
+}
+
+// Draws a single visual card summarizing one birth movement: code, date,
+// category and quantity on a header strip, followed by the detailed
+// occurrence/observation lines. Returns the card's total height in mm.
+function drawBirthDetailCard(doc, y, movement, farmName, multiFarm, bodyLines) {
+  const marginX = 14;
+  const width = 269;
+  const headerHeight = 7;
+  const lineHeight = 4.6;
+  const cardHeight = headerHeight + bodyLines.length * lineHeight + 4;
+
+  doc.setFillColor(240, 244, 248);
+  doc.setDrawColor(200, 210, 220);
+  doc.roundedRect(marginX, y, width, cardHeight, 1.5, 1.5, "FD");
+
+  const interventionQty = getRecordInterventionQty(movement);
+  const headerParts = [
+    movement.code || "—",
+    formatDate(movement.date),
+    `Categoria: ${movement.categoryName || "-"}`,
+    `Qtd.: ${formatInteger(movement.quantity || 0)}`
+  ];
+  if (multiFarm && farmName) headerParts.splice(1, 0, farmName);
+  if (interventionQty > 0) headerParts.push(`c/ intervenção: ${formatInteger(interventionQty)}`);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(43, 132, 184);
+  doc.text(headerParts.join("    •    "), marginX + 4, y + 5);
+
+  doc.setDrawColor(200, 210, 220);
+  doc.line(marginX, y + headerHeight, marginX + width, y + headerHeight);
+
+  let lineY = y + headerHeight + 4.2;
+  bodyLines.forEach((line) => {
+    doc.setFont("helvetica", line.bold ? "bold" : (line.italic ? "italic" : "normal"));
+    doc.setFontSize(9);
+    if (line.italic) doc.setTextColor(140, 140, 140);
+    else doc.setTextColor(45, 35, 25);
+    doc.text(line.text, marginX + (line.indent ? 10 : 4), lineY);
+    lineY += lineHeight;
+  });
+
+  return cardHeight;
+}
+
+// Renders the "Detalhamento dos nascimentos" section: one visual card per
+// birth movement, replacing the old cramped notes column from the main
+// table. Paginates automatically when a card would overflow the page.
+function renderBirthDetailCards(doc, startY, birthMovements, farmNamesByMovement, multiFarm) {
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const bottomMargin = 15;
+  const innerWidth = 269 - 16;
+  let y = startY + 10;
+
+  if (y > pageHeight - bottomMargin) {
+    doc.addPage();
+    y = 20;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(45, 35, 25);
+  doc.text("Detalhamento dos nascimentos", 14, y);
+  y += 7;
+
+  birthMovements.forEach((movement) => {
+    const bodyLines = buildBirthCardLines(doc, movement, innerWidth);
+    const cardHeight = 7 + bodyLines.length * 4.6 + 4;
+
+    if (y + cardHeight > pageHeight - bottomMargin) {
+      doc.addPage();
+      y = 20;
+    }
+
+    const farmName = farmNamesByMovement.get(movement);
+    const drawnHeight = drawBirthDetailCard(doc, y, movement, farmName, multiFarm, bodyLines);
+    y += drawnHeight + 4;
+  });
+
+  return y;
+}
+
 // Focused report for a single operation (Compra, Venda, Nascimento, etc.),
 // listing every matching movement with its full notes/intervention text.
 async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId], period = { year: state.filters.year, month: state.filters.month }, operation = "all", options = {}) {
@@ -13326,6 +13437,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
 
   const rows = [];
   const birthMovements = [];
+  const birthMovementFarmNames = new Map();
   let totalQty = 0;
   let totalValue = 0;
   let interventionQty = 0;
@@ -13342,22 +13454,23 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
         if (isBirth) {
           interventionQty += recordInterventionQty;
           birthMovements.push(m);
+          birthMovementFarmNames.set(m, farm.name);
         }
         rows.push([
           m.code || "—",
           ...(multiFarm ?[farm.name] : []),
           formatDate(m.date),
-          m.categoryName || "-",
+          ...(isBirth ?[] : [m.categoryName || "-"]),
           formatInteger(qty),
           m.value ?formatCurrency(m.value) : "-",
           ...(isBirth ?[recordInterventionQty > 0 ?formatInteger(recordInterventionQty) : "-"] : []),
-          isBirth ?summarizeBirthOccurrencesForRow(m) : (m.notes || "-")
+          ...(isBirth ?[] : [m.notes || "-"])
         ]);
       });
   });
 
-  const head = ["Código", ...(multiFarm ?["Fazenda"] : []), "Data", "Categoria", "Qtd.", "Valor", ...(isBirth ?["Qtd. c/ interv."] : []), notesLabel];
-  const notesColIndex = head.length - 1;
+  const head = ["Código", ...(multiFarm ?["Fazenda"] : []), "Data", ...(isBirth ?[] : ["Categoria"]), "Qtd.", "Valor", ...(isBirth ?["Qtd. c/ interv."] : []), ...(isBirth ?[] : [notesLabel])];
+  const notesColIndex = isBirth ?-1 : head.length - 1;
 
   doc.autoTable({
     startY: 40,
@@ -13366,7 +13479,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
     theme: "striped",
     headStyles: { fillColor: [43, 132, 184] },
     styles: { overflow: "linebreak", valign: "top" },
-    columnStyles: { [notesColIndex]: { cellWidth: multiFarm ?85 : 105 } }
+    columnStyles: notesColIndex >= 0 ?{ [notesColIndex]: { cellWidth: multiFarm ?85 : 105 } } : {}
   });
 
   const summaryY = doc.lastAutoTable.finalY + 8;
@@ -13416,6 +13529,10 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
       );
       nextY = breakdownSummaryY;
     }
+  }
+
+  if (isBirth && birthMovements.length) {
+    nextY = renderBirthDetailCards(doc, nextY, birthMovements, birthMovementFarmNames, multiFarm);
   }
 
   addPdfFooters(doc, { coverPage: true });
