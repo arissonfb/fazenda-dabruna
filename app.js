@@ -10942,7 +10942,7 @@ async function handleMovementSubmit(event) {
     return;
   }
 
-  if (category.quantity + delta < 0) {
+  if (delta < 0 && category.quantity + delta < 0) {
     rollbackEditing();
     alert("A quantidade informada deixa o estoque negativo para essa categoria.");
     return;
