@@ -9,7 +9,7 @@
 // forem atualizados em um novo deploy, bump também o CACHE_VERSION
 // abaixo e a lista PRECACHE_URLS. Sem isso, quem estiver offline pode
 // ficar preso numa versão antiga do painel.
-const CACHE_VERSION = "wolf-shell-20260729a";
+const CACHE_VERSION = "wolf-shell-20260729b";
 
 const PRECACHE_URLS = [
   "./",

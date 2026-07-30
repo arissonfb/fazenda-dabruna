@@ -5528,9 +5528,11 @@ function renderFarmSwitch() {
   totalButton.textContent = "Todas as Fazendas";
   totalButton.addEventListener("click", () => {
     state.data.selectedFarmId = TOTAL_FARM_ID;
-    if (state.activeView !== "compras" && state.activeView !== "vendas") {
-      state.activeView = "home";
-    }
+    runtime.movementsPage = 0;
+    runtime.movementsSearch = "";
+    runtime.sanitaryPage = 0;
+    runtime.sanitarySearch = "";
+    resetSanitaryTableFilters();
     saveData();
     render();
   });
@@ -5544,14 +5546,11 @@ function renderFarmSwitch() {
     button.innerHTML = `${escapeHtml(farm.name)} <span class="farm-btn-country">${countryTag}</span>`;
     button.addEventListener("click", () => {
       state.data.selectedFarmId = farm.id;
-      if (state.activeView !== "compras" && state.activeView !== "vendas") {
-        state.activeView = "home";
-        runtime.movementsPage = 0;
-        runtime.movementsSearch = "";
-        runtime.sanitaryPage = 0;
-        runtime.sanitarySearch = "";
-        resetSanitaryTableFilters();
-      }
+      runtime.movementsPage = 0;
+      runtime.movementsSearch = "";
+      runtime.sanitaryPage = 0;
+      runtime.sanitarySearch = "";
+      resetSanitaryTableFilters();
       saveData();
       render();
     });
@@ -5716,7 +5715,6 @@ function renderMobileFarmDrawer() {
   elements.mobileFarmSwitchList.querySelectorAll("[data-farm-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.data.selectedFarmId = btn.dataset.farmId;
-      state.activeView = "dashboard";
       elements.mobileFarmDrawer.hidden = true;
       saveData();
       render();
