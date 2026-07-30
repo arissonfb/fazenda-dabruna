@@ -4999,9 +4999,11 @@ function summarizeBirthOccurrencesForRow(movement) {
   return movement.birthOccurrences
     .map((occ) => {
       const tipo = occ.tipoParto === "Outro" ? (occ.outroTipoParto || "Outro") : occ.tipoParto;
-      return `${formatInteger(occ.quantidade || 0)} ${tipo || "?"}`;
+      const base = `${formatInteger(occ.quantidade || 0)} ${tipo || "?"}`;
+      const obs = (occ.observacoes || "").trim();
+      return obs ? `${base}\n   Obs.: ${obs}` : base;
     })
-    .join("; ");
+    .join("\n");
 }
 
 function computeBirthOccurrenceStats(movements) {
@@ -6587,6 +6589,10 @@ function getOperationalInsights(farm, year = state.filters.year, month = state.f
 }
 
 function getMovementNotes(movement) {
+  if (movement.type === "nascimento") {
+    return summarizeBirthOccurrencesForRow(movement).replace(/\n\s*/g, "; ");
+  }
+
   const notes = movement.notes || "";
   if (movement.type !== "venda" || !movement.saleDetails) {
     return notes || "-";
