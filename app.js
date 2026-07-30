@@ -13366,17 +13366,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
     theme: "striped",
     headStyles: { fillColor: [43, 132, 184] },
     styles: { overflow: "linebreak", valign: "top" },
-    columnStyles: { [notesColIndex]: { cellWidth: multiFarm ?85 : 105 } },
-    didParseCell: (data) => {
-      if (isBirth && data.section === "body" && data.column.index === notesColIndex && data.cell.raw !== "-") {
-        data.cell.styles.textColor = [163, 52, 30];
-        data.cell.styles.fontStyle = "bold";
-      }
-      if (isBirth && data.section === "body" && data.column.index === notesColIndex - 1 && data.cell.raw !== "-") {
-        data.cell.styles.textColor = [163, 52, 30];
-        data.cell.styles.fontStyle = "bold";
-      }
-    }
+    columnStyles: { [notesColIndex]: { cellWidth: multiFarm ?85 : 105 } }
   });
 
   const summaryY = doc.lastAutoTable.finalY + 8;
