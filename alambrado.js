@@ -1395,7 +1395,7 @@ async function exportAlambradoPdf() {
 
   try {
     const logoData = await loadLogoForPdf("#ffffff");
-    doc.addImage(logoData, "JPEG", margin, 8, 18, 18);
+    doc.addImage(logoData, "JPEG", margin, 13.65, 18, 6.7);
   } catch (e) { /* ignore */ }
 
   doc.setFont("helvetica", "bold");

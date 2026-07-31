@@ -230,7 +230,7 @@ const ARAPEY_PRIMARY_GEO_KEYS = new Set([
   "prad 7",
   "prad 8"
 ]);
-const PDF_LOGO_PATH = "./assets/wolf-seal.jpg";
+const PDF_LOGO_PATH = "./assets/wolf-logo-oficial.png";
 const PDF_COVER_IMAGE_PATH = "./assets/wolf-banner-hero.png";
 const TECHNICAL_MANAGER_NAME = "Bruna Castro";
 const TECHNICAL_MANAGER_CREDENTIAL = "Zootecnista CRMV/Z: 01174";
@@ -2074,7 +2074,7 @@ async function exportAuditTrailPdf() {
   // ── Cabeçalho da página de conteúdo ───────────────────────────────────
   try {
     const logoData = await loadLogoForPdf("#ffffff");
-    doc.addImage(logoData, "JPEG", margin, 7, 17, 17);
+    doc.addImage(logoData, "JPEG", margin, 12.3, 17, 6.4);
   } catch (e) { /* sem logo */ }
 
   doc.setFont("helvetica", "bold");
@@ -11726,7 +11726,7 @@ function handlePdfOptionsSubmit(event) {
 async function addPdfHeader(doc, farm, periodLabel, monthly) {
   try {
     const imageData = await loadLogoForPdf("#ffffff");
-    doc.addImage(imageData, "JPEG", 14, 10, 22, 22);
+    doc.addImage(imageData, "JPEG", 14, 16.9, 22, 8.2);
   } catch (error) {
     console.warn("Não foi possível carregar o logo para o PDF.", error);
   }
@@ -12764,7 +12764,7 @@ async function appendReproductionPdfSection(doc, farm, periodLabel, year, month)
 
   try {
     const logoData = await loadLogoForPdf("#ffffff");
-    doc.addImage(logoData, "JPEG", margin, 8, 18, 18);
+    doc.addImage(logoData, "JPEG", margin, 13.65, 18, 6.7);
   } catch (e) { /* ignore */ }
 
   doc.setFont("helvetica", "bold");
@@ -13101,7 +13101,7 @@ async function appendSanitaryPdfReport(doc, farm) {
   // Header
   try {
     const logoData = await loadLogoForPdf("#ffffff");
-    doc.addImage(logoData, "JPEG", margin, 8, 18, 18);
+    doc.addImage(logoData, "JPEG", margin, 13.65, 18, 6.7);
   } catch (e) { /* ignore */ }
 
   doc.setFont("helvetica", "bold");
@@ -13420,7 +13420,7 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
 
   try {
     const imageData = await loadLogoForPdf("#ffffff");
-    doc.addImage(imageData, "JPEG", 14, 10, 22, 22);
+    doc.addImage(imageData, "JPEG", 14, 16.9, 22, 8.2);
   } catch (error) {
     console.warn("Não foi possível carregar o logo para o PDF.", error);
   }
@@ -16645,7 +16645,7 @@ async function exportComprasPdfReport() {
     // Header
     try {
       const logoData = await loadLogoForPdf("#ffffff");
-      doc.addImage(logoData, "JPEG", margin, 8, 18, 18);
+      doc.addImage(logoData, "JPEG", margin, 13.65, 18, 6.7);
     } catch (e) { /* ignore */ }
 
     doc.setFont("helvetica", "bold");
@@ -17307,7 +17307,7 @@ async function exportVendasPdfReport() {
       doc.addPage();
     }
 
-    try { const logoData = await loadLogoForPdf("#ffffff"); doc.addImage(logoData, "JPEG", margin, 8, 18, 18); } catch (e) { /* ignore */ }
+    try { const logoData = await loadLogoForPdf("#ffffff"); doc.addImage(logoData, "JPEG", margin, 13.65, 18, 6.7); } catch (e) { /* ignore */ }
     doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(45, 35, 25);
     doc.text("Relatório de Vendas", margin + 22, 14);
     drawPdfTextSegments(doc, margin + 22, 22, [

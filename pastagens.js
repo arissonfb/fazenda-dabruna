@@ -2321,7 +2321,7 @@ async function exportPastureIndividualPdf(farm, area) {
 
   try {
     const imageData = await loadLogoForPdf("#ffffff");
-    doc.addImage(imageData, "JPEG", 14, 10, 20, 20);
+    doc.addImage(imageData, "JPEG", 14, 16.25, 20, 7.5);
   } catch (error) {
     console.warn("Não foi possível carregar o logo para o PDF.", error);
   }
@@ -2396,7 +2396,7 @@ async function exportPasturePdf() {
 
   try {
     const imageData = await loadLogoForPdf("#ffffff");
-    doc.addImage(imageData, "JPEG", 14, 10, 22, 22);
+    doc.addImage(imageData, "JPEG", 14, 16.9, 22, 8.2);
   } catch (error) {
     console.warn("Não foi possível carregar o logo para o PDF.", error);
   }
@@ -2517,7 +2517,7 @@ async function exportPastureExcel() {
   let html = `<table border="0" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin-bottom:12px;font-family:Arial, sans-serif;">`;
   html += `<tr>`;
   if (logoDataUrl) {
-    html += `<td rowspan="4" style="width:90px;"><img src="${logoDataUrl}" width="80" height="80" alt="Wolf Agricultura e Pecuária"></td>`;
+    html += `<td rowspan="4" style="width:90px;"><img src="${logoDataUrl}" width="80" height="30" alt="Wolf Agricultura e Pecuária"></td>`;
   }
   html += `<td style="font-size:18pt;font-weight:bold;color:#375b43;">Wolf Agricultura e Pecuária</td></tr>`;
   html += `<tr><td style="font-size:13pt;font-weight:bold;color:#c9a84c;">Pastagens / Custo por Hectare</td></tr>`;
