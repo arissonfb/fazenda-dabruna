@@ -13363,7 +13363,7 @@ function renderBirthDetailCards(doc, startY, birthMovements, farmNamesByMovement
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(45, 35, 25);
-  doc.text("Detalhamento dos nascimentos", 14, y);
+  doc.text("Detalhamento e Observações", 14, y);
   y += 7;
 
   birthMovements.forEach((movement) => {
@@ -13502,32 +13502,15 @@ async function exportMovementTypePdfReport(farmIds = [state.data.selectedFarmId]
   if (isBirth && birthMovements.length) {
     const stats = computeBirthOccurrenceStats(birthMovements);
     if (stats.totalClassificado > 0) {
-      const breakdownRows = [
-        ...Object.entries(stats.byTipoParto).sort((a, b) => b[1] - a[1]).map(([label, qty]) => ["Tipo de parto", label, formatInteger(qty)]),
-        ...Object.entries(stats.byCausa).sort((a, b) => b[1] - a[1]).map(([label, qty]) => ["Causa da dificuldade", label, formatInteger(qty)]),
-        ...Object.entries(stats.byIntervencao).sort((a, b) => b[1] - a[1]).map(([label, qty]) => ["Intervenção realizada", label, formatInteger(qty)])
-      ];
-
-      doc.autoTable({
-        startY: nextY + 8,
-        head: [["Categoria", "Detalhe", "Qtd."]],
-        body: breakdownRows,
-        theme: "striped",
-        headStyles: { fillColor: [163, 52, 30] },
-        styles: { overflow: "linebreak", valign: "top", fontSize: 9 },
-        columnStyles: { 2: { cellWidth: 20, halign: "right" } }
-      });
-
-      const breakdownSummaryY = doc.lastAutoTable.finalY + 8;
+      nextY += 8;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(45, 35, 25);
       doc.text(
         `Sem auxílio: ${stats.pctSemAuxilio}%    Com auxílio: ${stats.pctComAuxilio}%    Distócicos: ${stats.pctDistocicos}%    ` +
         `Cesarianas: ${formatInteger(stats.cesarianas)}    Abortos: ${formatInteger(stats.abortos)}    Natimortos: ${formatInteger(stats.natimortos)}`,
-        14, breakdownSummaryY
+        14, nextY
       );
-      nextY = breakdownSummaryY;
     }
   }
 
