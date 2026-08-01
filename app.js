@@ -2875,8 +2875,8 @@ function legacyHandleManageUsersSubmitUnused(event) {
 
   if (!login || !password) return;
 
-  if (password.length < 4) {
-    alert("A senha precisa ter pelo menos 4 caracteres.");
+  if (password.length < 8) {
+    alert("A senha precisa ter pelo menos 8 caracteres.");
     return;
   }
 
@@ -2924,9 +2924,9 @@ function legacyHandleChangeMyPasswordSubmitUnused(event) {
     feedback.textContent = "Senha atual incorreta.";
     return;
   }
-  if (next.length < 4) {
+  if (next.length < 8) {
     feedback.hidden = false;
-    feedback.textContent = "A nova senha deve ter pelo menos 4 caracteres.";
+    feedback.textContent = "A nova senha deve ter pelo menos 8 caracteres.";
     return;
   }
   if (next !== confirm) {
@@ -3299,8 +3299,8 @@ async function handleManageUsersSubmit(event) {
   const role = elements.newUserRole?.value || "usuario";
 
   if (!login || !password) return;
-  if (password.length < 4) {
-    alert("A senha precisa ter pelo menos 4 caracteres.");
+  if (password.length < 8) {
+    alert("A senha precisa ter pelo menos 8 caracteres.");
     return;
   }
 
@@ -3328,9 +3328,9 @@ async function handleChangeMyPasswordSubmit(event) {
   const confirm = document.getElementById("changeMyPasswordConfirm").value;
   const feedback = document.getElementById("changeMyPasswordFeedback");
 
-  if (next.length < 4) {
+  if (next.length < 8) {
     feedback.hidden = false;
-    feedback.textContent = "A nova senha deve ter pelo menos 4 caracteres.";
+    feedback.textContent = "A nova senha deve ter pelo menos 8 caracteres.";
     return;
   }
   if (next !== confirm) {
@@ -3340,11 +3340,14 @@ async function handleChangeMyPasswordSubmit(event) {
   }
 
   try {
-    await apiRequest("/api/auth/change-password", {
+    const result = await apiRequest("/api/auth/change-password", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ currentPassword: current, newPassword: next })
     });
+    if (result && result.token) {
+      runtime.cloudToken = result.token;
+    }
     feedback.hidden = true;
     document.getElementById("changeMyPasswordDlg").close();
     alert("Senha alterada com sucesso!");
