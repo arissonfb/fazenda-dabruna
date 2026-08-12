@@ -1110,6 +1110,9 @@ const runtime = {
   sanitaryPotreroFilter: "all",
   sanitaryCategoryFilter: "all",
   sanitaryProductFilter: "all",
+  sanReportFilters: { quick: "todo", dataIni: "", dataFim: "", potreiro: "all", produto: "all", categoria: "all", especie: "all" },
+  sanReportProductMetric: "applications",
+  sanReportPotreiroFocus: null,
   repPage: 0,
   repSearch: "",
   comprasPage: 0,
@@ -1142,7 +1145,10 @@ const state = {
     comprasBar: null,
     comprasEvolution: null,
     vendasBar: null,
-    vendasEvolution: null
+    vendasEvolution: null,
+    sanRepProducts: null,
+    sanRepPotreiros: null,
+    sanRepEvolution: null
   },
   userEditingId: null,
   userEditingMode: null,
@@ -4269,6 +4275,7 @@ function render() {
     renderSanitaryTable(farm);
     renderSanitaryFarmSwitch();
     renderSanitaryComposerState(farm);
+    try { renderSanitaryReportSection(); } catch (e) { console.warn("[sanReport]", e); }
     renderMonthlySummary(farm);
     renderMonthlyProtocol(farm);
     renderCharts(farm);
@@ -7065,6 +7072,598 @@ function renderSanitaryComposerState(farm) {
 
   elements.openSanitaryDialogButton.disabled = false;
   elements.sanitaryViewNote.textContent = `Manejo sanitário ativo para ${farm.name}. Os dados abaixo consideram apenas a fazenda selecionada.`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Relatórios e Indicadores — Sanitário
+   Dashboard calculado exclusivamente a partir dos registros sanitários
+   já cadastrados (farm.sanitaryRecords). O cadastro atual não possui
+   custo, tipo de tratamento nem responsável — por isso este painel não
+   exibe esses indicadores, para não inventar dado que não existe.
+   ══════════════════════════════════════════════════════════════════ */
+
+function getSanReportScopeFarms() {
+  const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
+  return isTotalView ? getAllFarms() : [state.data.farms[state.data.selectedFarmId]].filter(Boolean);
+}
+
+function getSanReportFlatRecords() {
+  return getSanReportScopeFarms().flatMap((farm) =>
+    (farm.sanitaryRecords || []).map((r) => ({ ...r, _farmId: farm.id, _farmName: farm.name }))
+  );
+}
+
+function sanReportRecordMatches(record, filters) {
+  if (filters.dataIni && String(record.date || "") < filters.dataIni) return false;
+  if (filters.dataFim && String(record.date || "") > filters.dataFim) return false;
+  if (filters.potreiro !== "all" && (record.potreiro || "Sem potreiro") !== filters.potreiro) return false;
+  if (filters.produto !== "all" && (record.product || "") !== filters.produto) return false;
+  if (filters.categoria !== "all" && (record.categoryName || "") !== filters.categoria) return false;
+  if (filters.especie !== "all" && (record.especie || "bovino") !== filters.especie) return false;
+  return true;
+}
+
+function getSanReportFilteredRecords(filters) {
+  return getSanReportFlatRecords()
+    .filter((r) => sanReportRecordMatches(r, filters))
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+}
+
+function sanReportQuickRangeBounds(quick) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (quick === "todo") return { dataIni: "", dataFim: "" };
+  if (quick === "ano") return { dataIni: `${new Date().getFullYear()}-01-01`, dataFim: todayStr };
+  const days = { "7d": 7, "30d": 30, "90d": 90 }[quick];
+  if (!days) return null;
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  return { dataIni: start.toISOString().slice(0, 10), dataFim: todayStr };
+}
+
+function sanReportPreviousPeriodBounds(dataIni, dataFim) {
+  if (!dataIni || !dataFim) return null;
+  const start = new Date(`${dataIni}T00:00:00`);
+  const end = new Date(`${dataFim}T00:00:00`);
+  const spanDays = Math.round((end - start) / 86400000) + 1;
+  if (!Number.isFinite(spanDays) || spanDays <= 0) return null;
+  const prevEnd = new Date(start);
+  prevEnd.setDate(prevEnd.getDate() - 1);
+  const prevStart = new Date(prevEnd);
+  prevStart.setDate(prevStart.getDate() - (spanDays - 1));
+  return { dataIni: prevStart.toISOString().slice(0, 10), dataFim: prevEnd.toISOString().slice(0, 10) };
+}
+
+function sanReportPlural(n) {
+  return n === 1 ? "" : "s";
+}
+
+function sanReportPluralWord(n, singular, plural) {
+  return n === 1 ? singular : plural;
+}
+
+function computeSanReportKpiSet(records) {
+  return {
+    treatments: records.length,
+    potreiros: new Set(records.map((r) => r.potreiro || "Sem potreiro")).size,
+    products: new Set(records.map((r) => r.product).filter(Boolean)).size,
+    animals: records.reduce((s, r) => s + (Number(r.quantity) || 0), 0)
+  };
+}
+
+function computeSanReportProductUsage(records) {
+  const map = new Map();
+  records.forEach((r) => {
+    const product = r.product || "Sem produto";
+    const cur = map.get(product) || { product, applications: 0, animals: 0 };
+    cur.applications += 1;
+    cur.animals += Number(r.quantity) || 0;
+    map.set(product, cur);
+  });
+  return [...map.values()];
+}
+
+function computeSanReportPotreiroUsage(records) {
+  const map = new Map();
+  records.forEach((r) => {
+    const potreiro = r.potreiro || "Sem potreiro";
+    const cur = map.get(potreiro) || { potreiro, treatments: 0, animals: 0 };
+    cur.treatments += 1;
+    cur.animals += Number(r.quantity) || 0;
+    map.set(potreiro, cur);
+  });
+  return [...map.values()].sort((a, b) => b.treatments - a.treatments);
+}
+
+let sanReportStaticHandlersWired = false;
+function ensureSanReportStaticHandlersWired() {
+  if (sanReportStaticHandlersWired) return;
+  const toggle = document.getElementById("sanReportProductMetricToggle");
+  if (toggle) {
+    toggle.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-san-product-metric]");
+      if (!btn) return;
+      runtime.sanReportProductMetric = btn.dataset.sanProductMetric;
+      renderSanReportProductsChart(getSanReportFilteredRecords(runtime.sanReportFilters));
+    });
+  }
+  sanReportStaticHandlersWired = true;
+}
+
+function renderSanReportFilterBar() {
+  const el = document.getElementById("sanReportFilterBar");
+  if (!el) return;
+  const filters = runtime.sanReportFilters;
+  const allRecords = getSanReportFlatRecords();
+
+  const potreiros = [...new Set(allRecords.map((r) => r.potreiro || "Sem potreiro"))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const produtos = [...new Set(allRecords.map((r) => r.product).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const categorias = [...new Set(allRecords.map((r) => r.categoryName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  if (filters.potreiro !== "all" && !potreiros.includes(filters.potreiro)) filters.potreiro = "all";
+  if (filters.produto !== "all" && !produtos.includes(filters.produto)) filters.produto = "all";
+  if (filters.categoria !== "all" && !categorias.includes(filters.categoria)) filters.categoria = "all";
+
+  const quickOptions = [
+    { id: "7d", label: "7 dias" },
+    { id: "30d", label: "30 dias" },
+    { id: "90d", label: "90 dias" },
+    { id: "ano", label: "Este ano" },
+    { id: "todo", label: "Todo o período" }
+  ];
+
+  el.innerHTML = `
+    <div class="san-rep-quick-range">
+      ${quickOptions.map((q) => `<button type="button" class="san-rep-quick-btn ${filters.quick === q.id ? "active" : ""}" data-san-rep-quick="${q.id}">${q.label}</button>`).join("")}
+    </div>
+    <label>Data inicial <input type="date" id="sanReportDataIni" value="${filters.dataIni || ""}"></label>
+    <label>Data final <input type="date" id="sanReportDataFim" value="${filters.dataFim || ""}"></label>
+    <label>Potreiro
+      <select id="sanReportFilterPotreiro">
+        <option value="all">Todos os potreiros</option>
+        ${potreiros.map((p) => `<option value="${escapeHtml(p)}" ${filters.potreiro === p ? "selected" : ""}>${escapeHtml(p)}</option>`).join("")}
+      </select>
+    </label>
+    <label>Produto
+      <select id="sanReportFilterProduto">
+        <option value="all">Todos os produtos</option>
+        ${produtos.map((p) => `<option value="${escapeHtml(p)}" ${filters.produto === p ? "selected" : ""}>${escapeHtml(p)}</option>`).join("")}
+      </select>
+    </label>
+    <label>Categoria animal
+      <select id="sanReportFilterCategoria">
+        <option value="all">Todas as categorias</option>
+        ${categorias.map((c) => `<option value="${escapeHtml(c)}" ${filters.categoria === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}
+      </select>
+    </label>
+    <label>Espécie
+      <select id="sanReportFilterEspecie">
+        <option value="all" ${filters.especie === "all" ? "selected" : ""}>Todas</option>
+        <option value="bovino" ${filters.especie === "bovino" ? "selected" : ""}>🐄 Bovinos</option>
+        <option value="ovino" ${filters.especie === "ovino" ? "selected" : ""}>🐑 Ovinos</option>
+      </select>
+    </label>
+    <button type="button" class="ghost-btn san-rep-clear-btn" id="sanReportClearFilters">Limpar filtros</button>
+  `;
+
+  el.querySelectorAll("[data-san-rep-quick]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const quick = btn.dataset.sanRepQuick;
+      const bounds = sanReportQuickRangeBounds(quick);
+      runtime.sanReportFilters.quick = quick;
+      if (bounds) {
+        runtime.sanReportFilters.dataIni = bounds.dataIni;
+        runtime.sanReportFilters.dataFim = bounds.dataFim;
+      }
+      renderSanitaryReportSection();
+    });
+  });
+
+  document.getElementById("sanReportDataIni").addEventListener("change", (e) => {
+    runtime.sanReportFilters.dataIni = e.target.value;
+    runtime.sanReportFilters.quick = "custom";
+    renderSanitaryReportSection();
+  });
+  document.getElementById("sanReportDataFim").addEventListener("change", (e) => {
+    runtime.sanReportFilters.dataFim = e.target.value;
+    runtime.sanReportFilters.quick = "custom";
+    renderSanitaryReportSection();
+  });
+  document.getElementById("sanReportFilterPotreiro").addEventListener("change", (e) => {
+    runtime.sanReportFilters.potreiro = e.target.value;
+    renderSanitaryReportSection();
+  });
+  document.getElementById("sanReportFilterProduto").addEventListener("change", (e) => {
+    runtime.sanReportFilters.produto = e.target.value;
+    renderSanitaryReportSection();
+  });
+  document.getElementById("sanReportFilterCategoria").addEventListener("change", (e) => {
+    runtime.sanReportFilters.categoria = e.target.value;
+    renderSanitaryReportSection();
+  });
+  document.getElementById("sanReportFilterEspecie").addEventListener("change", (e) => {
+    runtime.sanReportFilters.especie = e.target.value;
+    renderSanitaryReportSection();
+  });
+  document.getElementById("sanReportClearFilters").addEventListener("click", () => {
+    runtime.sanReportFilters = { quick: "todo", dataIni: "", dataFim: "", potreiro: "all", produto: "all", categoria: "all", especie: "all" };
+    runtime.sanReportPotreiroFocus = null;
+    renderSanitaryReportSection();
+  });
+}
+
+function sanReportTrendHtml(current, previous) {
+  if (previous === null || previous === undefined) return "";
+  if (previous === 0) {
+    if (current === 0) return "";
+    return `<span class="san-rep-kpi-trend san-rep-kpi-trend-up">novo no período</span>`;
+  }
+  const pct = ((current - previous) / previous) * 100;
+  const cls = pct > 0 ? "san-rep-kpi-trend-up" : pct < 0 ? "san-rep-kpi-trend-down" : "san-rep-kpi-trend-flat";
+  const sign = pct > 0 ? "+" : "";
+  return `<span class="san-rep-kpi-trend ${cls}">${sign}${pct.toFixed(1)}% em relação ao período anterior</span>`;
+}
+
+function renderSanReportKpis(records, filters) {
+  const el = document.getElementById("sanReportKpis");
+  if (!el) return;
+
+  const current = computeSanReportKpiSet(records);
+
+  let previous = null;
+  const prevBounds = sanReportPreviousPeriodBounds(filters.dataIni, filters.dataFim);
+  if (prevBounds) {
+    const prevFilters = { ...filters, dataIni: prevBounds.dataIni, dataFim: prevBounds.dataFim };
+    previous = computeSanReportKpiSet(getSanReportFilteredRecords(prevFilters));
+  }
+
+  const cards = [
+    { title: "Tratamentos realizados", value: formatInteger(current.treatments), detail: "registros sanitários no período filtrado", key: "treatments" },
+    { title: "Potreiros atendidos", value: formatInteger(current.potreiros), detail: "potreiros distintos com tratamento", key: "potreiros" },
+    { title: "Produtos utilizados", value: formatInteger(current.products), detail: "produtos distintos aplicados", key: "products" },
+    { title: "Animais tratados", value: formatInteger(current.animals), detail: "cabeças somadas nos registros", key: "animals" }
+  ];
+
+  el.innerHTML = cards.map((card) => `
+    <div class="summary-card">
+      <p>${card.title}</p>
+      <strong>${card.value}</strong>
+      <p>${card.detail}</p>
+      ${sanReportTrendHtml(current[card.key], previous ? previous[card.key] : null)}
+    </div>
+  `).join("");
+}
+
+function renderSanReportProductsChart(records) {
+  const canvas = document.getElementById("sanReportChartProducts");
+  if (!canvas) return;
+  if (state.charts.sanRepProducts) state.charts.sanRepProducts.destroy();
+
+  const metric = runtime.sanReportProductMetric;
+  document.querySelectorAll("#sanReportProductMetricToggle button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.sanProductMetric === metric);
+  });
+
+  const usage = computeSanReportProductUsage(records).sort((a, b) => b[metric] - a[metric]).slice(0, 12);
+  if (!usage.length) { drawChartFallback("sanReportChartProducts", "Sem dados no período selecionado."); return; }
+
+  const total = usage.reduce((s, u) => s + u[metric], 0);
+  const context = canvas.getContext("2d");
+  state.charts.sanRepProducts = new Chart(context, {
+    type: "bar",
+    data: {
+      labels: usage.map((u) => u.product),
+      datasets: [{
+        label: metric === "applications" ? "Aplicações" : "Animais tratados",
+        data: usage.map((u) => u[metric]),
+        backgroundColor: usage.map((_, i) => COLORS[i % COLORS.length]),
+        borderRadius: 8,
+        maxBarThickness: 26
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      maintainAspectRatio: false,
+      onClick: (evt, elements) => {
+        if (!elements.length) return;
+        runtime.sanReportFilters.produto = usage[elements[0].index].product;
+        // Adiado: destruir/recriar o chart dentro do seu próprio onClick
+        // sincronamente quebra o despacho interno de eventos do Chart.js.
+        setTimeout(renderSanitaryReportSection, 0);
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const u = usage[ctx.dataIndex];
+              const pct = total > 0 ? ((u[metric] / total) * 100).toFixed(1) : "0.0";
+              return [`Aplicações: ${formatInteger(u.applications)}`, `Animais tratados: ${formatInteger(u.animals)}`, `Participação: ${pct}%`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: "rgba(76,55,34,0.08)" } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderSanReportPotreirosChart(records) {
+  const canvas = document.getElementById("sanReportChartPotreiros");
+  if (!canvas) return;
+  if (state.charts.sanRepPotreiros) state.charts.sanRepPotreiros.destroy();
+
+  const usage = computeSanReportPotreiroUsage(records).slice(0, 10);
+  if (!usage.length) { drawChartFallback("sanReportChartPotreiros", "Sem dados no período selecionado."); return; }
+  const total = records.length;
+
+  const context = canvas.getContext("2d");
+  state.charts.sanRepPotreiros = new Chart(context, {
+    type: "bar",
+    data: {
+      labels: usage.map((u) => u.potreiro),
+      datasets: [{
+        label: "Tratamentos",
+        data: usage.map((u) => u.treatments),
+        backgroundColor: createLinearColor(canvas, "rgba(55,91,67,0.95)", "rgba(103,149,111,0.55)"),
+        borderRadius: 8,
+        maxBarThickness: 24
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      maintainAspectRatio: false,
+      onClick: (evt, elements) => {
+        if (!elements.length) return;
+        runtime.sanReportFilters.potreiro = usage[elements[0].index].potreiro;
+        // Adiado: destruir/recriar o chart dentro do seu próprio onClick
+        // sincronamente quebra o despacho interno de eventos do Chart.js.
+        setTimeout(renderSanitaryReportSection, 0);
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const u = usage[ctx.dataIndex];
+              const pct = total > 0 ? ((u.treatments / total) * 100).toFixed(1) : "0.0";
+              return [`Tratamentos: ${formatInteger(u.treatments)}`, `Animais tratados: ${formatInteger(u.animals)}`, `Participação: ${pct}%`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: "rgba(76,55,34,0.08)" } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function sanReportPickGranularity(records, filters) {
+  let start = filters.dataIni, end = filters.dataFim;
+  if (!start || !end) {
+    const dates = records.map((r) => r.date).filter(Boolean).sort();
+    start = start || dates[0];
+    end = end || dates[dates.length - 1];
+  }
+  if (!start || !end) return "month";
+  const days = (new Date(`${end}T00:00:00`) - new Date(`${start}T00:00:00`)) / 86400000;
+  if (days <= 31) return "day";
+  if (days <= 180) return "week";
+  if (days <= 900) return "month";
+  return "year";
+}
+
+function sanReportWeekKey(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function sanReportPeriodKey(dateStr, granularity) {
+  if (!dateStr) return "";
+  if (granularity === "day") return dateStr;
+  if (granularity === "week") return sanReportWeekKey(dateStr);
+  if (granularity === "year") return dateStr.slice(0, 4);
+  return dateStr.slice(0, 7);
+}
+
+function sanReportPeriodLabel(key, granularity) {
+  if (granularity === "day") return formatDate(key);
+  if (granularity === "week") return `Sem. ${formatDate(key)}`;
+  if (granularity === "year") return key;
+  return formatMonthYear(key);
+}
+
+function renderSanReportEvolutionChart(records, filters) {
+  const canvas = document.getElementById("sanReportChartEvolution");
+  if (!canvas) return;
+  if (state.charts.sanRepEvolution) state.charts.sanRepEvolution.destroy();
+  if (!records.length) { drawChartFallback("sanReportChartEvolution", "Sem dados no período selecionado."); return; }
+
+  const granularity = sanReportPickGranularity(records, filters);
+  const map = new Map();
+  records.forEach((r) => {
+    const key = sanReportPeriodKey(r.date, granularity);
+    if (!key) return;
+    map.set(key, (map.get(key) || 0) + 1);
+  });
+  const keys = [...map.keys()].sort();
+
+  const context = canvas.getContext("2d");
+  state.charts.sanRepEvolution = new Chart(context, {
+    type: "line",
+    data: {
+      labels: keys.map((k) => sanReportPeriodLabel(k, granularity)),
+      datasets: [{
+        label: "Tratamentos",
+        data: keys.map((k) => map.get(k)),
+        borderColor: "#375b43",
+        backgroundColor: createLinearColor(canvas, "rgba(55,91,67,0.5)", "rgba(55,91,67,0.02)"),
+        fill: true,
+        tension: 0.35,
+        pointRadius: 3,
+        pointBackgroundColor: "#375b43",
+        borderWidth: 3
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `${formatInteger(ctx.parsed.y)} tratamento${sanReportPlural(ctx.parsed.y)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: {
+          beginAtZero: true,
+          grid: { color: "rgba(76,55,34,0.08)" },
+          ticks: { precision: 0 },
+          title: { display: true, text: "Nº de tratamentos", font: { size: 11, weight: "600" }, color: "#7a6754" }
+        }
+      }
+    }
+  });
+}
+
+function computeSanReportIncidenceRows(records) {
+  const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
+  const treatMap = new Map();
+  records.forEach((r) => {
+    const potreiroName = r.potreiro || "Sem potreiro";
+    const key = isTotalView ? `${r._farmId}::${potreiroName}` : potreiroName;
+    const cur = treatMap.get(key) || {
+      key,
+      label: isTotalView ? `${potreiroName} (${r._farmName})` : potreiroName,
+      treatments: 0,
+      farmId: r._farmId,
+      potreiroName
+    };
+    cur.treatments += 1;
+    treatMap.set(key, cur);
+  });
+
+  treatMap.forEach((row) => {
+    const farm = state.data.farms[row.farmId];
+    const entry = farm ? getPotreroEntries(farm).find((p) => normalizeText(p.name) === normalizeText(row.potreiroName)) : null;
+    row.animals = entry ? normalizePotreroQuantity(entry.quantity) : 0;
+    row.rate = row.animals > 0 ? (row.treatments / row.animals) * 100 : null;
+  });
+
+  return [...treatMap.values()].sort((a, b) => b.treatments - a.treatments);
+}
+
+function renderSanReportIncidenceTable(records) {
+  const body = document.getElementById("sanReportIncidenceBody");
+  if (!body) return;
+  const rows = computeSanReportIncidenceRows(records);
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="4" class="table-empty-cell">Nenhum registro sanitário no período selecionado.</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map((row) => `
+    <tr>
+      <td data-label="Potreiro"><strong>${escapeHtml(row.label)}</strong></td>
+      <td data-label="Animais">${row.animals > 0 ? formatInteger(row.animals) : "—"}</td>
+      <td data-label="Tratamentos">${formatInteger(row.treatments)}</td>
+      <td data-label="Trat./100 animais">${row.rate !== null ? row.rate.toFixed(1) : "—"}</td>
+    </tr>
+  `).join("");
+}
+
+function renderSanReportByProductPanel(records) {
+  const chipsEl = document.getElementById("sanReportPotreroChips");
+  const listEl = document.getElementById("sanReportByProductList");
+  if (!chipsEl || !listEl) return;
+
+  const potreiroUsage = computeSanReportPotreiroUsage(records);
+  if (!potreiroUsage.length) {
+    chipsEl.innerHTML = "";
+    listEl.innerHTML = `<p class="san-rep-empty-note">Nenhum registro sanitário no período selecionado.</p>`;
+    return;
+  }
+
+  if (!runtime.sanReportPotreiroFocus || !potreiroUsage.some((u) => u.potreiro === runtime.sanReportPotreiroFocus)) {
+    runtime.sanReportPotreiroFocus = potreiroUsage[0].potreiro;
+  }
+  const focus = runtime.sanReportPotreiroFocus;
+
+  chipsEl.innerHTML = potreiroUsage.slice(0, 16).map((u) => `
+    <button type="button" class="san-rep-potrero-chip ${u.potreiro === focus ? "active" : ""}" data-san-rep-potreiro-chip="${escapeHtml(u.potreiro)}">${escapeHtml(u.potreiro)} · ${formatInteger(u.treatments)}</button>
+  `).join("");
+  chipsEl.querySelectorAll("[data-san-rep-potreiro-chip]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      runtime.sanReportPotreiroFocus = chip.dataset.sanRepPotreiroChip;
+      renderSanReportByProductPanel(getSanReportFilteredRecords(runtime.sanReportFilters));
+    });
+  });
+
+  const focusRecords = records.filter((r) => (r.potreiro || "Sem potreiro") === focus);
+  const usage = computeSanReportProductUsage(focusRecords).sort((a, b) => b.applications - a.applications);
+  const maxApplications = usage[0]?.applications || 1;
+
+  listEl.innerHTML = usage.length
+    ? usage.map((u) => `
+        <div class="san-rep-product-row">
+          <span class="san-rep-product-name">${escapeHtml(u.product)}</span>
+          <span class="san-rep-product-bar"><span class="san-rep-product-bar-fill" style="width:${Math.round((u.applications / maxApplications) * 100)}%"></span></span>
+          <span class="san-rep-product-meta">${formatInteger(u.applications)} ${sanReportPluralWord(u.applications, "aplicação", "aplicações")} · ${formatInteger(u.animals)} animais</span>
+        </div>
+      `).join("")
+    : `<p class="san-rep-empty-note">Nenhum produto aplicado neste potreiro no período.</p>`;
+}
+
+function renderSanReportSummaryText(records) {
+  const el = document.getElementById("sanReportSummaryText");
+  if (!el) return;
+
+  if (!records.length) {
+    el.innerHTML = `<p>Nenhum registro sanitário encontrado para o período e os filtros selecionados.</p>`;
+    return;
+  }
+
+  const kpis = computeSanReportKpiSet(records);
+  const potreiroUsage = computeSanReportPotreiroUsage(records);
+  const productUsage = computeSanReportProductUsage(records).sort((a, b) => b.applications - a.applications);
+  const topPotreiro = potreiroUsage[0];
+  const topProduct = productUsage[0];
+  const topPotreiroPct = topPotreiro && kpis.treatments > 0 ? ((topPotreiro.treatments / kpis.treatments) * 100).toFixed(1) : "0.0";
+
+  const sentences = [
+    `No período selecionado foram registrados ${formatInteger(kpis.treatments)} tratamento${sanReportPlural(kpis.treatments)} sanitário${sanReportPlural(kpis.treatments)} em ${formatInteger(kpis.potreiros)} potreiro${sanReportPlural(kpis.potreiros)}.`
+  ];
+  if (topPotreiro) {
+    sentences.push(`O potreiro ${escapeHtml(topPotreiro.potreiro)} apresentou o maior número de intervenções, representando ${topPotreiroPct}% dos registros.`);
+  }
+  if (topProduct) {
+    sentences.push(`${escapeHtml(topProduct.product)} foi o produto com maior número de aplicações (${formatInteger(topProduct.applications)}).`);
+  }
+  sentences.push(`Ao todo, ${formatInteger(kpis.animals)} ${sanReportPluralWord(kpis.animals, "animal", "animais")} ${sanReportPluralWord(kpis.animals, "foi", "foram")} ${sanReportPluralWord(kpis.animals, "tratado", "tratados")} no período, com ${formatInteger(kpis.products)} produto${sanReportPlural(kpis.products)} distinto${sanReportPlural(kpis.products)} utilizado${sanReportPlural(kpis.products)}.`);
+
+  el.innerHTML = sentences.map((s) => `<p>${s}</p>`).join("");
+}
+
+function renderSanitaryReportSection() {
+  if (!document.getElementById("sanReportFilterBar")) return;
+  ensureSanReportStaticHandlersWired();
+  renderSanReportFilterBar();
+  const filters = runtime.sanReportFilters;
+  const records = getSanReportFilteredRecords(filters);
+  renderSanReportKpis(records, filters);
+  try {
+    renderSanReportProductsChart(records);
+    renderSanReportPotreirosChart(records);
+    renderSanReportEvolutionChart(records, filters);
+  } catch (error) {
+    console.warn("[sanReport] erro ao renderizar gráficos:", error);
+  }
+  renderSanReportIncidenceTable(records);
+  renderSanReportByProductPanel(records);
+  renderSanReportSummaryText(records);
 }
 
 function renderMonthlySummary(farm) {
@@ -13021,6 +13620,13 @@ async function exportSanitaryPdfReport() {
   if (farms.length > 1) {
     doc.addPage();
     appendSanitaryConsolidatedPdfIntro(doc, farms);
+    try {
+      const allRecords = farms.flatMap((farm) => getFilteredSanitaryRecords(farm, state.filters.year, state.filters.month));
+      const consolidatedCharts = await renderSanReportPdfCharts(allRecords);
+      appendSanReportPdfChartsPage(doc, consolidatedCharts, "Todas as Fazendas");
+    } catch (error) {
+      console.warn("[sanReport] erro ao gerar gráficos consolidados do PDF:", error);
+    }
     for (const [index, farm] of farms.entries()) {
       doc.addPage();
       const summary = getSanitarySummary(farm, state.filters.year, state.filters.month);
@@ -13210,6 +13816,13 @@ async function appendSanitaryPdfReport(doc, farm) {
     y += rowH;
   });
 
+  try {
+    const charts = await renderSanReportPdfCharts(records);
+    appendSanReportPdfChartsPage(doc, charts, farm.name);
+  } catch (error) {
+    console.warn("[sanReport] erro ao gerar gráficos do PDF:", error);
+  }
+
   // Footer handled after all pages are assembled.
   /*
   const pageCount = doc.internal.getNumberOfPages();
@@ -13221,6 +13834,141 @@ async function appendSanitaryPdfReport(doc, farm) {
     doc.text(`Wolf Agricultura e Pecuária · Manejo Sanitário · ${periodLabel}`, margin, pageH - 6);
   }
   */
+}
+
+async function renderSanReportPdfCharts(records) {
+  if (typeof window.Chart !== "function" || !records.length) return [];
+
+  const width = 900;
+  const height = 460;
+  const host = document.createElement("div");
+  host.style.position = "fixed";
+  host.style.left = "-9999px";
+  host.style.top = "0";
+  document.body.appendChild(host);
+
+  const results = [];
+  try {
+    const productUsage = computeSanReportProductUsage(records).sort((a, b) => b.applications - a.applications).slice(0, 12);
+    if (productUsage.length) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      host.appendChild(canvas);
+      const chart = new Chart(canvas.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: productUsage.map((u) => u.product),
+          datasets: [{ data: productUsage.map((u) => u.applications), backgroundColor: productUsage.map((_, i) => COLORS[i % COLORS.length]), borderRadius: 6 }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: false,
+          animation: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 11 } } } }
+        }
+      });
+      results.push({ title: "Produtos mais utilizados", dataUrl: canvas.toDataURL("image/png", 1.0) });
+      chart.destroy();
+    }
+
+    const potreiroUsage = computeSanReportPotreiroUsage(records).slice(0, 10);
+    if (potreiroUsage.length) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      host.appendChild(canvas);
+      const chart = new Chart(canvas.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: potreiroUsage.map((u) => u.potreiro),
+          datasets: [{ data: potreiroUsage.map((u) => u.treatments), backgroundColor: "#375b43", borderRadius: 6 }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: false,
+          animation: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 11 } } } }
+        }
+      });
+      results.push({ title: "Potreiros com mais tratamentos", dataUrl: canvas.toDataURL("image/png", 1.0) });
+      chart.destroy();
+    }
+
+    const granularity = sanReportPickGranularity(records, { dataIni: "", dataFim: "" });
+    const map = new Map();
+    records.forEach((r) => {
+      const key = sanReportPeriodKey(r.date, granularity);
+      if (!key) return;
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+    const keys = [...map.keys()].sort();
+    if (keys.length) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      host.appendChild(canvas);
+      const chart = new Chart(canvas.getContext("2d"), {
+        type: "line",
+        data: {
+          labels: keys.map((k) => sanReportPeriodLabel(k, granularity)),
+          datasets: [{ data: keys.map((k) => map.get(k)), borderColor: "#375b43", backgroundColor: "rgba(55,91,67,0.15)", fill: true, tension: 0.35, pointRadius: 2, borderWidth: 2 }]
+        },
+        options: {
+          responsive: false,
+          animation: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: "Nº de tratamentos", font: { size: 11, weight: "600" }, color: "#7a6754" } },
+            x: { ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+      results.push({ title: "Evolução dos tratamentos", dataUrl: canvas.toDataURL("image/png", 1.0) });
+      chart.destroy();
+    }
+  } finally {
+    host.remove();
+  }
+
+  return results;
+}
+
+function appendSanReportPdfChartsPage(doc, charts, sectionLabel) {
+  if (!charts.length) return;
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const cols = 2;
+  const gap = 8;
+  const rowH = 72;
+  const rowPitch = 88;
+  const colW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
+
+  doc.addPage();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(45, 35, 25);
+  doc.text(`Gráficos do Relatório Sanitário — ${sectionLabel}`, margin, 14);
+  doc.setDrawColor(55, 91, 67);
+  doc.setLineWidth(0.5);
+  doc.line(margin, 18, pageW - margin, 18);
+
+  charts.forEach((chartItem, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const x = margin + col * (colW + gap);
+    const y = 26 + row * rowPitch;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(87, 69, 52);
+    doc.text(chartItem.title, x, y);
+    const ratio = Math.min(colW / 900, rowH / 460);
+    const w = 900 * ratio;
+    const h = 460 * ratio;
+    doc.addImage(chartItem.dataUrl, "PNG", x + (colW - w) / 2, y + 3, w, h);
+  });
 }
 
 function getPdfFileName(farms, year, month) {

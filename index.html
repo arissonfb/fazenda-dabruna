@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Yrsa:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260727b">
+  <link rel="stylesheet" href="./styles.css?v=20260812a">
   <link rel="stylesheet" href="./bruna.css">
 
   <!-- PWA / offline: permite instalar na tela de inicio (iOS e Android)
@@ -547,6 +547,89 @@
         </section>
 
         <section id="sanitaryFarmBreakdown" hidden></section>
+
+        <section class="san-rep-section">
+          <article class="panel">
+            <div class="panel-header san-rep-header">
+              <div>
+                <p class="panel-kicker">Relatórios e Indicadores</p>
+                <h2>Dashboard Sanitário</h2>
+                <p class="san-rep-subtitle">Indicadores de tratamentos, produtos utilizados e distribuição sanitária da Fazenda Wolf</p>
+              </div>
+            </div>
+
+            <div class="san-rep-filter-bar" id="sanReportFilterBar"></div>
+
+            <div class="summary-grid san-rep-kpi-grid" id="sanReportKpis"></div>
+
+            <div class="san-rep-charts-grid" id="sanReportChartsGrid">
+              <div class="san-rep-chart-card san-rep-chart-card-wide">
+                <div class="san-rep-chart-head">
+                  <div>
+                    <h3>Produtos mais utilizados</h3>
+                    <p>Ranking dos produtos aplicados no período filtrado</p>
+                  </div>
+                  <div class="san-rep-toggle" id="sanReportProductMetricToggle">
+                    <button type="button" data-san-product-metric="applications">Aplicações</button>
+                    <button type="button" data-san-product-metric="animals">Animais tratados</button>
+                  </div>
+                </div>
+                <canvas id="sanReportChartProducts" data-san-rep-chart-title="Produtos mais utilizados"></canvas>
+              </div>
+
+              <div class="san-rep-chart-card">
+                <div class="san-rep-chart-head">
+                  <div>
+                    <h3>Potreiros com mais tratamentos</h3>
+                    <p>Ranking de intervenções sanitárias por potreiro — clique numa barra para filtrar</p>
+                  </div>
+                </div>
+                <canvas id="sanReportChartPotreiros" data-san-rep-chart-title="Potreiros com mais tratamentos"></canvas>
+              </div>
+
+              <div class="san-rep-chart-card">
+                <div class="san-rep-chart-head">
+                  <div>
+                    <h3>Evolução dos tratamentos</h3>
+                    <p>Quantidade de registros sanitários ao longo do tempo</p>
+                  </div>
+                </div>
+                <canvas id="sanReportChartEvolution" data-san-rep-chart-title="Evolução dos tratamentos"></canvas>
+              </div>
+            </div>
+
+            <div class="san-rep-block" id="sanReportIncidenceBlock">
+              <div class="san-rep-block-head">
+                <h3>Incidência sanitária por potreiro</h3>
+                <p>Tratamentos por potreiro e taxa por 100 animais, com base na alocação atual do rebanho</p>
+              </div>
+              <div class="table-wrap">
+                <table class="sanitary-table san-rep-incidence-table">
+                  <thead>
+                    <tr><th>Potreiro</th><th>Animais</th><th>Tratamentos</th><th>Trat./100 animais</th></tr>
+                  </thead>
+                  <tbody id="sanReportIncidenceBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="san-rep-block" id="sanReportByProductBlock">
+              <div class="san-rep-block-head">
+                <h3>Produtos mais utilizados por potreiro</h3>
+                <p>Selecione um potreiro para ver seus produtos mais aplicados</p>
+              </div>
+              <div class="san-rep-potrero-chips" id="sanReportPotreroChips"></div>
+              <div class="san-rep-product-list" id="sanReportByProductList"></div>
+            </div>
+
+            <div class="san-rep-block san-rep-summary-block">
+              <div class="san-rep-block-head">
+                <h3>Resumo do período</h3>
+              </div>
+              <div class="san-rep-summary-text" id="sanReportSummaryText"></div>
+            </div>
+          </article>
+        </section>
 
         <section class="san-history-section">
           <article class="panel">
@@ -1809,7 +1892,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./assets/jspdf.umd.min.js"></script>
   <script src="./assets/jspdf.autotable.min.js"></script>
-  <script src="./app.js?v=20260731a"></script>
+  <script src="./app.js?v=20260812d"></script>
   <script src="./bruna-extras.js?v=20260714a"></script>
   <script src="./pastagens.js?v=20260712c"></script>
   <script src="./eventos.js?v=20260711a"></script>
