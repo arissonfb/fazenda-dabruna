@@ -7530,51 +7530,6 @@ function renderSanReportEvolutionChart(records, filters) {
   });
 }
 
-function computeSanReportIncidenceRows(records) {
-  const isTotalView = state.data.selectedFarmId === TOTAL_FARM_ID;
-  const treatMap = new Map();
-  records.forEach((r) => {
-    const potreiroName = r.potreiro || "Sem potreiro";
-    const key = isTotalView ? `${r._farmId}::${potreiroName}` : potreiroName;
-    const cur = treatMap.get(key) || {
-      key,
-      label: isTotalView ? `${potreiroName} (${r._farmName})` : potreiroName,
-      treatments: 0,
-      farmId: r._farmId,
-      potreiroName
-    };
-    cur.treatments += 1;
-    treatMap.set(key, cur);
-  });
-
-  treatMap.forEach((row) => {
-    const farm = state.data.farms[row.farmId];
-    const entry = farm ? getPotreroEntries(farm).find((p) => normalizeText(p.name) === normalizeText(row.potreiroName)) : null;
-    row.animals = entry ? normalizePotreroQuantity(entry.quantity) : 0;
-    row.rate = row.animals > 0 ? (row.treatments / row.animals) * 100 : null;
-  });
-
-  return [...treatMap.values()].sort((a, b) => b.treatments - a.treatments);
-}
-
-function renderSanReportIncidenceTable(records) {
-  const body = document.getElementById("sanReportIncidenceBody");
-  if (!body) return;
-  const rows = computeSanReportIncidenceRows(records);
-  if (!rows.length) {
-    body.innerHTML = `<tr><td colspan="4" class="table-empty-cell">Nenhum registro sanitário no período selecionado.</td></tr>`;
-    return;
-  }
-  body.innerHTML = rows.map((row) => `
-    <tr>
-      <td data-label="Potreiro"><strong>${escapeHtml(row.label)}</strong></td>
-      <td data-label="Animais">${row.animals > 0 ? formatInteger(row.animals) : "—"}</td>
-      <td data-label="Tratamentos">${formatInteger(row.treatments)}</td>
-      <td data-label="Trat./100 animais">${row.rate !== null ? row.rate.toFixed(1) : "—"}</td>
-    </tr>
-  `).join("");
-}
-
 function renderSanReportByProductPanel(records) {
   const chipsEl = document.getElementById("sanReportPotreroChips");
   const listEl = document.getElementById("sanReportByProductList");
@@ -7661,7 +7616,6 @@ function renderSanitaryReportSection() {
   } catch (error) {
     console.warn("[sanReport] erro ao renderizar gráficos:", error);
   }
-  renderSanReportIncidenceTable(records);
   renderSanReportByProductPanel(records);
   renderSanReportSummaryText(records);
 }
