@@ -177,7 +177,19 @@ No sistema, cada registro vira um cartão com o botão **Revisar e salvar**. Ele
 - **Validação e estoque ficam com o sistema:** o salvar normal é quem valida e atualiza o estoque. A IA só preenche o formulário.
 - **Se um campo não bater,** deixe-o vazio no formulário para o usuário escolher.
 
-### 6. Servidor próprio (produção)
+### 6. Exclusões (com confirmação)
+
+O Minuano também pode excluir, sempre **um registro por vez** e **com confirmação**:
+
+1. Os dados enviados à IA trazem o código de cada registro recente entre colchetes (`[MOV-00012] 2026-09-01 venda 10 ...`).
+2. Quando o usuário pede para excluir, a IA devolve `{"tipo":"excluir","registro":"movimiento","codigo":"MOV-00012"}`. Se a descrição servir para mais de um registro, ela lista os candidatos e pergunta.
+3. O sistema **procura o registro pelo código nos próprios dados** e mostra o que achou (não o que a IA disse), com o botão vermelho **Excluir…**.
+4. O botão chama a **função de exclusão que o sistema já tem**, a mesma do botão da tabela. Ela pergunta "tem certeza?", reverte o estoque e grava na auditoria.
+5. Código inexistente: o cartão avisa "Não encontrei", sem botão.
+
+Veja `minuanoDeleteTarget()` e `minuanoDeleteCard()` em `app.js` e `minuanoDeleteTarget()` em `agro-ui.js`.
+
+### 7. Servidor próprio (produção)
 
 **Sistema com backend Node/Express** (ex.: Render): crie uma rota no próprio servidor em vez do Worker. Ela deve exigir o login do sistema:
 

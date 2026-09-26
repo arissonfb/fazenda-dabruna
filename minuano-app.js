@@ -50,6 +50,7 @@
       "O sistema abre o formulário preenchido para o usuário revisar e salvar. Use os nomes EXATOS de fazendas, categorias, potreiros e produtos que estão nos dados. Se faltar algo essencial (categoria, quantidade ou fazenda quando houver mais de uma e não der para deduzir), pergunte antes e não gere o bloco. Data padrão: hoje (AAAA-MM-DD).",
       "Esquemas (campos vazios podem ser omitidos):",
       "- Movimento: {\"tipo\":\"movimiento\",\"movimiento\":\"nascimento|compra|venda|consumo|morte|transferencia|ajuste\",\"establecimiento\":\"<fazenda>\",\"categoria\":\"\",\"cantidad\":0,\"fecha\":\"\",\"potrero\":\"\",\"valor\":0,\"comprador\":\"\",\"destino\":\"<fazenda destino>\",\"direccion\":\"sumar|restar\",\"notas\":\"\"} (abate, carneada, faena = consumo; nasceram/nacieron = nascimento)",
+      "Exclusões: só quando o usuário pedir claramente para excluir/apagar/cancelar/desfazer um registro. Identifique UM registro pelo código entre colchetes nos dados (ex.: [A-0012]). Se a descrição servir para mais de um, liste os candidatos com código, data e quantidade e pergunte qual; não gere bloco. Nunca exclua em massa (no máximo 1 bloco de exclusão por resposta) e nunca diga que excluiu: o sistema mostra o registro real e pede confirmação. Antes do bloco, diga em 1 frase qual registro será excluído e o efeito (movimentações revertem o estoque). Bloco: {\"tipo\":\"excluir\",\"registro\":\"movimiento|sanidad|reproduccion\",\"codigo\":\"<código sem colchetes>\"}",
       "- Sanidade: {\"tipo\":\"sanidad\",\"establecimiento\":\"<fazenda>\",\"categoria\":\"\",\"cantidad\":0,\"producto\":\"\",\"fecha\":\"\",\"potrero\":\"\",\"notas\":\"\"} (dosificação, vacina, vermífugo, banho)"
     ].join("\n")
   });
@@ -83,13 +84,13 @@
           }),
           movimentosDesde: `${year - 1}-01-01`,
           movimentosPorTipo: byType,
-          ultimosMovimentos: movs.slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 10)
-            .map((m) => `${m.date} ${m.type} ${num(m.quantity)} ${m.categoryName || ""}${num(m.value) ? ` valor ${Math.round(num(m.value))}` : ""}`),
+          ultimosMovimentos: movs.slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 25)
+            .map((m) => `[${m.code || m.id}] ${m.date} ${m.type} ${num(m.quantity)} ${m.categoryName || ""}${num(m.value) ? ` valor ${Math.round(num(m.value))}` : ""}`),
           produtosSanitarios: farm.sanitaryProducts || [],
-          sanidade: (farm.sanitaryRecords || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 10)
-            .map((r) => `${r.date} ${r.product} ${num(r.quantity)} ${r.categoryName || ""}${r.potreiro ? ` (${r.potreiro})` : ""}`),
-          reproducao: (farm.reproductionRecords || []).slice(-6)
-            .map((r) => `${r.date} ${r.type || ""} ${num(r.quantity)} ${r.categoryName || ""}${r.quantityPegou != null ? ` prenhes ${r.quantityPegou}` : ""}`),
+          sanidade: (farm.sanitaryRecords || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 20)
+            .map((r) => `[${r.code || r.id}] ${r.date} ${r.product} ${num(r.quantity)} ${r.categoryName || ""}${r.potreiro ? ` (${r.potreiro})` : ""}`),
+          reproducao: (farm.reproductionRecords || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 15)
+            .map((r) => `[${r.code || r.id}] ${r.date} ${r.type || ""} ${num(r.quantity)} ${r.categoryName || ""}${r.quantityPegou != null ? ` prenhes ${r.quantityPegou}` : ""}`),
           ultimoPotreiroUsado: potrName(movs[movs.length - 1]?.potreiroId) || undefined
         };
       })
@@ -136,6 +137,8 @@
   .mna-form .mna-mic.listening{background:#c62828;animation:mnaMic 1.1s infinite}
   @keyframes mnaMic{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.45)}50%{box-shadow:0 0 0 8px rgba(198,40,40,0)}}
   @media (max-width:640px){.mna-fab{bottom:78px;right:12px}.mna-fab .mna-label{display:none}.mna-fab{padding:6px}.mna-panel{right:8px;left:8px;width:auto;bottom:8px;height:calc(100vh - 16px)}}
+  .mna-del{border-color:rgba(198,40,40,.35);background:rgba(198,40,40,.05)}.mna-del b{color:#b71c1c}.mna-del button{background:#c62828}
+  .mna-rec button:disabled{background:#9aa39d;cursor:default}
   body.mna-hidden .mna-fab{display:none}`;
 
   function mount() {
@@ -176,6 +179,8 @@
       if (chip) { $("mnaInput").value = chip.dataset.mq; $("mnaForm").requestSubmit(); return; }
       const rec = e.target.closest("[data-mrec]");
       if (rec) openRecord(drafts[Number(rec.dataset.mrec)]);
+      const del = e.target.closest("[data-mdel]");
+      if (del && !del.disabled) runDelete(del);
     });
     setupMic();
     texts();
@@ -232,6 +237,15 @@
     const q = $("mnaInput").value.trim();
     if (!q) return;
     $("mnaInput").value = "";
+    const cmd = q.match(/^\/chave\s+(\S+)/i);
+    if (cmd || /^\/servidor$/i.test(q)) {
+      AI.saveConfig(cmd ? { mode: "gemini", key: cmd[1], model: "" } : { mode: "proxy", key: "" });
+      AI.reset();
+      failed = false;
+      add("bot", `<p>${cmd ? L("Chave de teste salva só neste navegador. Agora estou usando o Gemini direto.", "Clave de prueba guardada solo en este navegador. Ahora uso Gemini directo.") : L("Voltei a usar o servidor do sistema.", "Volví a usar el servidor del sistema.")}</p>`);
+      badge();
+      return;
+    }
     add("user", `<p>${esc(q)}</p>`);
     const typing = add("bot", `<span class="mna-typing"><span></span><span></span><span></span></span>`);
     let html;
@@ -356,11 +370,56 @@
   const drafts = [];
   const MOV_LABEL = { nascimento: "Nascimento", compra: "Compra", venda: "Venda", consumo: "Consumo / abate", morte: "Morte", transferencia: "Transferência", ajuste: "Ajuste" };
   function card(r) {
+    if (r.tipo === "excluir") return deleteCard(r);
     const i = drafts.push(r) - 1;
     const title = r.tipo === "sanidad" ? L("Sanidade", "Sanidad") : L("Movimentação", "Movimiento");
     const parts = [MOV_LABEL[r.movimiento], r.cantidad ? `${r.cantidad} ${r.categoria || ""}`.trim() : r.categoria, r.producto, r.establecimiento, r.potrero, r.destino ? `→ ${r.destino}` : "", num(r.valor) ? `valor ${r.valor}` : "", r.fecha || L("hoje", "hoy")].filter(Boolean);
     return `<div class="mna-rec"><b>📝 ${esc(title)}</b><p>${esc(parts.join(" · "))}</p><button type="button" data-mrec="${i}">${L("Revisar e salvar", "Revisar y guardar")}</button></div>`;
   }
+  /* ───── exclusao: registro real + funcao de exclusao do sistema (que pede confirmacao) ───── */
+  const deletes = [];
+  const DEL_KEYS = { movimiento: "movements", sanidad: "sanitaryRecords", reproduccion: "reproductionRecords" };
+  function deleteTarget(r) {
+    const key = DEL_KEYS[r.registro];
+    const code = String(r.codigo || "").replace(/^\[|\]$/g, "").trim();
+    if (!key || !code) return null;
+    for (const farm of G.farms()) {
+      const rec = (farm[key] || []).find((x) => x.code === code || x.id === code || x.sourceId === code);
+      if (!rec) continue;
+      const what = r.registro === "sanidad" ? rec.product : (rec.type || "");
+      const label = `${rec.code || ""} · ${rec.date || ""} · ${what} · ${num(rec.quantity)} ${rec.categoryName || ""} · ${farm.name}`;
+      const exists = () => (state.data.farms[farm.id]?.[key] || []).some((x) => x.id === rec.id);
+      return {
+        label,
+        exists,
+        run: () => {
+          if (r.registro === "movimiento") deleteMovement(farm.id, rec.id);
+          else if (r.registro === "sanidad") deleteSanitaryRecord(rec.id || rec.sourceId);
+          else if (typeof deleteRepRecordFixed === "function") deleteRepRecordFixed(rec.id, farm.id);
+          else deleteRepRecord(rec.id, farm.id);
+          return !exists();
+        }
+      };
+    }
+    return null;
+  }
+  function deleteCard(r) {
+    const t = deleteTarget(r);
+    if (!t) return `<div class="mna-rec mna-del"><b>🗑 ${L("Excluir", "Eliminar")}</b><p>${L("Não encontrei o registro", "No encontré el registro")} <b>${esc(r.codigo || "-")}</b>.</p></div>`;
+    const i = deletes.push(t) - 1;
+    return `<div class="mna-rec mna-del"><b>🗑 ${L("Excluir registro", "Eliminar registro")}</b><p>${esc(t.label)}</p><button type="button" data-mdel="${i}">${L("Excluir…", "Eliminar…")}</button></div>`;
+  }
+  function runDelete(btn) {
+    const t = deletes[Number(btn.dataset.mdel)];
+    if (!t) return;
+    if (!t.exists()) { btn.disabled = true; btn.textContent = L("Já excluído", "Ya eliminado"); return; }
+    if (t.run()) {
+      btn.disabled = true;
+      btn.textContent = L("Excluído ✓", "Eliminado ✓");
+      AI.remember("assistant", `${L("Registro excluído pelo usuário", "Registro eliminado por el usuario")}: ${t.label}`);
+    }
+  }
+
   function match(list, name, get) {
     const n = norm(name);
     if (!n) return null;
