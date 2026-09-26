@@ -139,6 +139,18 @@
   @media (max-width:640px){.mna-fab{bottom:78px;right:12px}.mna-fab .mna-label{display:none}.mna-fab{padding:6px}.mna-panel{right:8px;left:8px;width:auto;bottom:8px;height:calc(100vh - 16px)}}
   .mna-del{border-color:rgba(198,40,40,.35);background:rgba(198,40,40,.05)}.mna-del b{color:#b71c1c}.mna-del button{background:#c62828}
   .mna-rec button:disabled{background:#9aa39d;cursor:default}
+  .mna-cfg{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fbfcfa}
+  .mna-cfg[hidden],.mna-msgs[hidden],.mna-form[hidden],.mna-cfg [hidden]{display:none!important}
+  .mna-cfg h4{margin:0;font-size:15px}
+  .mna-cfg label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:#4b5550}
+  .mna-cfg input,.mna-cfg select{height:38px;border:1px solid #cfd6cd;border-radius:9px;padding:0 10px;font-size:14px;font-weight:400;color:#1d2521;background:#fff}
+  .mna-cfg .mna-check{flex-direction:row;align-items:center;font-weight:600}.mna-cfg .mna-check input{height:auto}
+  .mna-cfg-btns{display:flex;flex-wrap:wrap;gap:8px}
+  .mna-cfg-btns button{border:none;border-radius:9px;padding:9px 14px;background:#1f3d2b;color:#fff;font-weight:800;cursor:pointer}
+  .mna-cfg-btns button.ghost{background:#fff;color:#1f3d2b;border:1px solid #cfd6cd}
+  .mna-cfg-msg{margin:0;font-size:13px;font-weight:700}
+  .mna-cfg-help{margin:0;font-size:12px;color:#6b756f}
+  .mna-cfg-status{margin:0}
   body.mna-hidden .mna-fab{display:none}`;
 
   function mount() {
@@ -154,11 +166,13 @@
           <span class="mna-face">${FACE}</span>
           <div><strong>Minuano IA</strong><small id="mnaSub"></small><span class="mna-badge" id="mnaBadge"></span></div>
           <div class="mna-head-actions">
+            <button type="button" id="mnaCfgBtn" title="Configurar IA" hidden>⚙</button>
             <button type="button" id="mnaLang" title="Idioma / Idioma"></button>
             <button type="button" id="mnaClose" aria-label="Fechar">✕</button>
           </div>
         </div>
         <div class="mna-msgs" id="mnaMsgs"></div>
+        <div class="mna-cfg" id="mnaCfg" hidden></div>
         <form class="mna-form" id="mnaForm">
           <button type="button" class="mna-mic" id="mnaMic" aria-label="Falar">${MIC}</button>
           <input type="text" id="mnaInput" autocomplete="off">
@@ -174,6 +188,13 @@
       texts();
     });
     $("mnaForm").addEventListener("submit", onSubmit);
+    $("mnaCfgBtn").addEventListener("click", () => showSettings($("mnaCfg").hidden));
+    $("mnaCfg").addEventListener("change", (e) => { if (e.target.name === "mode") syncSettings(true); });
+    $("mnaCfg").addEventListener("click", (e) => {
+      if (e.target.id === "mnaCfgSave") saveSettings();
+      if (e.target.id === "mnaCfgTest") testSettings();
+      if (e.target.id === "mnaCfgBack") showSettings(false);
+    });
     $("mnaMsgs").addEventListener("click", (e) => {
       const chip = e.target.closest("[data-mq]");
       if (chip) { $("mnaInput").value = chip.dataset.mq; $("mnaForm").requestSubmit(); return; }
@@ -206,7 +227,9 @@
     const el = $("mnaBadge");
     const on = AI.enabled() && !failed;
     el.className = `mna-badge ${on ? "on" : ""}`;
-    el.textContent = on ? L("IA conectada", "IA conectada") : L("IA indisponível", "IA no disponible");
+    el.textContent = AI.config().off ? L("IA desligada", "IA apagada") : on ? L("IA conectada", "IA conectada") : L("IA indisponível", "IA no disponible");
+    const admin = typeof isAdmin === "function" ? isAdmin() : false;
+    $("mnaCfgBtn").hidden = !admin;
   }
 
   let started = false;
@@ -215,6 +238,7 @@
     const open = force === null ? panel.hidden : force;
     panel.hidden = !open;
     $("mnaFab").setAttribute("aria-expanded", String(open));
+    if (open) badge();
     if (open && !started) {
       started = true;
       add("bot", `<p><strong>${L("Olá! Eu sou o Minuano.", "¡Hola! Soy Minuano.")}</strong></p><p>${L("Leio o rebanho, os potreiros, as movimentações e a sanidade. Pergunte do seu jeito, em português ou espanhol — ou toque no microfone e fale um registro.", "Leo el rodeo, los potreros, los movimientos y la sanidad. Pregunte a su manera, en español o portugués, o toque el micrófono y dicte un registro.")}</p>`,
@@ -276,6 +300,78 @@
     const text = await AI.ask(q, extra);
     const { text: clean, records } = AI.extractRecords(text);
     return AI.toHtml(clean) + records.map(card).join("");
+  }
+
+  /* ───── configuracao da IA (somente administrador) ───── */
+  const MODES = [
+    ["proxy", () => L("Servidor do sistema (recomendado)", "Servidor del sistema (recomendado)")],
+    ["gemini", () => L("Google Gemini — chave neste navegador (grátis)", "Google Gemini — clave en este navegador (gratis)")],
+    ["key", () => L("Claude — chave neste navegador (pago)", "Claude — clave en este navegador (pago)")],
+    ["openai", () => L("Compatível OpenAI (Groq, OpenRouter, GPT)", "Compatible OpenAI (Groq, OpenRouter, GPT)")]
+  ];
+  function showSettings(open) {
+    if (open && !(typeof isAdmin === "function" && isAdmin())) return;
+    $("mnaCfg").hidden = !open;
+    $("mnaMsgs").hidden = open;
+    $("mnaForm").hidden = open;
+    if (open) renderSettings();
+  }
+  function renderSettings() {
+    const c = AI.config();
+    $("mnaCfg").innerHTML = `
+      <h4>${L("Configuração da IA", "Configuración de la IA")}</h4>
+      <p class="mna-cfg-status"><span class="mna-badge ${AI.enabled() && !c.off ? "on" : ""}">${c.off ? L("IA desligada", "IA apagada") : AI.enabled() ? L("Configurada", "Configurada") : L("Sem configuração", "Sin configuración")}</span></p>
+      <label>${L("Conexão", "Conexión")}<select name="mode">${MODES.map(([v, l]) => `<option value="${v}" ${c.mode === v ? "selected" : ""}>${esc(l())}</option>`).join("")}</select></label>
+      <label data-show="openai">${L("Endereço da API", "Dirección de la API")}<input name="openaiUrl" type="url" value="${esc(c.openaiUrl)}"></label>
+      <label data-show="gemini key openai">${L("Chave da API", "Clave de API")}<input name="key" type="password" autocomplete="off" value="${esc(c.mode === "proxy" ? "" : c.key)}"></label>
+      <label data-show="gemini key openai">${L("Modelo", "Modelo")}<input name="model" type="text" list="mnaModels" value="${esc(c.mode === "proxy" ? "" : c.model)}"><datalist id="mnaModels">${["gemini-flash-latest", "gemini-2.5-flash", "gemini-pro-latest", "claude-sonnet-5", "claude-haiku-4-5-20251001", "llama-3.3-70b-versatile"].map((m) => `<option value="${m}">`).join("")}</datalist></label>
+      <label class="mna-check"><input type="checkbox" name="off" ${c.off ? "checked" : ""}> ${L("Desligar a IA", "Apagar la IA")}</label>
+      <div class="mna-cfg-btns"><button type="button" id="mnaCfgSave">${L("Salvar", "Guardar")}</button><button type="button" id="mnaCfgTest" class="ghost">${L("Testar conexão", "Probar conexión")}</button><button type="button" id="mnaCfgBack" class="ghost">${L("Voltar ao chat", "Volver al chat")}</button></div>
+      <p class="mna-cfg-msg" id="mnaCfgMsg"></p>
+      <p class="mna-cfg-help" data-show="proxy">${L("O servidor do sistema guarda a chave (variável GEMINI_API_KEY no Render). Ninguém precisa colar chave no navegador.", "El servidor del sistema guarda la clave (variable GEMINI_API_KEY en Render). Nadie necesita pegar clave en el navegador.")}</p>
+      <p class="mna-cfg-help" data-show="gemini">${L("Chave grátis: aistudio.google.com → Get API key → Create API key (começa com AIza). Fica salva só neste navegador.", "Clave gratis: aistudio.google.com → Get API key → Create API key (empieza con AIza). Queda guardada solo en este navegador.")}</p>
+      <p class="mna-cfg-help" data-show="key openai">${L("A chave fica salva só neste navegador. Use apenas em computador de confiança.", "La clave queda guardada solo en este navegador. Úsela solo en una computadora de confianza.")}</p>`;
+    syncSettings(false);
+  }
+  function syncSettings(changed) {
+    const box = $("mnaCfg");
+    const mode = box.querySelector("[name=mode]").value;
+    box.querySelectorAll("[data-show]").forEach((el) => { el.hidden = !el.dataset.show.split(" ").includes(mode); });
+    if (changed) {
+      const def = AI.DEFAULT_MODELS?.[mode];
+      box.querySelector("[name=model]").value = def || "";
+      if (mode !== AI.config().mode) box.querySelector("[name=key]").value = "";
+    }
+  }
+  function saveSettings() {
+    const box = $("mnaCfg");
+    const v = (n) => box.querySelector(`[name=${n}]`);
+    const mode = v("mode").value;
+    const key = v("key").value.trim();
+    if (mode !== "proxy" && !key) { $("mnaCfgMsg").textContent = L("Cole a chave da API.", "Pegue la clave de API."); return; }
+    AI.saveConfig({ mode, key: mode === "proxy" ? "" : key, model: mode === "proxy" ? "" : v("model").value.trim(), openaiUrl: v("openaiUrl").value.trim(), off: v("off").checked });
+    AI.reset();
+    failed = false;
+    badge();
+    renderSettings();
+    $("mnaCfgMsg").textContent = L("Salvo.", "Guardado.");
+  }
+  async function testSettings() {
+    saveSettings();
+    const msg = $("mnaCfgMsg");
+    if (AI.config().mode === "proxy" && !G.token()) { msg.textContent = L("Entre no sistema (login online) para testar o servidor.", "Ingrese al sistema (login en línea) para probar el servidor."); return; }
+    msg.textContent = L("Testando…", "Probando…");
+    try {
+      const r = await AI.test();
+      const model = (String(r).match(/\(([^()]+)\)\s*$/) || [])[1];
+      msg.textContent = `✔ ${L("Conexão OK", "Conexión OK")}${model ? ` (${model})` : ""}`;
+      failed = false;
+    } catch (err) {
+      const t = String(err?.message || err);
+      msg.textContent = `✖ ${/404/.test(t) ? L("O servidor ainda não tem a rota do Minuano (publicar o servidor).", "El servidor todavía no tiene la ruta de Minuano (publicar el servidor).") : t}`;
+      failed = true;
+    }
+    badge();
   }
 
   /* ───── voz ───── */
