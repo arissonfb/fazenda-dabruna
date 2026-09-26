@@ -102,10 +102,10 @@
   const MIC = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
 
   const CSS = `
-  .mna-fab{position:fixed;right:18px;bottom:18px;z-index:9000;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border:none;border-radius:999px;background:#1f3d2b;color:#fff;font:800 14px/1 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer}
+  .mna-fab{position:fixed;right:18px;bottom:18px;z-index:2147483000;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border:none;border-radius:999px;background:#1f3d2b;color:#fff;font:800 14px/1 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer}
   .mna-fab .mna-face{width:34px;height:34px}
   .mna-face svg{width:100%;height:100%;display:block;border-radius:50%}
-  .mna-panel{position:fixed;right:18px;bottom:74px;z-index:9001;width:min(400px,calc(100vw - 24px));height:min(600px,calc(100vh - 110px));display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.28);overflow:hidden;font:14px/1.45 system-ui,sans-serif;color:#1d2521}
+  .mna-panel{position:fixed;right:18px;bottom:74px;z-index:2147483001;width:min(400px,calc(100vw - 24px));height:min(600px,calc(100vh - 110px));display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.28);overflow:hidden;font:14px/1.45 system-ui,sans-serif;color:#1d2521}
   .mna-panel[hidden]{display:none}
   .mna-head{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f3f6f1;border-bottom:1px solid #e3e8e1}
   .mna-head .mna-face{width:38px;height:38px;flex:0 0 38px}
@@ -136,7 +136,13 @@
   .mna-form .mna-mic{width:40px;padding:0;display:grid;place-items:center;border-radius:50%;background:#2e7d32}
   .mna-form .mna-mic.listening{background:#c62828;animation:mnaMic 1.1s infinite}
   @keyframes mnaMic{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.45)}50%{box-shadow:0 0 0 8px rgba(198,40,40,0)}}
-  @media (max-width:640px){.mna-fab{bottom:78px;right:12px}.mna-fab .mna-label{display:none}.mna-fab{padding:6px}.mna-panel{right:8px;left:8px;width:auto;bottom:8px;height:calc(100vh - 16px)}}
+  @media (max-width:640px){
+    .mna-fab{bottom:calc(84px + env(safe-area-inset-bottom));right:12px;padding:6px}.mna-fab .mna-label{display:none}
+    .mna-panel{top:0;left:0;right:0;bottom:0;width:auto;height:100vh;height:100dvh;border-radius:0;padding-bottom:env(safe-area-inset-bottom)}
+    .mna-form input{font-size:16px}
+  }
+  body.mna-open{overflow:hidden}
+  body.mna-open .mobile-bottom-nav{visibility:hidden}
   .mna-del{border-color:rgba(198,40,40,.35);background:rgba(198,40,40,.05)}.mna-del b{color:#b71c1c}.mna-del button{background:#c62828}
   .mna-rec button:disabled{background:#9aa39d;cursor:default}
   .mna-cfg{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fbfcfa}
@@ -238,6 +244,7 @@
     const open = force === null ? panel.hidden : force;
     panel.hidden = !open;
     $("mnaFab").setAttribute("aria-expanded", String(open));
+    document.body.classList.toggle("mna-open", open && window.matchMedia("(max-width:640px)").matches);
     if (open) badge();
     if (open && !started) {
       started = true;
